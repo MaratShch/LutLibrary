@@ -46,6 +46,6 @@ set(CMAKE_DEBUG_POSTFIX "d")
 
 add_subdirectory(LutObject)
 add_subdirectory(LutInterface)
-if (LUT_LIB_TESTS EQUAL ON)
+if (LUT_LIB_TESTS)
 	add_subdirectory(LutTests)
 endif()
