@@ -21,3 +21,9 @@ target_include_directories (
 	PUBLIC BEFORE
 	${LUT_OBJECT_SRC_HXX_DIR}
 )
+
+install (
+    TARGETS ${PROJECT_NAME}
+	DESTINATION ${CMAKE_INSTALL_LIB_DIRECTORY}
+)
+
