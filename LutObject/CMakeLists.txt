@@ -9,6 +9,8 @@ set (LUT_OBJECT_SRC_HXX_DIR ${LUT_OBJECT_SRC_ROOT}/include)
 file(GLOB LUT_OBJECT_CXX ${LUT_OBJECT_SRC_CXX_DIR}/*.cpp)
 file(GLOB LUT_OBJECT_HXX ${LUT_OBJECT_SRC_HXX_DIR}/*.hpp ${LUT_OBJECT_SRC_HXX_DIR}/*.h)
 
+message (STATUS "C++ files for build project ${PROJECT_NAME}: ${LUT_OBJECT_CXX}")
+ 
 add_library (
 	${PROJECT_NAME}
 	STATIC
