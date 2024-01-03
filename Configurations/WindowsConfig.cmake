@@ -22,11 +22,10 @@ message (STATUS "Install HEADRES folder: ${CMAKE_INSTALL_HXX_DIRECTORY}")
 message (STATUS "Install BIN folder:     ${CMAKE_INSTALL_BIN_DIRECTORY}")
 message (STATUS "Install TESTS folder:   ${CMAKE_INSTALL_TST_DIRECTORY}")
 
-
 if(MSVC)
-include(InstallRequiredSystemLibraries)
 # Microsoft Visual Studio compiler used
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
+ message (STATUS "Microsofr Visual Studio compiler detected...")
+ add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
 
 	add_compile_options(
 		"$<$<CONFIG:DEBUG>:/Od;/Ot;/arch:AVX2>"			# disable optimization, favor fast code, AVX2 instruction set
@@ -34,4 +33,4 @@ include(InstallRequiredSystemLibraries)
 	)
 endif(MSVC)
 
-# Intel compiler used
+include(InstallRequiredSystemLibraries)
