@@ -11,7 +11,7 @@
 #endif /* #if __cplusplus == 201703L */
 
 
-template <typename T>
+template <typename T, typename = std::enable_if<std::is_floating_point<T>::value>::type>
 class CCubeLut3D
 {
 public:
