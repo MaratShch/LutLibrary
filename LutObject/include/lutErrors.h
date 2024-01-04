@@ -5,6 +5,7 @@ namespace LutErrorCode
 {
 	enum class LutState
 	{
+		NonImplemented = -10,
 		AlreadyLoaded = -2,
 		AsyncIoPended = -1,
 		OK = 0,
@@ -18,6 +19,7 @@ namespace LutErrorCode
 		DomainBoundReversed,
 		LutSizeOutOfRange,
 		CouldNotParseTableData,
+		FileNotOpened = 30,
 		GenericError = 100
 	};
 }

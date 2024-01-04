@@ -28,8 +28,8 @@ if(MSVC)
  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
 
 	add_compile_options(
-		"$<$<CONFIG:DEBUG>:/Od;/Ot;/arch:AVX2>"			# disable optimization, favor fast code, AVX2 instruction set
-		"$<$<CONFIG:RELEASE>:/O2;/Oi;/Ot;/arch:AVX2>"	# high optimization, inline functions, favor fast code, AVX2 instruction set
+		"$<$<CONFIG:DEBUG>:/Od;/Ot;/arch:AVX2>"			    # disable optimization, favor fast code, AVX2 instruction set
+		"$<$<CONFIG:RELEASE>:/O2;/Oi;/Ot;/arch:AVX2;/FAs>"	# high optimization, inline functions, favor fast code, AVX2 instruction set, ASM output with Source code
 	)
 endif(MSVC)
 
