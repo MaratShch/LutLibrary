@@ -2,6 +2,7 @@
 #define __LUT_LIBRARY_LUT_ELEMENT__
 
 #include <vector>
+#include <string>
 
 template <typename T>
 struct tElement
