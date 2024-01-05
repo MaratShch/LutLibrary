@@ -31,6 +31,8 @@ namespace LutElement
 	using lutTable3D = std::vector<lutTable2D<T>>;
 
 	using lutFileName = std::string;
+	using lutTitle    = std::string;
+	using lutSize     = size_t;
 }
 
 #endif /* __LUT_LIBRARY_LUT_ELEMENT__ */

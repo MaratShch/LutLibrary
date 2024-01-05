@@ -2,6 +2,7 @@
 
 WORK_DIR=$PWD
 
+CMAKE_BIN=~/cmake-3.28.0-rc2-linux-x86_64/bin/cmake
 BUILD_FOLDER=$WORK_DIR/build
 INSTALL_FOLDER=$WORK_DIR/install
 
@@ -18,12 +19,10 @@ mkdir -p $INSTALL_FOLDER
 sync
 cd $BUILD_FOLDER
 
-CMAKE_EXE=~/cmake-3.28.0-rc2-linux-x86_64/bin/cmake
 echo 'Start make generation...'
-$CMAKE_EXE -DCMAKE_INSTALL_PREFIX=$INSTALL_FOLDER ..
+$CMAKE_BIN -DCMAKE_INSTALL_PREFIX=$INSTALL_FOLDER ..
 
 echo 'Start build...'
 make -j 4 && make install -j 4
 echo 'Build completed'
 
-echo 'Complete...'

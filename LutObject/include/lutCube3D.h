@@ -24,16 +24,34 @@ public:
 
 	LutErrorCode::LutState LoadCubeFile (std::ifstream& lutFile)
 	{
-		/* check line separator used in CUBE file */
+		/* clear file stream status */
+		lutFile.clear();
+		/* cleanup internal objects before parsing */
+		_cleanup();
+
+		/* check line separator used in 3D CUBE file */
 		const char lineSeparator = getLineSeparator(lutFile);
+		if ('\0' == lineSeparator)
+			return LutErrorCode::LutState::CouldNotParseTableData;
 
 		/* unconditional seek on start of file for start parsing */
 		lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
 
-		/* cleanup internal objects before parsing */
-		_cleanup();
+		LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
+		std::string stringBuffer, keyWord;
+		constexpr T nonValidDomain = static_cast<T>(-1);
 
-		return LutErrorCode::LutState::NonImplemented;
+		do {
+			stringBuffer.clear(); /* cleanup string before read line from file */
+			if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator)))
+			{
+				keyWord.clear();
+
+
+			} /* if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator))) */
+		} while (loadStatus == LutErrorCode::LutState::OK);
+
+		return loadStatus;
 	}
 
 
@@ -93,15 +111,15 @@ private:
 	LutElement::lutTableRaw<T> m_domainMin;
 	LutElement::lutTableRaw<T> m_domainMax;
 	LutElement::lutTable3D<T>  m_lutBody;
-	LutElement::lutFileName    m_lutName{};
-
-	std::string m_title{};
-	size_t      m_lutSize = 0u;
-	bool        m_blobIndicator = false;
+	LutElement::lutFileName    m_lutName;
+	LutElement::lutSize        m_lutSize;
+	LutElement::lutTitle       m_title;
+	bool                       m_blobIndicator;
 
 	const char symbNewLine        = '\n';
 	const char symbCarriageReturn = '\r';
 	const char symbCommentMarker  = '#';
+	const char symbQuote          = '"';
 
 	void _cleanup (void)
 	{
@@ -138,8 +156,23 @@ private:
 		}
 
 		return lineSeparator;
-	}
+	} /* char getLineSeparator (std::ifstream& lutFile) */
 
-};
+	LutErrorCode::LutState ReadLine (std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator)
+	{
+		while (0u == strBuffer.size() || symbCommentMarker == strBuffer[0])
+		{
+			if (lutFile.eof())
+				return LutErrorCode::LutState::PrematureEndOfFile;
+
+			std::getline(lutFile, strBuffer, lineSeparator);
+			if (lutFile.fail())
+				return LutErrorCode::LutState::ReadError;
+		}
+		return LutErrorCode::LutState::OK;
+	} /* LutErrorCode::LutState ReadLine(std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator) */
+
+
+}; /* class CCubeLut3D */
 
 #endif /* __LUT_LIBRARY_LUT_CUBE_3D__ */

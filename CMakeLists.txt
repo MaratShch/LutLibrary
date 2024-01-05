@@ -9,6 +9,12 @@ set(LUT_LIB_RELEASE 1)
 set(LUT_LIB_NAME lib${PROJECT_NAME}${LUT_LIB_MAJOR}${LUT_LIB_MINOR})
 set(LUT_LIB_VERSION ${LUT_LIB_MAJOR}.${LUT_LIB_MINOR}.${LUT_LIB_RELEASE})
 
+# Build type
+if (NOT CMAKE_BUILD_TYPE)
+   SET( CMAKE_BUILD_TYPE Release FORCE )
+   message (STATUS "Release build type forced...")
+endif()
+
 # common build options
 option(LUT_LIB_SHARED "Build shared lib" OFF)
 option(LUT_LIB_STATIC "Build static lib" ON)
