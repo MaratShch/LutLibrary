@@ -4,6 +4,7 @@
 #include "lutElement.h"
 #include "lutErrors.h"
 #include <fstream>
+#include <sstream>
 #include <iostream>
 
 #if __cplusplus == 201703L /* C++17 only features */
@@ -38,19 +39,44 @@ public:
 		lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
 
 		LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
-		std::string stringBuffer, keyWord;
+		std::string stringBuffer, keyword;
 		constexpr T nonValidDomain = static_cast<T>(-1);
+		bool bData = false;
 
+		/* IN FIRST READ KEYWORDS */
 		do {
 			stringBuffer.clear(); /* cleanup string before read line from file */
+			const std::streampos linePos = lutFile.tellg();
 			if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator)))
 			{
-				keyWord.clear();
+				keyword.clear();
+				std::istringstream line(stringBuffer);
+				line >> keyword;
 
-
+				if ("+" < keyword && ":" > keyword)
+				{
+					/* LUT data itself starting */
+					lutFile.seekg(linePos, std::ios_base::beg);
+					bData = true;
+				}
+				else if ("LUT_3D_SIZE" == keyword)
+					loadStatus = set_lut_size(line);
+				else if ("LUT_1D_SIZE" == keyword)
+					return LutErrorCode::LutState::IncorrectDimension; /* because 3D and 1D CUBE LUT looks very similar we need protect here from incorrect read */
+				else if ("DOMAIN_MIN" == keyword)
+					loadStatus = set_domain_min_value(line);
+				else if ("DOMAIN_MAX" == keyword)
+					loadStatus = set_domain_max_value(line);
+				else if ("TITLE" == keyword)
+					loadStatus = read_lut_title (line);
 			} /* if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator))) */
-		} while (loadStatus == LutErrorCode::LutState::OK);
+		} while (loadStatus == LutErrorCode::LutState::OK && false == bData);
 
+		/* VALIDATE KEYWORDS */
+		if (LutErrorCode::LutState::OK == keywords_validation())
+		{
+			/* READ LUT DATA */
+		}
 		return loadStatus;
 	}
 
@@ -114,7 +140,6 @@ private:
 	LutElement::lutFileName    m_lutName;
 	LutElement::lutSize        m_lutSize;
 	LutElement::lutTitle       m_title;
-	bool                       m_blobIndicator;
 
 	const char symbNewLine        = '\n';
 	const char symbCarriageReturn = '\r';
@@ -128,8 +153,54 @@ private:
 		m_lutBody.clear();
 		m_title.clear();
 		m_lutSize = 0u;
-		m_blobIndicator = false;
 		return;
+	}
+
+	LutErrorCode::LutState keywords_validation (void)
+	{
+		/* validate LUT size */
+		if (0u == m_lutSize)
+			return LutErrorCode::LutState::LutSizeOutOfRange;
+
+		/* validate DOMAIN_MIN and DOMAIN_MAX */
+		if (3 == m_domainMin.size() && 3 == m_domainMax.size())
+			if (m_domainMin[0] > m_domainMax[0] || m_domainMin[1] > m_domainMax[1] || m_domainMin[2] > m_domainMax[2])
+				return LutErrorCode::LutState::DomainBoundReversed;
+		return LutErrorCode::LutState::OK;
+	}
+
+
+	LutErrorCode::LutState read_lut_title(std::istringstream& line)
+	{
+		/* TODO */
+		return LutErrorCode::LutState::OK;
+	}
+
+	LutErrorCode::LutState set_domain_min_value (std::istringstream& line)
+	{
+		m_domainMin.resize(3);
+		line >> m_domainMin[0] >> m_domainMin[1] >> m_domainMin[2];
+		return LutErrorCode::LutState::OK;
+	}
+
+	LutErrorCode::LutState set_domain_max_value (std::istringstream& line)
+	{
+		m_domainMax.resize(3);
+		line >> m_domainMax[0] >> m_domainMax[1] >> m_domainMax[2];
+		return LutErrorCode::LutState::OK;
+	}
+
+	LutErrorCode::LutState set_lut_size (std::istringstream& line)
+	{
+		int32_t lutSize = -1;
+		line >> lutSize;
+		if (lutSize >= 2 && lutSize <= 256)
+		{
+			m_lutSize = static_cast<decltype(m_lutSize)>(lutSize);
+			m_lutBody = std::move(LutElement::lutTable3D<T>(lutSize, LutElement::lutTable2D<T>(lutSize, LutElement::lutTable1D<T>(lutSize, LutElement::lutTableRaw<T>(3)))));
+			return LutErrorCode::LutState::OK;
+		}
+		return LutErrorCode::LutState::LutSizeOutOfRange;
 	}
 
 	char getLineSeparator (std::ifstream& lutFile)

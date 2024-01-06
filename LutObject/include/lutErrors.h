@@ -20,6 +20,7 @@ namespace LutErrorCode
 		LutSizeOutOfRange,
 		CouldNotParseTableData,
 		FileNotOpened = 30,
+		IncorrectDimension,
 		GenericError = 100
 	};
 }
