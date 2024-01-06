@@ -47,7 +47,7 @@ public:
 		do {
 			stringBuffer.clear(); /* cleanup string before read line from file */
 			const std::streampos linePos = lutFile.tellg();
-			if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator)))
+			if (LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
 			{
 				keyword.clear();
 				std::istringstream line(stringBuffer);
@@ -68,7 +68,9 @@ public:
 				else if ("DOMAIN_MAX" == keyword)
 					loadStatus = set_domain_max_value(line);
 				else if ("TITLE" == keyword)
-					loadStatus = read_lut_title (line);
+					loadStatus = read_lut_title(line);
+				else
+					loadStatus = LutErrorCode::LutState::UnknownOrRepeatedKeyword;
 			} /* if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator))) */
 		} while (loadStatus == LutErrorCode::LutState::OK && false == bData);
 
@@ -160,9 +162,9 @@ private:
 	{
 		/* validate LUT size */
 		if (0u == m_lutSize)
-			return LutErrorCode::LutState::LutSizeOutOfRange;
+			return LutErrorCode::LutState::LutSizeUnknown;
 
-		/* validate DOMAIN_MIN and DOMAIN_MAX */
+		/* validate DOMAIN_MIN and DOMAIN_MAX range */
 		if (3 == m_domainMin.size() && 3 == m_domainMax.size())
 			if (m_domainMin[0] > m_domainMax[0] || m_domainMin[1] > m_domainMax[1] || m_domainMin[2] > m_domainMax[2])
 				return LutErrorCode::LutState::DomainBoundReversed;
@@ -170,7 +172,7 @@ private:
 	}
 
 
-	LutErrorCode::LutState read_lut_title(std::istringstream& line)
+	LutErrorCode::LutState read_lut_title (std::istringstream& line)
 	{
 		/* TODO */
 		return LutErrorCode::LutState::OK;

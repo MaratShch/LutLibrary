@@ -17,9 +17,10 @@ namespace LutErrorCode
 		UnknownOrRepeatedKeyword = 20,
 		TitleMissingQuote,
 		DomainBoundReversed,
+		LutSizeUnknown,
 		LutSizeOutOfRange,
 		CouldNotParseTableData,
-		FileNotOpened = 30,
+		FileNotOpened = 50,
 		IncorrectDimension,
 		GenericError = 100
 	};
