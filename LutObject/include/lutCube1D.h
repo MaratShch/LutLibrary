@@ -5,7 +5,7 @@
 #include "lutElement.h"
 #include "lutErrors.h"
 
-template <typename T, typename = std::enable_if<std::is_floating_point<T>::value>::type>
+template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CCubeLut1D
 {
 public:

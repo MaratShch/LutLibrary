@@ -12,13 +12,10 @@
 #endif /* #if __cplusplus == 201703L */
 
 
-template <typename T, typename = std::enable_if<std::is_floating_point<T>::value>::type>
+template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CCubeLut3D
 {
 public:
-	CCubeLut3D(void) = default;
-	virtual ~CCubeLut3D(void) = default;
-
 	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
 	size_t getLutSize (void) {return m_lutSize;}
 	
