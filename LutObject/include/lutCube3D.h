@@ -17,8 +17,9 @@ class CCubeLut3D
 {
 public:
 	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
-	size_t getLutSize (void) {return m_lutSize;}
-	
+	LutErrorCode::LutState getLastError(void) { return m_error; }
+	size_t const getLutSize (void) { return m_lutSize; }
+
 
 	LutErrorCode::LutState LoadCubeFile (std::ifstream& lutFile)
 	{
@@ -56,26 +57,51 @@ public:
 					lutFile.seekg(linePos, std::ios_base::beg);
 					bData = true;
 				}
+				else if ("TITLE" == keyword)
+					loadStatus = read_lut_title(line);
 				else if ("LUT_3D_SIZE" == keyword)
 					loadStatus = set_lut_size(line);
 				else if ("LUT_1D_SIZE" == keyword)
-					return LutErrorCode::LutState::IncorrectDimension; /* because 3D and 1D CUBE LUT looks very similar we need protect here from incorrect read */
+					return LutErrorCode::LutState::IncorrectDimension; /* because 3D and 1D CUBE LUT looks very similar we need put protection here from incorrect read */
 				else if ("DOMAIN_MIN" == keyword)
 					loadStatus = set_domain_min_value(line);
 				else if ("DOMAIN_MAX" == keyword)
 					loadStatus = set_domain_max_value(line);
-				else if ("TITLE" == keyword)
-					loadStatus = read_lut_title(line);
 				else
 					loadStatus = LutErrorCode::LutState::UnknownOrRepeatedKeyword;
 			} /* if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator))) */
 		} while (loadStatus == LutErrorCode::LutState::OK && false == bData);
 
-		/* VALIDATE KEYWORDS */
+		LutElement::lutSize r = 0, g = 0, b = 0;
+
+		/* VALIDATE KEYWORDS AND READ LUT BODY */
 		if (LutErrorCode::LutState::OK == keywords_validation())
 		{
-			/* READ LUT DATA */
+			const auto& lut3DSize = m_lutSize;
+			bool bNoBlob = true;
+
+			for (b = 0; b < lut3DSize && bNoBlob; b++)
+				for (g = 0; g < lut3DSize && bNoBlob; g++)
+					for (r = 0; r < lut3DSize && bNoBlob; r++)
+					{
+						/* READ LUT DATA */
+						stringBuffer.clear();
+						loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator);
+
+						/* skip #xxBLOB section */
+						if (symbCommentMarker == stringBuffer[0])
+						{
+							bNoBlob = false;
+							continue;
+						}
+
+						m_lutBody[r][g][b] = ParseTableRow (stringBuffer);
+					}
 		}
+
+		loadStatus = lust_size_validation (r, g, b);
+		m_error = loadStatus;
+
 		return loadStatus;
 	}
 
@@ -137,13 +163,15 @@ private:
 	LutElement::lutTableRaw<T> m_domainMax;
 	LutElement::lutTable3D<T>  m_lutBody;
 	LutElement::lutFileName    m_lutName;
-	LutElement::lutSize        m_lutSize;
 	LutElement::lutTitle       m_title;
+	LutElement::lutSize        m_lutSize;
+	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
 
 	const char symbNewLine        = '\n';
 	const char symbCarriageReturn = '\r';
 	const char symbCommentMarker  = '#';
 	const char symbQuote          = '"';
+
 
 	void _cleanup (void)
 	{
@@ -152,8 +180,17 @@ private:
 		m_lutBody.clear();
 		m_title.clear();
 		m_lutSize = 0u;
+		m_error = LutErrorCode::LutState::NotInitialized;
 		return;
 	}
+
+
+	LutErrorCode::LutState lust_size_validation (const LutElement::lutSize& r, const LutElement::lutSize& g, const LutElement::lutSize& b)
+	{
+		/* validate real LUT size */
+		return ((0u == m_lutSize || r != m_lutSize || g != m_lutSize || b != m_lutSize) ? LutErrorCode::LutState::LutSizeInvalid : LutErrorCode::LutState::OK);
+	}
+
 
 	LutErrorCode::LutState keywords_validation (void)
 	{
@@ -165,6 +202,7 @@ private:
 		if (3 == m_domainMin.size() && 3 == m_domainMax.size())
 			if (m_domainMin[0] > m_domainMax[0] || m_domainMin[1] > m_domainMax[1] || m_domainMin[2] > m_domainMax[2])
 				return LutErrorCode::LutState::DomainBoundReversed;
+
 		return LutErrorCode::LutState::OK;
 	}
 
@@ -175,6 +213,7 @@ private:
 		return LutErrorCode::LutState::OK;
 	}
 
+
 	LutErrorCode::LutState set_domain_min_value (std::istringstream& line)
 	{
 		m_domainMin.resize(3);
@@ -182,12 +221,14 @@ private:
 		return LutErrorCode::LutState::OK;
 	}
 
+
 	LutErrorCode::LutState set_domain_max_value (std::istringstream& line)
 	{
 		m_domainMax.resize(3);
 		line >> m_domainMax[0] >> m_domainMax[1] >> m_domainMax[2];
 		return LutErrorCode::LutState::OK;
 	}
+
 
 	LutErrorCode::LutState set_lut_size (std::istringstream& line)
 	{
@@ -201,6 +242,7 @@ private:
 		}
 		return LutErrorCode::LutState::LutSizeOutOfRange;
 	}
+
 
 	char getLineSeparator (std::ifstream& lutFile)
 	{
@@ -228,6 +270,7 @@ private:
 		return lineSeparator;
 	} /* char getLineSeparator (std::ifstream& lutFile) */
 
+
 	LutErrorCode::LutState ReadLine (std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator)
 	{
 		while (0u == strBuffer.size() || symbCommentMarker == strBuffer[0])
@@ -242,6 +285,24 @@ private:
 		return LutErrorCode::LutState::OK;
 	} /* LutErrorCode::LutState ReadLine(std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator) */
 
+
+	LutElement::lutTableRaw<T> ParseTableRow (const std::string& strBuffer)
+	{
+		LutElement::lutTableRaw<T> lutRawData(3);
+		std::istringstream data_line (strBuffer);
+
+		for (int32_t i = 0; i < 3; i++)
+		{
+			data_line >> lutRawData[i];
+			if (data_line.fail())
+			{
+				m_error = LutErrorCode::LutState::CouldNotParseTableData;
+				break;
+			}
+		}
+
+		return lutRawData;
+	}
 
 }; /* class CCubeLut3D */
 

@@ -15,7 +15,7 @@ int main(void)
 	CCubeLut3D<double> dLut3D;
 	CCubeLut3D<long double> ldLut3D;
 
-	const std::string tinyLut = dbgLutsFolder + "/" + "Tiny_with_Blob.cube";
+	const std::string tinyLut = dbgLutsFolder + "/" + "Large65.cube";// "Tiny_with_Blob.cube";
 	std::cout << "LUT file name for DEBUG: " << tinyLut << std::endl;
 
 	fLut3D.LoadCubeFile (tinyLut);

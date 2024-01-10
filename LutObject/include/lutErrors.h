@@ -18,6 +18,7 @@ namespace LutErrorCode
 		TitleMissingQuote,
 		DomainBoundReversed,
 		LutSizeUnknown,
+		LutSizeInvalid,
 		LutSizeOutOfRange,
 		CouldNotParseTableData,
 		FileNotOpened = 50,
