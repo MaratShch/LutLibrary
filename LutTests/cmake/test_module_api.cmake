@@ -19,9 +19,10 @@ function (lutlib_test name source libraries)
 
  target_link_libraries (
 	${GTest_NAME}
-        PRIVATE ${GTest_PrivateLibraries}
-        PUBLIC  ${libraries}
+    PRIVATE ${GTest_PrivateLibraries}
+    PUBLIC  ${libraries}
  )
 
-
+ install (TARGETS ${GTest_NAME} DESTINATION ${CMAKE_INSTALL_TST_DIRECTORY})
+ 
 endfunction(lutlib_test)
