@@ -2,6 +2,10 @@ cmake_minimum_required (VERSION 3.25)
 
 message (STATUS "Include LutTests repository")
 
+set (CMAKE_TESTS_API_DIR 	${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_TESTS_API_DIR}")
+include ("test_module_api")
+
 set (LUT_TESTS_FILES_FOLDER	${CMAKE_CURRENT_SOURCE_DIR})
 
 # IRIDAS files for tests (CUBE 1D and CUBE 3D format)
@@ -30,11 +34,18 @@ install (DIRECTORY ${CUBE_1D_FILES_FOLDER} DESTINATION ${CMAKE_INSTALL_CUBE_LUT_
 install (DIRECTORY ${CLF_FILES_FOLDER}     DESTINATION ${CMAKE_INSTALL_CLF_LUT_DIRECTORY})
 install (DIRECTORY ${CSP_FILES_FOLDER}     DESTINATION ${CMAKE_INSTALL_CSP_LUT_DIRECTORY})
 
-set (TEST1	ParseCube3dMain)
-add_executable (
-	${TEST1}
-	${LUT_TESTS_FILES_FOLDER}/src/ParseCube3dMain.cpp
+#set (TEST1	ParseCube3d.gtest)
+#add_executable (
+#	${TEST1}
+#	${LUT_TESTS_FILES_FOLDER}/src/ParseCube3d.cpp
+#)
+#target_compile_definitions (${TEST1} PRIVATE -DCUBE_3D_LUT_FOLDER="${CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY}/3D")
+#target_link_libraries (${TEST1} PRIVATE LutObject)
+#install (TARGETS ${TEST1} DESTINATION ${CMAKE_INSTALL_TST_DIRECTORY})
+
+lutlib_test (
+	ParseCube3d 
+	${LUT_TESTS_FILES_FOLDER}/src/ParseCube3d.cpp 
+	LutObject
 )
-target_compile_definitions (${TEST1} PRIVATE -DCUBE_3D_LUT_FOLDER="${CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY}/3D")
-target_link_libraries (${TEST1} PRIVATE LutObject)
-install (TARGETS ${TEST1} DESTINATION ${CMAKE_INSTALL_TST_DIRECTORY})
+
