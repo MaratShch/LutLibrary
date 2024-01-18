@@ -24,10 +24,10 @@ option(LUT_LIB_TESTS  "Build ${PROJECT_NAME} tests" OFF)
 set(LUT_LIB_PROJECT_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 message (STATUS "LutLibrary PROJECT ROOT: ${LUT_LIB_PROJECT_ROOT}")
 
-set (CMAKE_CONFIGURATIONS_DIR ${LUT_LIB_PROJECT_ROOT}/Configurations)
+set (CMAKE_CONFIGURATIONS_DIR ${LUT_LIB_PROJECT_ROOT}/CMakeConfig)
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CONFIGURATIONS_DIR}")
 
-message (STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+message (DEBUG "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
 
 if (CMAKE_TARGET_EXTERNAL_CONFIG)
 	message (STATUS  "External project configuration file defined: ${CMAKE_TARGET_EXTERNAL_CONFIG}")
@@ -50,6 +50,7 @@ endif()
 include(${PROJ_CONFIG_FILE})
 set(CMAKE_DEBUG_POSTFIX "d")
 
+add_subdirectory(LutUtils)
 add_subdirectory(LutObject)
 add_subdirectory(LutInterface)
 if (LUT_LIB_TESTS)
