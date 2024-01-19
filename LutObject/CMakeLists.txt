@@ -25,7 +25,7 @@ target_include_directories (
 )
 
 target_link_libraries (
-	${PROJECT_NAME} PUBLIC LutUtils
+	${PROJECT_NAME} PUBLIC StringView
 )
 	
 install (

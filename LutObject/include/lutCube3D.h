@@ -103,10 +103,13 @@ public:
 		return loadStatus;
 	}
 
-	template <typename U>
-	LutErrorCode::LutState LoadCubeFile (StringView<U> lutFileName)
+
+	LutErrorCode::LutState LoadCubeFile (string_view lutFileName)
 	{
 		/* TODO */
+		constexpr string_view fName = "kuku.cube";
+//		constexpr char vv = fName[100];
+		
 		return LutErrorCode::LutState::NonImplemented;
 	}
 
