@@ -7,6 +7,7 @@
 
 #else /* C++11 and C++14 standards */
 
+#include <algorithm>
 #include <string> 
 #include <ostream>
 #include <cstddef>
@@ -16,7 +17,7 @@ namespace lututils_std
 { 
 
   template <typename CharT, typename Traits = std::char_traits<CharT>>
-  class basic_string_view final
+  class basic_string_view
   {
     public:
       using char_type       = CharT;
@@ -37,20 +38,23 @@ namespace lututils_std
       static constexpr size_type npos = static_cast<size_type>(-1);
       
       /* default constructor */
-      constexpr basic_string_view () noexcept {m_string = nullptr; m_size = 0;}
+      constexpr basic_string_view () noexcept : m_string {nullptr}, m_size{0} {};
       
       /* copy and move constructors */
       constexpr basic_string_view (const basic_string_view& other_sw) noexcept = default;
       constexpr basic_string_view (basic_string_view&& other_sw) noexcept = default;
       
-      /* construct basic_string_view from ANSI string with given size */
-      constexpr basic_string_view (const char_type* ansi_str, size_type size) noexcept {m_string{ansi_str}, m_size{size};}
       /* construct basic_string_view from ANSI string with zero termination */
-      constexpr basic_string_view (const char_type* ansi_str) noexcept {basic_string_view(ansi_str, traits_type::length(ansi_str));}
+      constexpr basic_string_view (const char_type* str) noexcept : m_string{str}, m_size{std::traits_type::length(str)} {};
+      /* construct basic_string_view from ANSI string with given size */
+      constexpr basic_string_view (const char_type* str, const size_type count) noexcept : m_string{str}, m_size{count} {};
       
       /* construct basic_string_view from std::string */
       template <typename tAllocator>
-      basic_string_view (const std::basic_string<CharT,Traits,tAllocator>& std_str) noexcept {m_string{std_str.c_str()}, m_size{std_str.size()};}
+      basic_string_view (const std::basic_string<CharT,Traits,tAllocator>& std_str) noexcept : m_string{std_str.c_str()}, m_size{std_str.size()} {};
+      
+      /* assignment / copy operators */
+      basic_string_view& operator=(const basic_string_view& view) = default;
       
       /* capacity, size and size validation */
       constexpr size_type size()     const noexcept {return m_size;}
@@ -62,7 +66,7 @@ namespace lututils_std
       constexpr char_type* data() const noexcept {return m_string;}
       constexpr const_reference operator[] (const size_type position) const noexcept {return m_string[position];}
       constexpr const_reference at (const size_type position) const
-     {
+      {
           return (position < m_size) ? m_string[position] : 
          (throw std::out_of_range{"Position is out of range in basic_string_view::at"}), m_string[position];
       }
@@ -85,6 +89,11 @@ namespace lututils_std
   using wstring_view   = lututils_std::basic_string_view<wchar_t>;
   using u16string_view = lututils_std::basic_string_view<char16_t>;
   using u32string_view = lututils_std::basic_string_view<char32_t>;
+
+  constexpr string_view    operator ""_sv( const char*     str, std::size_t len ) noexcept {return string_view    {str, len};}
+  constexpr wstring_view   operator ""_sv( const wchar_t*  str, std::size_t len ) noexcept {return wstring_view   {str, len};}
+  constexpr u16string_view operator ""_sv( const char16_t* str, std::size_t len ) noexcept {return u16string_view {str, len};}
+  constexpr u32string_view operator ""_sv( const char32_t* str, std::size_t len ) noexcept {return u32string_view {str, len};}
 
 
 #endif /*  __cplusplus >= 201703L  */ 
