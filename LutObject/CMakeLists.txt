@@ -24,6 +24,10 @@ target_include_directories (
 	${LUT_OBJECT_SRC_HXX_DIR}
 )
 
+target_link_libraries (
+	${PROJECT_NAME} PUBLIC LutUtils
+)
+	
 install (
     TARGETS ${PROJECT_NAME}
 	DESTINATION ${CMAKE_INSTALL_LIB_DIRECTORY}

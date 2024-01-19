@@ -3,13 +3,11 @@
 
 #include "lutElement.h"
 #include "lutErrors.h"
+#include "string_view.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
 
-#if __cplusplus == 201703L /* C++17 only features */
-#include <string_view>
-#endif /* #if __cplusplus == 201703L */
 
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
@@ -18,7 +16,7 @@ class CCubeLut3D
 public:
 	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
 	LutErrorCode::LutState getLastError(void) { return m_error; }
-	size_t const getLutSize (void) { return m_lutSize; }
+	LutElement::lutSize const getLutSize (void) { return m_lutSize; }
 
 
 	LutErrorCode::LutState LoadCubeFile (std::ifstream& lutFile)
@@ -105,13 +103,12 @@ public:
 		return loadStatus;
 	}
 
-
-#if __cplusplus == 201703L /* C++17 only features */
-	LutErrorCode::LutState LoadCubeFile (std::string_view lutFileName)
+	template <typename U>
+	LutErrorCode::LutState LoadCubeFile (StringView<U> lutFileName)
 	{
 		/* TODO */
+		return LutErrorCode::LutState::NonImplemented;
 	}
-#endif /* #if __cplusplus == 201703L */
 
 
 	LutErrorCode::LutState LoadCubeFile (const char* lutFileName)
