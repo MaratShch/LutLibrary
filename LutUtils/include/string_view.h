@@ -75,7 +75,7 @@ namespace lututils_std
       
       /* simple modifiers */
       void remove_prefix (size_type prefix_pos)     noexcept {m_string += prefix_pos; m_size += prefix_pos;}
-      void remove_suffix (size_type suffix_pos)     noexcept {m_string -= suffix_pos; m_size -= suffix_pos;}
+      void remove_suffix (size_type suffix_pos)     noexcept {m_size -= suffix_pos;}
       void swap          (basic_string_view& other) noexcept {std::swap(m_string, other.m_string), std::swap(m_size, other.m_size);}
       
     private:
