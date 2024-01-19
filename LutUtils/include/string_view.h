@@ -70,12 +70,13 @@ namespace lututils_std
           return (position < m_size) ? m_string[position] : 
          (throw std::out_of_range{"Position is out of range in basic_string_view::at"}), m_string[position];
       }
-      
       constexpr const_reference front () const noexcept {return *m_string;}
       constexpr const_reference back  () const noexcept {return m_string[m_size - static_cast<size_type>(1)]};
       
-  //    void remove_prefix (size_type prefix_pos) noexcept {m_string += prefix_pos; m_size += prefix_pos;}
-      
+      /* simple modifiers */
+      void remove_prefix (size_type prefix_pos)     noexcept {m_string += prefix_pos; m_size += prefix_pos;}
+      void remove_suffix (size_type suffix_pos)     noexcept {m_string -= suffix_pos; m_size -= suffix_pos;}
+      void swap          (basic_string_view& other) noexcept {std::swap(m_string, other.m_string), std::swap(m_size, other.m_size);}
       
     private:
       const char_type* m_string;

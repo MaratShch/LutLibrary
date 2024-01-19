@@ -104,19 +104,50 @@ public:
 	}
 
 
-	LutErrorCode::LutState LoadCubeFile (string_view lutFileName)
+	LutErrorCode::LutState LoadCubeFile (const string_view& lutFileName)
 	{
-		/* TODO */
-		constexpr string_view fName = "kuku.cube";
-//		constexpr char vv = fName[100];
-		
-		return LutErrorCode::LutState::NonImplemented;
+		LutErrorCode::LutState err = LutErrorCode::LutState::OK;
+		if (!lutFileName.empty() && lutFileName != m_lutName)
+		{
+			std::ifstream cubeFile3D { lutFileName };
+			if (!cubeFile3D.good())
+				return LutErrorCode::LutState::FileNotOpened;
+			
+			err = LoadCubeFile (cubeFile3D);
+			cubeFile3D.close();
+
+			if (LutErrorCode::LutState::OK == err)
+				m_lutName = lutFileName;
+		}
+		return err;
 	}
 
+	LutErrorCode::LutState LoadCubeFile (const wstring_view& lutFileName)
+	{
+		LutErrorCode::LutState err = LutErrorCode::LutState::OK;
+		if (!lutFileName.empty() && lutFileName != m_lutName)
+		{
+			std::ifstream cubeFile3D { lutFileName };
+			if (!cubeFile3D.good())
+				return LutErrorCode::LutState::FileNotOpened;
+			
+			err = LoadCubeFile (cubeFile3D);
+			cubeFile3D.close();
+
+			if (LutErrorCode::LutState::OK == err)
+				m_lutName = lutFileName;
+		}
+		return err;
+	}
 
 	LutErrorCode::LutState LoadCubeFile (const char* lutFileName)
 	{
-		return (nullptr != lutFileName && '\0' != lutFileName[0]) ? LoadCubeFile (std::string{ lutFileName }) : LutErrorCode::LutState::GenericError;
+		return (nullptr != lutFileName && '\0' != lutFileName[0]) ? LoadCubeFile (string_view{ lutFileName }) : LutErrorCode::LutState::GenericError;
+	}
+
+	LutErrorCode::LutState LoadCubeFile (const wchar_t* lutFileName)
+	{
+		return (nullptr != lutFileName && 0 != lutFileName[0]) ? LoadCubeFile (wstring_view{ lutFileName }) : LutErrorCode::LutState::GenericError;
 	}
 
 
@@ -139,13 +170,17 @@ public:
 	}
 
 
-#if __cplusplus == 201703L /* C++17 only features */
-	LutErrorCode::LutState SaveCubeFile (const std::string_view& fileName)
+	LutErrorCode::LutState SaveCubeFile (const string_view& fileName)
 	{ 
 		return LutErrorCode::LutState::NonImplemented; 
 	}
-#endif /* #if __cplusplus == 201703L */
 
+
+	LutErrorCode::LutState SaveCubeFile (const wstring_view& fileName)
+	{ 
+		return LutErrorCode::LutState::NonImplemented; 
+	}
+	
 	
 	LutErrorCode::LutState SaveCubeFile (const std::string& fileName)
 	{
