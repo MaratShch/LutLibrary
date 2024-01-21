@@ -78,11 +78,56 @@ namespace lututils_std
       void remove_suffix (size_type suffix_pos)     noexcept {m_size -= suffix_pos;}
       void swap          (basic_string_view& other) noexcept {std::swap(m_string, other.m_string), std::swap(m_size, other.m_size);}
       
+
     private:
       const char_type* m_string;
       size_type        m_size; 
 
   }; /* basic_string_view */
+
+
+  /* logical operators */
+  template <typename CharT, typename Traits>
+  bool operator != (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
+  {
+     return false;
+  }
+      
+  template <typename CharT, typename Traits>
+  bool operator == (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
+  {
+     return false;
+  }
+
+  template <typename CharT, typename Traits>
+  bool operator < (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
+  {
+     return false;
+  }
+
+  template <typename CharT, typename Traits>
+  bool operator > (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
+  {
+     return false;
+  }
+
+  template <typename CharT, typename Traits>
+  bool operator <= (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
+  {
+     return false;
+  }
+
+  template <typename CharT, typename Traits>
+  bool operator >= (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
+  {
+     return false;
+  }
+      
+      /* stream output operator */
+//      std::basic_ostream& operator << (std::basic_ostream& o, const basic_string_view& str)
+//      {
+//          return o;
+//      }
 
 } /* namespace lututils_std */
 
