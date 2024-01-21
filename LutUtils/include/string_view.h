@@ -78,7 +78,18 @@ namespace lututils_std
       void remove_suffix (size_type suffix_pos)     noexcept {m_size -= suffix_pos;}
       void swap          (basic_string_view& other) noexcept {std::swap(m_string, other.m_string), std::swap(m_size, other.m_size);}
       
-
+      /* compare */
+      int compare (basic_string_view s) const noexcept
+      {
+          const size_type rlen = std::min(m_size, s.m_size);
+          const int compare = Traits::compare (m_string, s.m_string, rlen);
+          if (compare != 0) return compare;
+          if (m_size < v.m_size) return -1;
+          if (m_size > v.m_size) return 1;
+          return 0;
+      }
+      
+      
     private:
       const char_type* m_string;
       size_type        m_size; 
@@ -88,16 +99,10 @@ namespace lututils_std
 
   /* logical operators */
   template <typename CharT, typename Traits>
-  bool operator != (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
-  {
-     return false;
-  }
+  bool operator != (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return 0 != l.compare(r);}
       
   template <typename CharT, typename Traits>
-  bool operator == (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
-  {
-     return false;
-  }
+  bool operator == (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return 0 == l.compare(r);}
 
   template <typename CharT, typename Traits>
   bool operator < (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
