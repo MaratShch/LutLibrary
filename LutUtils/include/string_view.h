@@ -1,5 +1,5 @@
-#ifndef LUTUTILS_STRING_VIEW_PORTING
-#define LUTUTILS_STRING_VIEW_PORTING
+#ifndef __LUTUTILS_STRING_VIEW_PORTING__
+#define __LUTUTILS_STRING_VIEW_PORTING__
 
 #if __cplusplus >= 201703L /* C++17 and later standards only features */
 
@@ -11,7 +11,8 @@
 #include <string> 
 #include <ostream>
 #include <cstddef>
-    
+
+   
 /* lets implement this class by itself */
 namespace lututils_std
 { 
@@ -45,7 +46,7 @@ namespace lututils_std
       constexpr basic_string_view (basic_string_view&& other_sw) noexcept = default;
       
       /* construct basic_string_view from ANSI string with zero termination */
-      constexpr basic_string_view (const char_type* str) noexcept : m_string{str}, m_size{std::traits_type::length(str)} {};
+      constexpr basic_string_view (const char_type* str) noexcept : m_string{str}, m_size{traits_type::length(str)} {};
       /* construct basic_string_view from ANSI string with given size */
       constexpr basic_string_view (const char_type* str, const size_type count) noexcept : m_string{str}, m_size{count} {};
       
@@ -71,7 +72,7 @@ namespace lututils_std
          (throw std::out_of_range{"Position is out of range in basic_string_view::at"}), m_string[position];
       }
       constexpr const_reference front () const noexcept {return *m_string;}
-      constexpr const_reference back  () const noexcept {return m_string[m_size - static_cast<size_type>(1)]};
+      constexpr const_reference back  () const noexcept {return m_string[m_size - static_cast<size_type>(1)];}
       
       /* simple modifiers */
       void remove_prefix (size_type prefix_pos)     noexcept {m_string += prefix_pos; m_size += prefix_pos;}
@@ -84,8 +85,8 @@ namespace lututils_std
           const size_type rlen = std::min(m_size, s.m_size);
           const int compare = Traits::compare (m_string, s.m_string, rlen);
           if (compare != 0) return compare;
-          if (m_size < v.m_size) return -1;
-          if (m_size > v.m_size) return 1;
+          if (m_size < s.m_size) return -1;
+          if (m_size > s.m_size) return 1;
           return 0;
       }
       
@@ -97,10 +98,23 @@ namespace lututils_std
   }; /* basic_string_view */
 
 
-  /* logical operators */
+  /* logical operators != */
   template <typename CharT, typename Traits>
   bool operator != (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return 0 != l.compare(r);}
       
+  template <typename CharT, typename Traits>
+  bool operator != (const basic_string_view<CharT,Traits>& l, const CharT* r) noexcept {return l != basic_string_view<CharT,Traits>(r);}
+
+  template <typename CharT, typename Traits>
+  bool operator != (const CharT* l, const basic_string_view<CharT,Traits>& r) noexcept {return basic_string_view<CharT,Traits>(l) != r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  bool operator != (const std::basic_string<CharT,Traits,Allocator>& l, const basic_string_view<CharT,Traits>& r) noexcept {return basic_string_view<CharT,Traits>(l) != r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  bool operator != (const basic_string_view<CharT,Traits>& l, const std::basic_string<CharT,Traits,Allocator>& r) noexcept {return l != basic_string_view<CharT,Traits>(r);}
+ 
+  /* logical operators == */
   template <typename CharT, typename Traits>
   bool operator == (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return 0 == l.compare(r);}
 
@@ -149,4 +163,4 @@ namespace lututils_std
 
 #endif /*  __cplusplus >= 201703L  */ 
 
-#endif /* LUTUTILS_STRING_VIEW_PORTING */
+#endif /* __LUTUTILS_STRING_VIEW_PORTING__ */

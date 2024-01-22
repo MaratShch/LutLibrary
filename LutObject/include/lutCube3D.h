@@ -8,7 +8,7 @@
 #include <sstream>
 #include <iostream>
 
-
+using namespace lututils_std;
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CCubeLut3D
@@ -122,32 +122,9 @@ public:
 		return err;
 	}
 
-	LutErrorCode::LutState LoadCubeFile (const wstring_view& lutFileName)
-	{
-		LutErrorCode::LutState err = LutErrorCode::LutState::OK;
-		if (!lutFileName.empty() && lutFileName != m_lutName)
-		{
-			std::ifstream cubeFile3D { lutFileName };
-			if (!cubeFile3D.good())
-				return LutErrorCode::LutState::FileNotOpened;
-			
-			err = LoadCubeFile (cubeFile3D);
-			cubeFile3D.close();
-
-			if (LutErrorCode::LutState::OK == err)
-				m_lutName = lutFileName;
-		}
-		return err;
-	}
-
 	LutErrorCode::LutState LoadCubeFile (const char* lutFileName)
 	{
 		return (nullptr != lutFileName && '\0' != lutFileName[0]) ? LoadCubeFile (string_view{ lutFileName }) : LutErrorCode::LutState::GenericError;
-	}
-
-	LutErrorCode::LutState LoadCubeFile (const wchar_t* lutFileName)
-	{
-		return (nullptr != lutFileName && 0 != lutFileName[0]) ? LoadCubeFile (wstring_view{ lutFileName }) : LutErrorCode::LutState::GenericError;
 	}
 
 
