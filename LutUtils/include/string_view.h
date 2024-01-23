@@ -42,8 +42,8 @@ namespace lututils_std
       constexpr basic_string_view () noexcept : m_string {nullptr}, m_size{0} {};
       
       /* copy and move constructors */
-      constexpr basic_string_view (const basic_string_view& other_sw) noexcept = default;
-      constexpr basic_string_view (basic_string_view&& other_sw) noexcept = default;
+      constexpr basic_string_view (const basic_string_view& other_strv) noexcept = default;
+      constexpr basic_string_view (basic_string_view&& other_strv) noexcept = default;
       
       /* construct basic_string_view from ANSI string with zero termination */
       constexpr basic_string_view (const char_type* str) noexcept : m_string{str}, m_size{traits_type::length(str)} {};
@@ -90,7 +90,9 @@ namespace lututils_std
           return 0;
       }
       
-      
+      template <typename tAllocator>
+      explicit constexpr operator std::basic_string<CharT, Traits, tAllocator>() const;
+
     private:
       const char_type* m_string;
       size_type        m_size; 
@@ -98,70 +100,116 @@ namespace lututils_std
   }; /* basic_string_view */
 
 
+  /* conversion from std::string */
+  template <typename CharT, typename Traits>
+  template <class tAllocator>
+  inline constexpr basic_string_view<CharT,Traits>::operator std::basic_string<CharT, Traits, tAllocator>() const {return std::basic_string<CharT,Traits,tAllocator>(m_string, m_size);}
+
   /* swap */
   template <typename CharT, typename Traits>
-  void swap (basic_string_view<CharT,Traits>& l, basic_string_view<CharT,Traits>& r) noexcept {return 0 != l.swap(r);}
+  inline void swap (basic_string_view<CharT,Traits>& l, basic_string_view<CharT,Traits>& r) noexcept {l.swap(r);}
 
   /* stream output operator */
   template <typename CharT, typename Traits>
-  std::basic_ostream<CharT,Traits>& operator << (std::basic_ostream<CharT,Traits>& o, const basic_string_view<CharT,Traits>& s)
+  inline std::basic_ostream<CharT,Traits>& operator << (std::basic_ostream<CharT,Traits>& o, const basic_string_view<CharT,Traits>& s)
   { o.write(s.m_string(),static_cast<std::streamsize>(s.m_size())); return o;}
 
   /* logical operators != */
   template <typename CharT, typename Traits>
-  bool operator != (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return 0 != l.compare(r);}
+  inline bool operator != (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return 0 != l.compare(r);}
       
   template <typename CharT, typename Traits>
-  bool operator != (const basic_string_view<CharT,Traits>& l, const CharT* r) noexcept {return l != basic_string_view<CharT,Traits>(r);}
+  inline bool operator != (const basic_string_view<CharT,Traits>& l, const CharT* r) noexcept {return l != basic_string_view<CharT,Traits>(r);}
 
   template <typename CharT, typename Traits>
-  bool operator != (const CharT* l, const basic_string_view<CharT,Traits>& r) noexcept {return basic_string_view<CharT,Traits>(l) != r;}
+  inline bool operator != (const CharT* l, const basic_string_view<CharT,Traits>& r) noexcept {return basic_string_view<CharT,Traits>(l) != r;}
 
   template <typename CharT, typename Traits, typename Allocator>
-  bool operator != (const std::basic_string<CharT,Traits,Allocator>& l, const basic_string_view<CharT,Traits>& r) noexcept {return basic_string_view<CharT,Traits>(l) != r;}
+  inline bool operator != (const std::basic_string<CharT,Traits,Allocator>& l, const basic_string_view<CharT,Traits>& r) noexcept {return basic_string_view<CharT,Traits>(l) != r;}
 
   template <typename CharT, typename Traits, typename Allocator>
-  bool operator != (const basic_string_view<CharT,Traits>& l, const std::basic_string<CharT,Traits,Allocator>& r) noexcept {return l != basic_string_view<CharT,Traits>(r);}
+  inline bool operator != (const basic_string_view<CharT,Traits>& l, const std::basic_string<CharT,Traits,Allocator>& r) noexcept {return l != basic_string_view<CharT,Traits>(r);}
  
   /* logical operators == */
   template <typename CharT, typename Traits>
   bool operator == (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return 0 == l.compare(r);}
 
   template <typename CharT, typename Traits>
-  bool operator == (const basic_string_view<CharT,Traits> l, const CharT* r) noexcept {return l == basic_string_view<CharT,Traits>(r);}
+  inline bool operator == (const basic_string_view<CharT,Traits> l, const CharT* r)  noexcept {return l == basic_string_view<CharT,Traits>(r);}
 
   template <typename CharT, typename Traits>
-  bool operator == (const CharT* l, const basic_string_view<CharT,Traits> r) noexcept {return basic_string_view<CharT,Traits>(l) == r;}
+  inline bool operator == (const CharT* l, const basic_string_view<CharT,Traits> r) noexcept {return basic_string_view<CharT,Traits>(l) == r;}
 	
   template <typename CharT, typename Traits, typename Allocator>
-  bool operator == (const std::basic_string<CharT,Traits,Allocator>& l, const basic_string_view<CharT,Traits>& r) {return basic_string_view<CharT,Traits>(l) == r;}
+  inline bool operator == (const std::basic_string<CharT,Traits,Allocator>& l, const basic_string_view<CharT,Traits>& r) noexcept {return basic_string_view<CharT,Traits>(l) == r;}
 
   template <typename CharT, typename Traits, typename Allocator>
-  bool operator == (const basic_string_view<CharT,Traits>& l, const std::basic_string<CharT,Traits,Allocator>& r) {return l == basic_string_view<CharT,Traits>(r);}
+  inline bool operator == (const basic_string_view<CharT,Traits>& l, const std::basic_string<CharT,Traits,Allocator>& r) noexcept {return l == basic_string_view<CharT,Traits>(r);}
 	
+  /* logical operators < */  
   template <typename CharT, typename Traits>
-  bool operator < (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
-  {
-     return false;
-  }
+  inline bool operator < (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return l.compare(r) < 0;}
 
   template <typename CharT, typename Traits>
-  bool operator > (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
-  {
-     return false;
-  }
+  inline bool operator < (const basic_string_view<CharT,Traits>& l, const CharT* r) noexcept {return l < basic_string_view<CharT,Traits>(r);}
 
   template <typename CharT, typename Traits>
-  bool operator <= (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
-  {
-     return false;
-  }
+  inline bool operator < (const CharT* l, const basic_string_view<CharT,Traits>& r) noexcept {return  basic_string_view<CharT,Traits>(l) < r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  inline bool operator < (const std::basic_string<CharT,Traits,Allocator>& l, const basic_string_view<CharT,Traits>& r) {return basic_string_view<CharT,Traits>(l) < r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  inline bool operator < (const basic_string_view<CharT,Traits>& l, const std::basic_string<CharT,Traits,Allocator>& r) {return l < basic_string_view<CharT,Traits>(r);}
+
+  /* logical operators > */  
+  template <typename CharT, typename Traits>
+  inline bool operator > (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return l.compare(r) > 0;}
 
   template <typename CharT, typename Traits>
-  bool operator >= (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
-  {
-     return false;
-  }
+  inline bool operator > (const basic_string_view<CharT,Traits>& l, const CharT* r) noexcept {return l > basic_string_view<CharT,Traits>(r);}
+
+  template <typename CharT, typename Traits>
+  inline bool operator > (const CharT* l, const basic_string_view<CharT,Traits>& r) noexcept {return  basic_string_view<CharT,Traits>(l) > r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  inline bool operator > (const std::basic_string<CharT,Traits,Allocator>& l, const basic_string_view<CharT,Traits>& r) {return basic_string_view<CharT,Traits>(l) > r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  inline bool operator > (const basic_string_view<CharT,Traits>& l, const std::basic_string<CharT,Traits,Allocator>& r) {return l > basic_string_view<CharT,Traits>(r);}
+
+  /* logical operators <= */  
+  template <typename CharT, typename Traits>
+  inline bool operator <= (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return l.compare(r) <= 0;}
+
+  template <typename CharT, typename Traits>
+  inline bool operator <= (const basic_string_view<CharT,Traits>& l, const CharT* r) noexcept {return l <= basic_string_view<CharT,Traits>(r);}
+
+  template <typename CharT, typename Traits>
+  inline bool operator <= (const CharT* l, const basic_string_view<CharT,Traits>& r) noexcept {return  basic_string_view<CharT,Traits>(l) <= r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  inline bool operator <= (const std::basic_string<CharT,Traits,Allocator>& l, const basic_string_view<CharT,Traits>& r) {return basic_string_view<CharT,Traits>(l) <= r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  inline bool operator <= (const basic_string_view<CharT,Traits>& l, const std::basic_string<CharT,Traits,Allocator>& r) {return l <= basic_string_view<CharT,Traits>(r);}
+
+  /* logical operators >= */  
+  template <typename CharT, typename Traits>
+  inline bool operator >= (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return l.compare(r) >= 0;}
+
+  template <typename CharT, typename Traits>
+  inline bool operator >= (const basic_string_view<CharT,Traits>& l, const CharT* r) noexcept {return l >= basic_string_view<CharT,Traits>(r);}
+
+  template <typename CharT, typename Traits>
+  inline bool operator >= (const CharT* l, const basic_string_view<CharT,Traits>& r) noexcept {return  basic_string_view<CharT,Traits>(l) >= r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  inline bool operator >= (const std::basic_string<CharT,Traits,Allocator>& l, const basic_string_view<CharT,Traits>& r) {return basic_string_view<CharT,Traits>(l) >= r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  inline bool operator >= (const basic_string_view<CharT,Traits>& l, const std::basic_string<CharT,Traits,Allocator>& r) {return l >= basic_string_view<CharT,Traits>(r);}
+
       
 
 } /* namespace lututils_std */
