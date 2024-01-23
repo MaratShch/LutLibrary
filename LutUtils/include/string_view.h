@@ -98,6 +98,15 @@ namespace lututils_std
   }; /* basic_string_view */
 
 
+  /* swap */
+  template <typename CharT, typename Traits>
+  void swap (basic_string_view<CharT,Traits>& l, basic_string_view<CharT,Traits>& r) noexcept {return 0 != l.swap(r);}
+
+  /* stream operators */
+  template <typename CharT, typename Traits>
+  std::basic_ostream<CharT,Traits>& operator << (std::basic_ostream<CharT,Traits>& o, const basic_string_view<CharT,Traits>& s)
+  { o.write(s.data(),static_cast<std::streamsize>(s.size())); return o;}
+
   /* logical operators != */
   template <typename CharT, typename Traits>
   bool operator != (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return 0 != l.compare(r);}
@@ -118,6 +127,18 @@ namespace lututils_std
   template <typename CharT, typename Traits>
   bool operator == (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept {return 0 == l.compare(r);}
 
+  template <typename CharT, typename Traits>
+  bool operator == (const basic_string_view<CharT,Traits> l, const CharT* r) noexcept {return l == basic_string_view<CharT,Traits>(r);}
+
+  template <typename CharT, typename Traits>
+  bool operator == (const CharT* l, const basic_string_view<CharT,Traits> r) noexcept {return basic_string_view<CharT,Traits>(l) == r;}
+	
+  template <typename CharT, typename Traits, typename Allocator>
+  bool operator == (const std::basic_string<CharT,Traits,Allocator>& l, const basic_string_view<CharT,Traits>& r) {return basic_string_view<CharT,Traits>(l) == r;}
+
+  template <typename CharT, typename Traits, typename Allocator>
+  bool operator == (const basic_string_view<CharT,Traits>& l, const std::basic_string<CharT,Traits,Allocator>& r) {return l == basic_string_view<CharT,Traits>(r);}
+	
   template <typename CharT, typename Traits>
   bool operator < (const basic_string_view<CharT,Traits>& l, const basic_string_view<CharT,Traits>& r) noexcept
   {
@@ -142,11 +163,6 @@ namespace lututils_std
      return false;
   }
       
-      /* stream output operator */
-//      std::basic_ostream& operator << (std::basic_ostream& o, const basic_string_view& str)
-//      {
-//          return o;
-//      }
 
 } /* namespace lututils_std */
 
