@@ -102,10 +102,10 @@ namespace lututils_std
   template <typename CharT, typename Traits>
   void swap (basic_string_view<CharT,Traits>& l, basic_string_view<CharT,Traits>& r) noexcept {return 0 != l.swap(r);}
 
-  /* stream operators */
+  /* stream output operator */
   template <typename CharT, typename Traits>
   std::basic_ostream<CharT,Traits>& operator << (std::basic_ostream<CharT,Traits>& o, const basic_string_view<CharT,Traits>& s)
-  { o.write(s.data(),static_cast<std::streamsize>(s.size())); return o;}
+  { o.write(s.m_string(),static_cast<std::streamsize>(s.m_size())); return o;}
 
   /* logical operators != */
   template <typename CharT, typename Traits>
