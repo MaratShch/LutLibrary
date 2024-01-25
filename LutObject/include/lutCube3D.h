@@ -8,7 +8,6 @@
 #include <sstream>
 #include <iostream>
 
-using namespace lututils_std;
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CCubeLut3D
