@@ -61,7 +61,7 @@ namespace lututils_std
       
       /* assignment / copy / move operators */
       basic_string_view& operator=(const basic_string_view& other) = default;
-      basic_string_view& operator=(basic_string_view&& other) noexcept {swap(other); return *this;};
+      basic_string_view& operator=(basic_string_view&& other) noexcept {swap(other); return *this;}
       
       /* capacity, size and size validation */
       constexpr size_type size()     const noexcept {return m_size;}
