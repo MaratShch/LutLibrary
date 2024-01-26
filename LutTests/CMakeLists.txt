@@ -1,4 +1,51 @@
 cmake_minimum_required (VERSION 3.25)
 
 message (STATUS "Include LutTests repository")
-# nothing to do currently
+
+set (CMAKE_TESTS_API_DIR 	${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_TESTS_API_DIR}")
+include ("test_module_api")
+
+set (LUT_TESTS_FILES_FOLDER	${CMAKE_CURRENT_SOURCE_DIR})
+
+# IRIDAS files for tests (CUBE 1D and CUBE 3D format)
+set (CUBE_FILES_FOLDER  	${LUT_TESTS_FILES_FOLDER}/Cube)
+set (CUBE_1D_FILES_FOLDER  	${CUBE_FILES_FOLDER}/1D)
+set (CUBE_3D_FILES_FOLDER  	${CUBE_FILES_FOLDER}/3D)
+
+# Common LUT Format files for tests (CLF files)
+set (CLF_FILES_FOLDER		${LUT_TESTS_FILES_FOLDER}/CLF)
+
+# CCF LUT format (CSF files)
+set (CSP_FILES_FOLDER		${LUT_TESTS_FILES_FOLDER}/CSP)
+
+
+#destination directory for install LUT files for debug and test purposes
+# should be defined into cmake file for target/project configuration
+get_filename_component(CMAKE_INSTALL_LUT_TST_FULL_PATH ${CMAKE_INSTALL_LUT_TST_DIRECTORY} ABSOLUTE)
+		
+set (CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY  ${CMAKE_INSTALL_LUT_TST_FULL_PATH}/CUBE)
+set (CMAKE_INSTALL_CLF_LUT_DIRECTORY       ${CMAKE_INSTALL_LUT_TST_FULL_PATH})
+set (CMAKE_INSTALL_CSP_LUT_DIRECTORY       ${CMAKE_INSTALL_LUT_TST_FULL_PATH})
+
+
+install (DIRECTORY ${CUBE_3D_FILES_FOLDER} DESTINATION ${CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY})
+install (DIRECTORY ${CUBE_1D_FILES_FOLDER} DESTINATION ${CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY})
+install (DIRECTORY ${CLF_FILES_FOLDER}     DESTINATION ${CMAKE_INSTALL_CLF_LUT_DIRECTORY})
+install (DIRECTORY ${CSP_FILES_FOLDER}     DESTINATION ${CMAKE_INSTALL_CSP_LUT_DIRECTORY})
+
+#set (TEST1	ParseCube3d.gtest)
+#add_executable (
+#	${TEST1}
+#	${LUT_TESTS_FILES_FOLDER}/src/ParseCube3d.cpp
+#)
+#target_compile_definitions (${TEST1} PRIVATE -DCUBE_3D_LUT_FOLDER="${CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY}/3D")
+#target_link_libraries (${TEST1} PRIVATE LutObject)
+#install (TARGETS ${TEST1} DESTINATION ${CMAKE_INSTALL_TST_DIRECTORY})
+
+lutlib_test (
+	ParseCube3d 
+	${LUT_TESTS_FILES_FOLDER}/src/ParseCube3d.cpp 
+	LutObject
+)
+

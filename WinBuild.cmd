@@ -1,6 +1,7 @@
 @echo 'Run CMake generation for Windows...'
 @echo OFF
 
+set CMAKE_BIN="cmake.exe"
 set BUILD_FOLDER=build
 set INSTALL_FOLDER=install
 
@@ -13,6 +14,6 @@ IF EXIST %INSTALL_FOLDER% @rmdir /S /Q %INSTALL_FOLDER%
 md %BUILD_FOLDER%
 cd %BUILD_FOLDER%
 
-cmake .. -DCMAKE_GENERATOR_PLATFORM=x64 -DLUT_LIB_TESTS=ON
-cmake -DCMAKE_INSTALL_PREFIX:PATH=..\install .. && cmake --build . --target install --config Release
+%CMAKE_BIN% .. -DCMAKE_GENERATOR_PLATFORM=x64 -DLUT_LIB_TESTS=ON
+%CMAKE_BIN% -DCMAKE_INSTALL_PREFIX:PATH=..\install .. && %CMAKE_BIN% --build . --target install --config Release
 cd ..
