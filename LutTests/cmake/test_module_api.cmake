@@ -23,6 +23,11 @@ function (lutlib_test name source libraries)
     PUBLIC  ${libraries}
  )
 
+ if (TST_PRIVATE_COMPILATION_DEFINES)
+ 	target_compile_definitions (${GTest_NAME} PRIVATE ${TST_PRIVATE_COMPILATION_DEFINES})
+	unset(TST_PRIVATE_COMPILATION_DEFINES)
+ endif(TST_PRIVATE_COMPILATION_DEFINES)
+ 
  install (TARGETS ${GTest_NAME} DESTINATION ${CMAKE_INSTALL_TST_DIRECTORY})
  
 endfunction(lutlib_test)
