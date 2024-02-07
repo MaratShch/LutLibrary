@@ -146,24 +146,61 @@ public:
 	}
 
 
+	LutErrorCode::LutState SaveCubeFile (std::ofstream& outFile)
+	{
+		if (outFile.good())
+		{
+			if (m_title.size() > 0)
+				outFile << "TITLE" << symbSpace << symbQuote << m_title << symbQuote << std::endl;
+			outFile << symbCommentMarker << symbSpace << "This file created bu LutLibrary" << std::endl;
+			outFile << std::endl;
+			outFile << "DOMAIN_MIN" << symbSpace << m_domainMin[0] << symbSpace << m_domainMin[1] << symbSpace << m_domainMin[2] << std::endl;
+			outFile << "DOMAIN_MAX" << symbSpace << m_domainMax[0] << symbSpace << m_domainMax[1] << symbSpace << m_domainMax[2] << std::endl;
+			outFile << std::endl;
+			outFile << "LUT_3D_SIZE" << symbSpace << m_lutSize << std::endl;
+			outFile << std::endl;
+			outfile.flush();
+
+			LutElement::lutSize r = 0, g = 0, b = 0;
+			if (outFile.good())
+			{
+				/* write LUT table */
+				for (b = 0; b < m_lutSize && outFile.good(); b++)
+				{
+					for (g = 0; g < m_lutSize && outFile.good(); g++)
+					{
+						for (r = 0; r < m_lutSize && outFile.good(); r++)
+						{
+							outFile << m_lutBody[r][g][b][0] << symbSpace << m_lutBody[r][g][b][1] << symbSpace << m_lutBody[r][g][b][2] << std::endl;
+						}
+					}
+				}
+				outFile << std::endl;
+			}
+			outfile.flush(); /* flush file stream */
+		}
+		return (b == m_lutSize && g == m_lutSize && r == m_lutSize && outfile.good()) ? LutErrorCode::LutState::OK : LutErrorCode::LutState::WriteError;
+	}
+
 	LutErrorCode::LutState SaveCubeFile (const string_view& fileName)
 	{ 
-		return LutErrorCode::LutState::NonImplemented; 
+		std::ofstream outFile (fileName, fstream::trunc);
+		if (!outFile.good())
+			return LutErrorCode::LutState::FileNotOpened;
+
+		auto const err = SaveCubeFile (outFile);
+		outFile.close();
+		return err;
 	}
 
 
-	LutErrorCode::LutState SaveCubeFile (const wstring_view& fileName)
+	LutErrorCode::LutState SaveCubeFile (const char* fileName)
 	{ 
-		return LutErrorCode::LutState::NonImplemented; 
+		return (nullptr != fileName && '\0' != fileName[0]) ? SaveCubeFile (string_view{ fileName }) : LutErrorCode::LutState::GenericError;
 	}
 	
 	
 	LutErrorCode::LutState SaveCubeFile (const std::string& fileName)
-	{
-		return LutErrorCode::LutState::NonImplemented;
-	}
-
-	LutErrorCode::LutState SaveCubeFile (std::ofstream& lutFile)
 	{
 		return LutErrorCode::LutState::NonImplemented;
 	}
@@ -182,7 +219,7 @@ private:
 	const char symbCarriageReturn = '\r';
 	const char symbCommentMarker  = '#';
 	const char symbQuote          = '"';
-
+	const char symbSpace          = ' ';
 
 	void _cleanup (void)
 	{
