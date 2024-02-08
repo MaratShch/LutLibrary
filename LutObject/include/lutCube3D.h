@@ -153,13 +153,13 @@ public:
 		{
 			if (m_title.size() > 0)
 				outFile << "TITLE" << symbSpace << symbQuote << m_title << symbQuote << std::endl;
-			outFile << symbCommentMarker << symbSpace << "This file created bu LutLibrary" << std::endl;
-			outFile << std::endl;
+			outFile << symbCommentMarker << symbSpace << "This file created by LutLibrary" << std::endl;
+			outFile << symbNewLine << std::endl;
 			outFile << "DOMAIN_MIN" << symbSpace << m_domainMin[0] << symbSpace << m_domainMin[1] << symbSpace << m_domainMin[2] << std::endl;
 			outFile << "DOMAIN_MAX" << symbSpace << m_domainMax[0] << symbSpace << m_domainMax[1] << symbSpace << m_domainMax[2] << std::endl;
-			outFile << std::endl;
+			outFile << symbNewLine << std::endl;
 			outFile << "LUT_3D_SIZE" << symbSpace << m_lutSize << std::endl;
-			outFile << std::endl;
+			outFile << symbNewLine << std::endl;
 			outFile.flush();
 
 			if (outFile.good())
@@ -184,7 +184,7 @@ public:
 
 	LutErrorCode::LutState SaveCubeFile (const string_view& fileName)
 	{ 
-		std::ofstream outFile (fileName, std::fstream::trunc);
+		std::ofstream outFile (fileName, std::ios::out | std::ios::trunc);
 		if (!outFile.good())
 			return LutErrorCode::LutState::FileNotOpened;
 
@@ -202,7 +202,13 @@ public:
 	
 	LutErrorCode::LutState SaveCubeFile (const std::string& fileName)
 	{
-		return LutErrorCode::LutState::NonImplemented;
+		std::ofstream outFile (fileName, std::ios::out | std::ios::trunc);
+		if (!outFile.good())
+			return LutErrorCode::LutState::FileNotOpened;
+
+		auto const err = SaveCubeFile (outFile);
+		outFile.close();
+		return err;
 	}
 
 
