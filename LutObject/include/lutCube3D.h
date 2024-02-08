@@ -148,18 +148,27 @@ public:
 
 	LutErrorCode::LutState SaveCubeFile (std::ofstream& outFile)
 	{
+		if (0 == m_lutSize)
+			return LutErrorCode::LutState::NotInitialized;
+
 		LutElement::lutSize r = 0, g = 0, b = 0;
 		if (outFile.good())
 		{
-			if (m_title.size() > 0)
-				outFile << "TITLE" << symbSpace << symbQuote << m_title << symbQuote << std::endl;
 			outFile << symbCommentMarker << symbSpace << "This file created by LutLibrary" << std::endl;
-			outFile << symbNewLine << std::endl;
-			outFile << "DOMAIN_MIN" << symbSpace << m_domainMin[0] << symbSpace << m_domainMin[1] << symbSpace << m_domainMin[2] << std::endl;
-			outFile << "DOMAIN_MAX" << symbSpace << m_domainMax[0] << symbSpace << m_domainMax[1] << symbSpace << m_domainMax[2] << std::endl;
-			outFile << symbNewLine << std::endl;
+			outFile << std::endl;
+			if (m_title.size() > 0)
+			{
+				outFile << "TITLE" << symbSpace << symbQuote << m_title << symbQuote << std::endl;
+				outFile << std::endl;
+			}
+			if (3 == m_domainMin.size() && 3 == m_domainMax.size())
+			{
+				outFile << "DOMAIN_MIN" << symbSpace << m_domainMin[0] << symbSpace << m_domainMin[1] << symbSpace << m_domainMin[2] << std::endl;
+				outFile << "DOMAIN_MAX" << symbSpace << m_domainMax[0] << symbSpace << m_domainMax[1] << symbSpace << m_domainMax[2] << std::endl;
+				outFile << std::endl;
+			}
 			outFile << "LUT_3D_SIZE" << symbSpace << m_lutSize << std::endl;
-			outFile << symbNewLine << std::endl;
+			outFile << std::endl;
 			outFile.flush();
 
 			if (outFile.good())
@@ -263,8 +272,20 @@ private:
 
 	LutErrorCode::LutState read_lut_title (std::istringstream& line)
 	{
-		/* TODO */
-		return LutErrorCode::LutState::OK;
+		LutErrorCode::LutState err = LutErrorCode::LutState::OK;
+		char startOfTitle;
+		line >> startOfTitle;
+		if (symbQuote != startOfTitle)
+		{
+			err = LutErrorCode::LutState::TitleMissingQuote;
+		}
+		else
+		{
+			/* read till second quota character */
+			std::getline(line, m_title, symbQuote);
+		}
+
+		return err;
 	}
 
 
