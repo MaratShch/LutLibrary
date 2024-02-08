@@ -148,6 +148,7 @@ public:
 
 	LutErrorCode::LutState SaveCubeFile (std::ofstream& outFile)
 	{
+		LutElement::lutSize r = 0, g = 0, b = 0;
 		if (outFile.good())
 		{
 			if (m_title.size() > 0)
@@ -159,9 +160,8 @@ public:
 			outFile << std::endl;
 			outFile << "LUT_3D_SIZE" << symbSpace << m_lutSize << std::endl;
 			outFile << std::endl;
-			outfile.flush();
+			outFile.flush();
 
-			LutElement::lutSize r = 0, g = 0, b = 0;
 			if (outFile.good())
 			{
 				/* write LUT table */
@@ -177,14 +177,14 @@ public:
 				}
 				outFile << std::endl;
 			}
-			outfile.flush(); /* flush file stream */
+			outFile.flush(); /* flush file stream */
 		}
-		return (b == m_lutSize && g == m_lutSize && r == m_lutSize && outfile.good()) ? LutErrorCode::LutState::OK : LutErrorCode::LutState::WriteError;
+		return (b == m_lutSize && g == m_lutSize && r == m_lutSize && outFile.good()) ? LutErrorCode::LutState::OK : LutErrorCode::LutState::WriteError;
 	}
 
 	LutErrorCode::LutState SaveCubeFile (const string_view& fileName)
 	{ 
-		std::ofstream outFile (fileName, fstream::trunc);
+		std::ofstream outFile (fileName, std::fstream::trunc);
 		if (!outFile.good())
 			return LutErrorCode::LutState::FileNotOpened;
 
