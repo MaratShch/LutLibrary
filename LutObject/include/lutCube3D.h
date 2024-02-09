@@ -18,7 +18,7 @@ public:
 	LutElement::lutSize const getLutSize (void) { return m_lutSize; }
 
 
-	LutErrorCode::LutState LoadCubeFile (std::ifstream& lutFile)
+	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
 	{
 		/* clear file stream status */
 		lutFile.clear();
@@ -96,14 +96,14 @@ public:
 					}
 		}
 
-		loadStatus = lust_size_validation (r, g, b);
+		loadStatus = lut_size_validation (r, g, b);
 		m_error = loadStatus;
 
 		return loadStatus;
 	}
 
 
-	LutErrorCode::LutState LoadCubeFile (const string_view& lutFileName)
+	LutErrorCode::LutState LoadFile (const string_view& lutFileName)
 	{
 		LutErrorCode::LutState err = LutErrorCode::LutState::OK;
 		if (!lutFileName.empty() && lutFileName != m_lutName)
@@ -121,13 +121,13 @@ public:
 		return err;
 	}
 
-	LutErrorCode::LutState LoadCubeFile (const char* lutFileName)
+	LutErrorCode::LutState LoadFile (const char* lutFileName)
 	{
-		return (nullptr != lutFileName && '\0' != lutFileName[0]) ? LoadCubeFile (string_view{ lutFileName }) : LutErrorCode::LutState::GenericError;
+		return (nullptr != lutFileName && '\0' != lutFileName[0]) ? LoadFile (string_view{ lutFileName }) : LutErrorCode::LutState::GenericError;
 	}
 
 
-	LutErrorCode::LutState LoadCubeFile (const std::string& lutFileName)
+	LutErrorCode::LutState LoadFile (const std::string& lutFileName)
 	{ 
 		LutErrorCode::LutState err = LutErrorCode::LutState::OK;
 		if (!lutFileName.empty() && lutFileName != m_lutName)
@@ -136,7 +136,7 @@ public:
 			if (!cubeFile3D.good())
 				return LutErrorCode::LutState::FileNotOpened;
 			
-			err = LoadCubeFile (cubeFile3D);
+			err = LoadFile (cubeFile3D);
 			cubeFile3D.close();
 
 			if (LutErrorCode::LutState::OK == err)
@@ -146,7 +146,7 @@ public:
 	}
 
 
-	LutErrorCode::LutState SaveCubeFile (std::ofstream& outFile)
+	LutErrorCode::LutState SaveFile (std::ofstream& outFile)
 	{
 		if (0 == m_lutSize)
 			return LutErrorCode::LutState::NotInitialized;
@@ -191,31 +191,31 @@ public:
 		return (b == m_lutSize && g == m_lutSize && r == m_lutSize && outFile.good()) ? LutErrorCode::LutState::OK : LutErrorCode::LutState::WriteError;
 	}
 
-	LutErrorCode::LutState SaveCubeFile (const string_view& fileName)
+	LutErrorCode::LutState SaveFile (const string_view& fileName)
 	{ 
 		std::ofstream outFile (fileName, std::ios::out | std::ios::trunc);
 		if (!outFile.good())
 			return LutErrorCode::LutState::FileNotOpened;
 
-		auto const err = SaveCubeFile (outFile);
+		auto const err = SaveFile (outFile);
 		outFile.close();
 		return err;
 	}
 
 
-	LutErrorCode::LutState SaveCubeFile (const char* fileName)
+	LutErrorCode::LutState SaveFile (const char* fileName)
 	{ 
-		return (nullptr != fileName && '\0' != fileName[0]) ? SaveCubeFile (string_view{ fileName }) : LutErrorCode::LutState::GenericError;
+		return (nullptr != fileName && '\0' != fileName[0]) ? SaveFile (string_view{ fileName }) : LutErrorCode::LutState::GenericError;
 	}
 	
 	
-	LutErrorCode::LutState SaveCubeFile (const std::string& fileName)
+	LutErrorCode::LutState SaveFile (const std::string& fileName)
 	{
 		std::ofstream outFile (fileName, std::ios::out | std::ios::trunc);
 		if (!outFile.good())
 			return LutErrorCode::LutState::FileNotOpened;
 
-		auto const err = SaveCubeFile (outFile);
+		auto const err = SaveFile (outFile);
 		outFile.close();
 		return err;
 	}
@@ -248,7 +248,7 @@ private:
 	}
 
 
-	LutErrorCode::LutState lust_size_validation (const LutElement::lutSize& r, const LutElement::lutSize& g, const LutElement::lutSize& b)
+	LutErrorCode::LutState lut_size_validation (const LutElement::lutSize& r, const LutElement::lutSize& g, const LutElement::lutSize& b)
 	{
 		/* validate real LUT size */
 		return ((0u == m_lutSize || r != m_lutSize || g != m_lutSize || b != m_lutSize) ? LutErrorCode::LutState::LutSizeInvalid : LutErrorCode::LutState::OK);
