@@ -16,7 +16,7 @@ public:
 	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
 	LutErrorCode::LutState getLastError(void) { return m_error; }
 	LutElement::lutSize const getLutSize (void) { return m_lutSize; }
-
+	LutElement::lutSize const getLutComponentSize (const LutElement::LutComponent component) {(void)component; return getLutSize();}
 
 	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
 	{

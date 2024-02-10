@@ -21,6 +21,13 @@ namespace LutElement
 	using lutFileName = std::string;
 	using lutTitle    = std::string;
 	using lutSize     = size_t;
+	
+	enum class LutComponent
+	{
+		Red = 0,
+		Green,
+		Blue
+	};
 }
 
 #endif /* __LUT_LIBRARY_LUT_ELEMENT__ */

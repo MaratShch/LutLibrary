@@ -16,9 +16,14 @@ class CCineSpaceLut3D
  	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
 	LutErrorCode::LutState getLastError  (void)         { return m_error; }
 	LutElement::lutSize const getLutSize (void)         { return m_lutSize; }
-
+	LutElement::lutSize const getLutComponentSize (const LutElement::LutComponent component) {return m_lutComponentSize[component];}
+	
 	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
 	{
+		/* clear file stream status */
+		lutFile.clear();
+		/* cleanup internal objects before parsing */
+		_cleanup();
 		return LutErrorCode::LutState::NonImplemented;
 	}
 	
@@ -62,7 +67,19 @@ class CCineSpaceLut3D
  	LutElement::lutTable3D<T>  m_lutBody;
  	LutElement::lutFileName    m_lutName;
 	LutElement::lutSize        m_lutSize;
+	LutElement::lutSize        m_lutComponentSize[3];
 	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
+	
+	uint32_t m_preLutR;
+	uint32_t m_preLutG;
+	uint32_t m_preLutB;
+	
+	std::vector<T> m_preLut_R_in;
+	std::vector<T> m_preLut_R_out;
+	std::vector<T> m_preLut_G_in;
+	std::vector<T> m_preLut_G_out;
+	std::vector<T> m_preLut_B_in;
+	std::vector<T> m_preLut_B_out;
 	
 	const std::string str_LutMarker  {"CSPLUTV100"};
 	const std::string str_LutDimType {"3D"};
@@ -73,7 +90,15 @@ class CCineSpaceLut3D
 	void _cleanup (void)
 	{
 		m_lutBody.clear();
+		m_preLut_R_in.clear();
+		m_preLut_R_out.clear();
+		m_preLut_G_in.clear();
+		m_preLut_G_out.clear();
+		m_preLut_B_in.clear();
+		m_preLut_B_out.clear();
 		m_lutSize = 0u;
+		m_lutComponentSize[0] = m_lutComponentSize[1] = m_lutComponentSize[2] = 0u;
+		m_preLutR  = m_preLutG  = m_preLutB = 0u;
 		m_error = LutErrorCode::LutState::NotInitialized;
 		return;
 	}
