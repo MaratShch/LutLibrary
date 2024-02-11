@@ -112,7 +112,7 @@ public:
 			if (!cubeFile3D.good())
 				return LutErrorCode::LutState::FileNotOpened;
 			
-			err = LoadCubeFile (cubeFile3D);
+			err = LoadFile (cubeFile3D);
 			cubeFile3D.close();
 
 			if (LutErrorCode::LutState::OK == err)
