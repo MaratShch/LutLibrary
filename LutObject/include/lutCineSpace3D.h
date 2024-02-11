@@ -57,7 +57,7 @@ class CCineSpaceLut3D
 		if (false == bMarkerFound) return loadStatus;
 		/* CSP markers found - continue parse ... */
 		
-		return LutErrorCode::LutState::NonImplemented;
+		return LutErrorCode::LutState::OK;
 	}
 	
 	LutErrorCode::LutState LoadFile (const string_view& lutFileName)
@@ -72,7 +72,20 @@ class CCineSpaceLut3D
 
 	LutErrorCode::LutState LoadFile (const std::string& lutFileName)
 	{ 
-		return LutErrorCode::LutState::NonImplemented;
+		LutErrorCode::LutState err = LutErrorCode::LutState::OK;
+		if (!lutFileName.empty() && lutFileName != m_lutName)
+		{
+			std::ifstream cspFile3D{ lutFileName };
+			if (!cspFile3D.good())
+				return LutErrorCode::LutState::FileNotOpened;
+
+			err = LoadFile(cspFile3D);
+			cspFile3D.close();
+
+			if (LutErrorCode::LutState::OK == err)
+				m_lutName = lutFileName;
+		}
+		return err;
 	}
 
 	LutErrorCode::LutState SaveFile (std::ofstream& outFile)
