@@ -16,7 +16,7 @@ class CCineSpaceLut3D
  	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
 	LutErrorCode::LutState getLastError  (void)         { return m_error; }
 	LutElement::lutSize const getLutSize (void)         { return m_lutSize; }
-	LutElement::lutSize const getLutComponentSize (const LutElement::LutComponent component) {return m_lutComponentSize[component];}
+	LutElement::lutSize const getLutComponentSize (const LutElement::LutComponent component) {return m_lutComponentSize[static_cast<uint32_t>(component)];}
 	
 	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
 	{
@@ -24,6 +24,39 @@ class CCineSpaceLut3D
 		lutFile.clear();
 		/* cleanup internal objects before parsing */
 		_cleanup();
+		/* check line separator used in 3D CUBE file */
+		const char lineSeparator = getLineSeparator(lutFile);
+		if ('\0' == lineSeparator)
+			return LutErrorCode::LutState::CouldNotParseTableData;
+
+		lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
+		LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
+		std::string stringBuffer;
+		bool bMarkerFound = false;
+		/* read first line - "CSPLUTV100" value mandatory */
+		if (LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
+		{
+			if ("CSPLUTV100" == stringBuffer) /* CSP LUT marker detected */
+			{
+				/* read LUT dimension "3D" value mandatory */
+				stringBuffer.clear();
+				if (LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
+				{
+					if ("3D" == stringBuffer)
+						bMarkerFound = true;
+					else if ("1D" == stringBuffer)
+						loadStatus = LutErrorCode::LutState::IncorrectDimension;
+					else
+						loadStatus = LutErrorCode::LutState::UnknownOrRepeatedKeyword;	
+				}	
+			}
+			else
+				loadStatus = LutErrorCode::LutState::CouldNotParseTableData;
+		}
+		
+		if (false == bMarkerFound) return loadStatus;
+		/* CSP markers found - continue parse ... */
+		
 		return LutErrorCode::LutState::NonImplemented;
 	}
 	
@@ -81,7 +114,6 @@ class CCineSpaceLut3D
 	std::vector<T> m_preLut_B_in;
 	std::vector<T> m_preLut_B_out;
 	
-	const std::string str_LutMarker  {"CSPLUTV100"};
 	const std::string str_LutDimType {"3D"};
 	const char symbNewLine        = '\n';
 	const char symbCarriageReturn = '\r';
@@ -102,6 +134,47 @@ class CCineSpaceLut3D
 		m_error = LutErrorCode::LutState::NotInitialized;
 		return;
 	}
+
+	LutErrorCode::LutState ReadLine (std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator)
+	{
+		while (0u == strBuffer.size() || symbSpace == strBuffer[0])
+		{
+			if (lutFile.eof())
+				return LutErrorCode::LutState::PrematureEndOfFile;
+
+			std::getline(lutFile, strBuffer, lineSeparator);
+			if (lutFile.fail())
+				return LutErrorCode::LutState::ReadError;
+		}
+		return LutErrorCode::LutState::OK;
+	}
+
+	char getLineSeparator (std::ifstream& lutFile)
+	{
+		char lineSeparator { '\0' };
+		for (int32_t i = 0; i < 256; i++)
+		{
+			auto const c = lutFile.get();
+			if (c == static_cast<decltype(c)>(symbNewLine))
+			{
+				lineSeparator = symbNewLine;
+				break;
+			}
+
+			if (c == static_cast<decltype(c)>(symbCarriageReturn))
+			{
+				if (symbCarriageReturn == lutFile.get())
+					break;
+
+				lineSeparator = symbCarriageReturn;
+				std::cout << "This file uses non - complient line separator \\r(0x0D)" << std::endl;
+				break;
+			}
+		}
+
+		return lineSeparator;
+	} /* char getLineSeparator (std::ifstream& lutFile) */
+
 
 };
 

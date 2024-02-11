@@ -49,3 +49,9 @@ lutlib_test (
 	LutObject
 )
 
+set (TST_PRIVATE_COMPILATION_DEFINES -DCSP_LUT_FOLDER=\"${CMAKE_INSTALL_CSP_LUT_DIRECTORY}\")
+lutlib_test (
+	ParseCsp3d 
+	${LUT_TESTS_FILES_FOLDER}/src/ParseCsp3d.cpp 
+	LutObject
+)
