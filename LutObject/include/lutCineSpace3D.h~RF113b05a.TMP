@@ -69,17 +69,7 @@ class CCineSpaceLut3D
 			} while (LutErrorCode::LutState::OK == loadStatus && "END METADATA" != stringBuffer);
 		}
 
-		if (true == bMetaData)
-		{
-			stringBuffer.clear();
-			loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator);
-		}
-		/* check if pre-LUT data available in CSP file */
-		if (LutErrorCode::LutState::OK == loadStatus && true == is_pre_lut(stringBuffer))
-		{
-
-		}
-
+		if ()
 		return LutErrorCode::LutState::OK;
 	}
 	
@@ -169,23 +159,6 @@ class CCineSpaceLut3D
 		m_preLutR  = m_preLutG  = m_preLutB = 0u;
 		m_error = LutErrorCode::LutState::NotInitialized;
 		return;
-	}
-
-	bool is_pre_lut (const std::string& strBuffer)
-	{
-		bool one_digit = false;
-		auto const strBufSize = strBuffer.size();
-		for (auto i = 0; i < strBufSize; i++)
-		{
-			if ('+' < strBuffer[i] && ':' > strBuffer[i])
-				one_digit = true;
-			else
-			{
-				one_digit = false;
-				break;
-			}
-		}
-		return one_digit;
 	}
 
 	LutErrorCode::LutState ReadLine (std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator)
