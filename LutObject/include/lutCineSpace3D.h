@@ -113,12 +113,25 @@ class CCineSpaceLut3D
 
 		return (true == componentMask && b == m_lutComponentSize[0] && g == m_lutComponentSize[1] && r == m_lutComponentSize[2]) ?
 			LutErrorCode::LutState::OK : LutErrorCode::LutState::CouldNotParseTableData;
-
 	}
 	
 	LutErrorCode::LutState LoadFile (const string_view& lutFileName)
 	{
-		return LutErrorCode::LutState::NonImplemented;
+		LutErrorCode::LutState err = LutErrorCode::LutState::OK;
+		if (!lutFileName.empty() && lutFileName != m_lutName)
+		{
+			std::ifstream cspFile3D{ lutFileName };
+			if (!cspFile3D.good())
+				return LutErrorCode::LutState::FileNotOpened;
+
+			err = LoadFile(cspFile3D);
+			cspFile3D.close();
+
+			if (LutErrorCode::LutState::OK == err)
+				m_lutName = lutFileName;
+		}
+		m_error = err;
+		return err;
 	}
 	
 	LutErrorCode::LutState LoadFile (const char* lutFileName)
