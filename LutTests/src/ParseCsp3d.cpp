@@ -24,7 +24,7 @@ TEST (Parse_CSP_3D_f64, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 /*
- add huge LUT with 96 entries - wge we may take lut like this ??? 
+ add huge LUT with 96 entries - where we may take lut like this ??? 
 */
 
 int main (int argc, char** argv)
