@@ -69,7 +69,7 @@ public:
 			} /* if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator))) */
 		} while (loadStatus == LutErrorCode::LutState::OK && false == bData);
 
-		LutElement::lutSize r = 0, g = 0, b = 0;
+		LutElement::lutSize r = 0u, g = 0u, b = 0u;
 
 		/* VALIDATE KEYWORDS AND READ LUT BODY */
 		if (LutErrorCode::LutState::OK == keywords_validation())
@@ -83,16 +83,16 @@ public:
 					{
 						/* READ LUT DATA */
 						stringBuffer.clear();
-						loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator);
-
-						/* skip #xxBLOB section */
-						if (symbCommentMarker == stringBuffer[0])
+						if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator)))
 						{
-							bNoBlob = false;
-							continue;
+							/* skip #xxBLOB section */
+							if (symbCommentMarker == stringBuffer[0])
+							{
+								bNoBlob = false;
+								continue;
+							}
+							m_lutBody[r][g][b] = ParseTableRow(stringBuffer);
 						}
-
-						m_lutBody[r][g][b] = ParseTableRow (stringBuffer);
 					}
 		}
 

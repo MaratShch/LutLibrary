@@ -6,7 +6,7 @@ const std::string dbgLutsFolder = { CSP_LUT_FOLDER };
 
 TEST (Parse_CSP_3D_f32, help_option)
 {
-	const std::string lutName{ dbgLutsFolder + "/linear_3D.csp" };
+	const std::string lutName{ dbgLutsFolder + "/non-uniform.csp" };
 	CCineSpaceLut3D<float> lutFileF32;
 	auto const result  = lutFileF32.LoadFile(lutName);
 //	auto const lutSize = lutFileF32.getLutSize();
@@ -16,7 +16,7 @@ TEST (Parse_CSP_3D_f32, help_option)
 
 TEST (Parse_CSP_3D_f64, help_option)
 {
-	const std::string lutName{ dbgLutsFolder + "/linear_3D.csp" };
+	const std::string lutName{ dbgLutsFolder + "/non-uniform.csp" };
 	CCineSpaceLut3D<float> lutFileF64;
 	auto const result  = lutFileF64.LoadFile(lutName);
 //	auto const lutSize = lutFileF32.getLutSize();
@@ -24,7 +24,7 @@ TEST (Parse_CSP_3D_f64, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 /*
- add huge LUT with 96 entries - wge we may take lut like this ??? 
+ add huge LUT with 96 entries - where we may take lut like this ??? 
 */
 
 int main (int argc, char** argv)
