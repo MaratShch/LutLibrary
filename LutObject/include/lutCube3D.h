@@ -230,11 +230,11 @@ private:
 	LutElement::lutSize        m_lutSize;
 	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
 
-	const char symbNewLine        = '\n';
-	const char symbCarriageReturn = '\r';
-	const char symbCommentMarker  = '#';
-	const char symbQuote          = '"';
-	const char symbSpace          = ' ';
+	static const char symbNewLine        = '\n';
+	static const char symbCarriageReturn = '\r';
+	static const char symbCommentMarker  = '#';
+	static const char symbQuote          = '"';
+	static const char symbSpace          = ' ';
 
 	void _cleanup (void)
 	{

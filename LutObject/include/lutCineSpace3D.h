@@ -198,9 +198,9 @@ class CCineSpaceLut3D
 	std::vector<T> m_preLut_B_out;
 	
 	const std::string str_LutDimType {"3D"};
-	const char symbNewLine        = '\n';
-	const char symbCarriageReturn = '\r';
-	const char symbSpace          = ' ';
+	static const char symbNewLine        = '\n';
+	static const char symbCarriageReturn = '\r';
+	static const char symbSpace          = ' ';
 
 	void _cleanup (void)
 	{
