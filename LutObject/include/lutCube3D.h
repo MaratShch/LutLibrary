@@ -241,6 +241,7 @@ private:
 		m_domainMin.clear();
 		m_domainMax.clear();
 		m_lutBody.clear();
+		m_lutName.clear();
 		m_title.clear();
 		m_lutSize = 0u;
 		m_error = LutErrorCode::LutState::NotInitialized;

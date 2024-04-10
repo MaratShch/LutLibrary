@@ -205,6 +205,7 @@ class CCineSpaceLut3D
 	void _cleanup (void)
 	{
 		m_lutBody.clear();
+		m_lutName.clear();
 		m_preLut_R_in.clear();
 		m_preLut_R_out.clear();
 		m_preLut_G_in.clear();

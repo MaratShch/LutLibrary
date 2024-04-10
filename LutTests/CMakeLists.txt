@@ -64,3 +64,10 @@ lutlib_test (
 	${LUT_TESTS_FILES_FOLDER}/src/ParseCsp3d.cpp 
 	LutObject
 )
+
+set (TST_PRIVATE_COMPILATION_DEFINES -DHALD_LUT_FOLDER=\"${CMAKE_INSTALL_HALD_LUT_DIRECTORY}/Hald\")
+lutlib_test (
+	ParseHald 
+	${LUT_TESTS_FILES_FOLDER}/src/ParseHald.cpp 
+	LutObject
+)
