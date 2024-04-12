@@ -3,8 +3,7 @@
 
 const std::string dbgLutsFolder = { HALD_LUT_FOLDER };
 
-
-TEST (Parse_Tiny_Cube3D_f32, help_option)
+TEST(Parse_Hald1 , help_option)
 {
 	const std::string lutName{ dbgLutsFolder + "/contrast.HCLUT.png" };
 	CHaldLut<float> lutFileF32;
