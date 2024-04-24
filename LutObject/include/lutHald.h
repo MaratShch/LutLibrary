@@ -140,7 +140,7 @@ private:
 		/* read chunk length and chunk type */
 		int32_t chunkSize = -1;
 		int32_t chunkName = -1;
-		uint32_t crc32 = 0xFFFFFFFFu;
+		uint32_t crc32 = 0u;
 		bool bRet = false;
 
 		lutFile.read (reinterpret_cast<char*>(&chunkSize), sizeof(chunkSize));
@@ -167,10 +167,10 @@ private:
 					height = endian_convert(*reinterpret_cast<uint32_t*>(&ihdr_data[4]));
 					bitDepth = ihdr_data[8], colorType = ihdr_data[9], compressionMethod = ihdr_data[10], filterMethod = ihdr_data[11], interlaceMethod = ihdr_data[12];
 					/* store Reflected CRC32 value of IHDR section in temporary variable */					
-					crc32 = *(reinterpret_cast<int32_t*>(&ihdr_data[13]));
+					crc32 = endian_convert(*(reinterpret_cast<int32_t*>(&ihdr_data[13])));
 					ihdr_data[13] = ihdr_data[14] = ihdr_data[15] = ihdr_data[16] = 0x0u;
-					const uint32_t computed_crc32 = crc32_reflected (ihdr_data);
-					
+					const uint32_t computed_crc32 = crc32_reflected (ihdr_data); /* /* Expected CRC32: 7b1a43ad  Computed CRC32: c0f85c88 */ */ 
+
 					if (computed_crc32 == crc32) /* validate CRC from IHDR chunk */
 					{
 					auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1)));};
@@ -183,7 +183,7 @@ private:
 					}
 					}
 					else
-						std::cout << "Expected CRC32: " << crc32 << "  Computed CRC32: " << computed_crc32 << std::endl;
+						std::cout << "Expected CRC32: " << std::hex << crc32 << "  Computed CRC32: " << std::hex << computed_crc32 << std::endl;
 
 				}
 			}
