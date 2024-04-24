@@ -169,18 +169,18 @@ private:
 					/* store Reflected CRC32 value of IHDR section in temporary variable */					
 					crc32 = endian_convert(*(reinterpret_cast<int32_t*>(&ihdr_data[13])));
 					ihdr_data[13] = ihdr_data[14] = ihdr_data[15] = ihdr_data[16] = 0x0u;
-					const uint32_t computed_crc32 = crc32_reflected (ihdr_data); /* /* Expected CRC32: 7b1a43ad  Computed CRC32: c0f85c88 */ */ 
+					const uint32_t computed_crc32 = crc32_reflected (ihdr_data); /* Expected CRC32: 7b1a43ad  Computed CRC32: c0f85c88 */ 
 
 					if (computed_crc32 == crc32) /* validate CRC from IHDR chunk */
 					{
-					auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1)));};
+						auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1)));};
 
-					if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth <= static_cast<uint8_t>(32u) && static_cast<uint8_t>(2u) == colorType /* RGB*/)
-					{
-						m_bitDepth = static_cast<uint32_t>(bitDepth);
-						m_lutSize = static_cast<LutElement::lutSize>(std::cbrt(static_cast<float>(width * height)));
-						bRet = true;
-					}
+						if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth <= static_cast<uint8_t>(32u) && static_cast<uint8_t>(2u) == colorType /* RGB*/)
+						{
+							m_bitDepth = static_cast<uint32_t>(bitDepth);
+							m_lutSize = static_cast<LutElement::lutSize>(std::cbrt(static_cast<float>(width * height)));
+							bRet = true;
+						}
 					}
 					else
 						std::cout << "Expected CRC32: " << std::hex << crc32 << "  Computed CRC32: " << std::hex << computed_crc32 << std::endl;
