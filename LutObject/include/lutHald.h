@@ -128,10 +128,7 @@ private:
 		char cBuffer[pngSignatureSize + 1]{};
 		lutFile.read (cBuffer, pngSignatureSize);
 		if (true == lutFile.good())
-		{
-			for (size_t i = 0u; i < pngSignatureSize; i++)
-				signature |= (static_cast<uint64_t>(cBuffer[i]) << ((7 - i) * 8));
-		}
+			signature = endian_convert (*reinterpret_cast<uint64_t*>(cBuffer));
 		return signature;
 	}
 
