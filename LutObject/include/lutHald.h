@@ -9,8 +9,27 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <unordered_map>
+#include <vector>
+#include <string>
 #include <array>
 #include <cmath>
+
+//enum class PngChunkTypes
+//{
+//	'IHDR',
+//	'IDAT',
+//      'PLTE',
+//      'tEXt',
+//      'IEND',
+//      'pHYs',
+//      'iCCP',
+//      'gAMA',
+//      'cHRM',
+//      'HALD'
+//};
+
+constexpr int32_t i = 'IHDR';
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CHaldLut
@@ -103,6 +122,10 @@ private:
  	LutElement::lutFileName    m_lutName;
 	LutElement::lutSize        m_lutSize;
 	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
+	
+	/* Original PNG file chunks. Let's save this chunks for keep possibilty restore original PNG file 
+	   and parse PNG/HALD LUT data from memory */
+	std::unordered_map<std::string, std::vector<uint8_t>> mHaldChunkOrig{};
 
 	uint32_t m_bitDepth;
 	bool m_3d_lut = true;
@@ -123,16 +146,24 @@ private:
 
 	const uint64_t readPngSignature (std::ifstream& lutFile)
 	{
-		constexpr size_t pngSignatureSize { 8 };
-		uint64_t signature { 0u };
-		char cBuffer[pngSignatureSize + 1]{};
-		lutFile.read (cBuffer, pngSignatureSize);
+		uint64_t signature = 0u, signature_le = 0u;
+		lutFile.read (reinterpret_cast<char*>(&signature), sizeof(signature));
 		if (true == lutFile.good())
-			signature = endian_convert (*reinterpret_cast<uint64_t*>(cBuffer));
-		return signature;
+			signature_le = endian_convert (signature);
+		return signature_le;
 	}
 
-	bool readIHDRChunk(std::ifstream& lutFile)
+	std::vector<uint8_t> readPngChunk (std::ifstream& lutFile, size_t& chunkSize, uint32_t& chunkType)
+	{
+		chunkSize = -1;
+		uint32_t crc32  = 0u;
+		/* read chunk */
+		/* validate CRC */
+		/* detect chunkSize and chunkType */
+		return false;
+	}
+
+	bool readIHDRChunk (std::ifstream& lutFile)
 	{
 		int32_t chunkSize = -1;
 		uint32_t crc32  = 0u;
