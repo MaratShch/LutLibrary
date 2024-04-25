@@ -15,8 +15,11 @@
 #include <array>
 #include <cmath>
 
-constexpr uint8_t DEFLATE   = static_cast<uint8_t>(0u);
-constexpr uint8_t COLOR_RGB = static_cast<uint8_t>(2u);
+namespace PNG
+{
+	constexpr uint8_t DEFLATE = static_cast<uint8_t>(0u);
+	constexpr uint8_t COLOR_RGB = static_cast<uint8_t>(2u);
+}
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CHaldLut
@@ -31,7 +34,6 @@ public:
 	void set_property_1D (void) noexcept { m_3d_lut = false; }
 	bool is_3D_property  (void) const noexcept { return m_3d_lut; }
 
-
 	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
 	{
 		/* clear file stream status */
@@ -43,9 +45,9 @@ public:
 
 		/* read and validate PNG signature in Hald LUT file */
 		bool isPng = verifyPngFileSignature(readPngSignature(lutFile));
-		bool continueRead = true;
 		if (true == isPng)
 		{
+			bool continueRead = true;
 			do
 			{
 				std::unordered_map<std::string, std::vector<uint8_t>> chunkMap = std::move(readPngChunk(lutFile));
@@ -61,7 +63,6 @@ public:
 				if (true == encodeIDAT (mHaldChunkOrig[{"IDAT"}]))
 					m_error = LutErrorCode::LutState::OK;
 			}
-
 		}
 		else
 			m_error = LutErrorCode::LutState::ReadError;
@@ -226,7 +227,7 @@ private:
 		return invalid_dict;
 	}
 
-	bool encodeIDAT (std::vector<uint8_t>& ihdrData)
+	bool encodeIDAT (const std::vector<uint8_t>& ihdrData)
 	{
 		/* TODO ... */
 		return true;
@@ -248,7 +249,7 @@ private:
 			auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1))); };
 
 			if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth <= static_cast<uint8_t>(32u) &&
-				COLOR_RGB == colorType&& DEFLATE == compressionMethod)
+				PNG::COLOR_RGB == colorType&& PNG::DEFLATE == compressionMethod)
 			{
 				m_CompressionMethod = compressionMethod;
 				m_bitDepth = static_cast<uint32_t>(bitDepth);
@@ -258,8 +259,6 @@ private:
 		}
 		return bRet;
 	}
-
-
 
 };
 
