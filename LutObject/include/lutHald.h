@@ -137,57 +137,64 @@ private:
 
 	bool readIHDRChunk(std::ifstream& lutFile)
 	{
-		/* read chunk length and chunk type */
 		int32_t chunkSize = -1;
 		int32_t chunkName = -1;
-		uint32_t crc32 = 0u;
+		uint32_t crc32  = 0u;
+		uint32_t width  = 0u, height = 0u;
+		uint8_t  bitDepth = 0u, colorType = 0u, compressionMethod = 0u, filterMethod = 0u, interlaceMethod = 0u;
 		bool bRet = false;
 
-		lutFile.read (reinterpret_cast<char*>(&chunkSize), sizeof(chunkSize));
-		lutFile.read (reinterpret_cast<char*>(&chunkName), sizeof(chunkName));
+		constexpr int32_t nameIHDR = static_cast<const int32_t>('IHDR');
+		constexpr size_t  sizeIHDR = sizeof(width) + sizeof(height) + sizeof(bitDepth) + sizeof(colorType) + sizeof(compressionMethod) + 
+                                             sizeof(filterMethod) + sizeof(interlaceMethod); 
+		constexpr size_t  sizeIHDRAll = sizeIHDR + sizeof(chunkName) + sizeof(chunkSize) + sizeof(crc32);
+ 
+		std::array<uint8_t, sizeIHDRAll> ihdr_data{};
+
+		lutFile.read (reinterpret_cast<char*>(&ihdr_data[0]), ihdr_data.size());
 		if (true == lutFile.good())
 		{
-			uint32_t width = 0u, height = 0u;
-			uint8_t  bitDepth, colorType, compressionMethod, filterMethod, interlaceMethod;
-			constexpr size_t sizeIHDRData = sizeof(width) + sizeof(height) + sizeof(bitDepth) + sizeof(colorType) +
-				sizeof(compressionMethod) + sizeof(filterMethod) + sizeof(interlaceMethod);
-			constexpr int32_t nameIHDR = static_cast<const int32_t>('IHDR');
+			/* read IHDR chunk size */
+			chunkSize = endian_convert(*reinterpret_cast<int32_t*>(&ihdr_data[0]));
+			/* read IHDR chunk name */	
+			chunkName = endian_convert(*reinterpret_cast<int32_t*>(&ihdr_data[4]));
+			constexpr size_t crc32_offset = sizeIHDRAll - sizeof(crc32);
+			crc32     = endian_convert(*reinterpret_cast<uint32_t*>(&ihdr_data[crc32_offset]));
+			
+			/* compute CRC of IHDR section */				
+			*reinterpret_cast<uint32_t*>(&ihdr_data[crc32_offset]) = 0u;
+			const uint32_t computed_crc32 = crc32_reflected (ihdr_data);
 
-			const int32_t chunkSize_le = endian_convert(chunkSize);
-			const int32_t chunkName_le = endian_convert(chunkName);
+			std::cout << "Expected chunkSize: " << std::hex << sizeIHDR << " Readed chunkSize: " << std::hex << chunkSize << std::endl;
+			std::cout << "Expected chunkName: " << std::hex << nameIHDR << " Readed chunkName: " << std::hex << chunkName << std::endl;
 
-			if (nameIHDR == chunkName_le && sizeIHDRData >= static_cast<size_t>(chunkSize_le))
-			{
-				constexpr size_t sizeIHDRDataWithCRC = sizeIHDRData + sizeof(crc32);
-				std::array<uint8_t, sizeIHDRDataWithCRC> ihdr_data{};
-				lutFile.read (reinterpret_cast<char*>(&ihdr_data[0]), ihdr_data.size());
-				if (true == lutFile.good())
+//			if (computed_crc32 == crc32) /* validate CRC from IHDR chunk */
+//			{
+				if (nameIHDR == chunkName && sizeIHDR == chunkSize)
 				{
-					width  = endian_convert(*reinterpret_cast<uint32_t*>(&ihdr_data[0]));
-					height = endian_convert(*reinterpret_cast<uint32_t*>(&ihdr_data[4]));
-					bitDepth = ihdr_data[8], colorType = ihdr_data[9], compressionMethod = ihdr_data[10], filterMethod = ihdr_data[11], interlaceMethod = ihdr_data[12];
-					/* store Reflected CRC32 value of IHDR section in temporary variable */					
-					crc32 = endian_convert(*(reinterpret_cast<int32_t*>(&ihdr_data[13])));
-					ihdr_data[13] = ihdr_data[14] = ihdr_data[15] = ihdr_data[16] = 0x0u;
-					const uint32_t computed_crc32 = crc32_reflected (ihdr_data); /* Expected CRC32: 7b1a43ad  Computed CRC32: c0f85c88 */ 
+					width  = endian_convert(*reinterpret_cast<uint32_t*>(&ihdr_data[8 ]));
+					height = endian_convert(*reinterpret_cast<uint32_t*>(&ihdr_data[12]));
+					std::cout << "width: " << width << "  height: " << height << std::endl;
 
-					if (computed_crc32 == crc32) /* validate CRC from IHDR chunk */
+					bitDepth = ihdr_data[15], colorType = ihdr_data[16], compressionMethod = ihdr_data[17], filterMethod = ihdr_data[18], interlaceMethod = ihdr_data[19];
+					auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1)));};
+
+					if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth <= static_cast<uint8_t>(32u) &&
+                                            static_cast<uint8_t>(2u) == colorType /* RGB*/)
 					{
-						auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1)));};
+						m_bitDepth = static_cast<uint32_t>(bitDepth);
+						m_lutSize  = static_cast<LutElement::lutSize>(std::cbrt(static_cast<float>(width * height)));
+						bRet = true;
+						std::cout << "BitDepth: " << m_bitDepth << "  LutSize: " << m_lutSize << std::endl;
+					} /* if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth .... */
 
-						if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth <= static_cast<uint8_t>(32u) && static_cast<uint8_t>(2u) == colorType /* RGB*/)
-						{
-							m_bitDepth = static_cast<uint32_t>(bitDepth);
-							m_lutSize = static_cast<LutElement::lutSize>(std::cbrt(static_cast<float>(width * height)));
-							bRet = true;
-						}
-					}
-					else
-						std::cout << "Expected CRC32: " << std::hex << crc32 << "  Computed CRC32: " << std::hex << computed_crc32 << std::endl;
+				} /* if (nameIHDR == chunkName && sizeIHDR == chunkSize) */
 
-				}
-			}
-		}
+//			} /* if (computed_crc32 == crc32)  */
+			std::cout << "Expected CRC32: " << std::hex << crc32 << "  Computed CRC32: " << std::hex << computed_crc32 << std::endl;
+	
+		} /* if (true == lutFile.good()) */
+
 		return bRet;
 	}
 

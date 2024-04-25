@@ -3,7 +3,6 @@
 
 #include <array>
 
-#if 1
 template <typename T, size_t N>
 uint32_t crc32_reflected (const std::array<T,N>& buffer) noexcept
 {
@@ -51,30 +50,6 @@ uint32_t crc32_reflected (const std::array<T,N>& buffer) noexcept
 
     return ~crc;		
 } 
-#else
 
-
-template <typename T, size_t N>
-uint32_t crc32_reflected (const std::array<T,N>& buffer) noexcept
-{
-	uint32_t crc=0xFFFFFFFF;
-	const size_t n = buffer.size();
-
-	for (size_t i = 0; i < n; i++)
-     	{
-		char ch = static_cast<const char>(buffer[i]);
-		
-		for (size_t j = 0; j < 8; j++)
-		{
-			uint32_t b = (ch ^ crc) & 1;
-			crc >>= 1;
-			if (b) crc = crc ^ 0xEDB88320;
-			ch >>= 1;
-		}
-	}
-	
-	return ~crc;
-}
-#endif
 	
 #endif /* __LUT_LIBRARY_CHECKSUM_UTILS__ */ 
