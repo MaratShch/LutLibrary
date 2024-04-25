@@ -15,6 +15,8 @@
 #include <array>
 #include <cmath>
 
+constexpr uint8_t DEFLATE   = static_cast<uint8_t>(0u);
+constexpr uint8_t COLOR_RGB = static_cast<uint8_t>(2u);
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CHaldLut
@@ -51,14 +53,13 @@ public:
 				auto it1 = chunkMap.find({"IEND"});
 				auto it2 = chunkMap.find({"NONE"});
 				if (it1 != chunkMap.end() || it2 != chunkMap.end())
-				{
 					continueRead = false;
-					m_error = LutErrorCode::LutState::OK;
-				}
 			} while (true == continueRead);
 
 			if (true == parseIHDR (mHaldChunkOrig[{"IHDR"}]))
 			{
+				if (true == encodeIDAT (mHaldChunkOrig[{"IDAT"}]))
+					m_error = LutErrorCode::LutState::OK;
 			}
 
 		}
@@ -122,6 +123,7 @@ private:
 	std::unordered_map<std::string, std::vector<uint8_t>> mHaldChunkOrig{};
 
 	uint32_t m_bitDepth;
+	uint32_t m_CompressionMethod;
 	bool m_3d_lut = true;
 
 	void _cleanup (void)
@@ -147,9 +149,9 @@ private:
 		return signature_le;
 	}
 
-	std::string encodeChunkName (const uint32_t& chankN)
+	std::string encodeChunkName (const uint32_t& chunkN)
 	{
-		switch (chankN)
+		switch (chunkN)
 		{
 			case 'IHDR':
 				return "IHDR";
@@ -202,10 +204,15 @@ private:
 			lutFile.read(reinterpret_cast<char*>(&crc32), sizeof(crc32));
 			if (true == lutFile.good())
 			{
+				/* convert readed CRC32 value from BE to LE */
 				crc32_le = endian_convert(crc32);
+				/* compute CRC32 value of current chunk */
 				const uint32_t computed_crc32 = crc32_reflected(data);
+				/* validate CRC32: compare betwen value readed from file and computed */
 				if (computed_crc32 == crc32_le)
 				{
+					/* if CRC32 is valid - create and retirn to caller map with key and data, 
+					   where as a key used chunk name as string value */
 					std::string chunkName = encodeChunkName(endian_convert(*reinterpret_cast<uint32_t*>(&data[0])));
 					std::unordered_map<std::string, std::vector<uint8_t>> dict;
 					dict[chunkName] = std::move(data);
@@ -215,11 +222,13 @@ private:
 
 		} /* if (true == lutFile.good()) */
 		
+		/* return invalid dictionary as map (with key value "NONE") if something going bad */
 		return invalid_dict;
 	}
 
-	bool parseIDAT (std::vector<uint8_t>& ihdrData)
+	bool encodeIDAT (std::vector<uint8_t>& ihdrData)
 	{
+		/* TODO ... */
 		return true;
 	}
 
@@ -230,7 +239,7 @@ private:
 
 		bool bRet = false;
 
-		if (17u == ihdrData.size()) /* let's check that vector contains IHDR data too and not only section name */
+		if (17u == ihdrData.size()) /* let's check that vector contains IHDR data too, and not only section name */
 		{
 			width  = endian_convert(*reinterpret_cast<uint32_t*>(const_cast<uint8_t*>(&ihdrData[4])));
 			height = endian_convert(*reinterpret_cast<uint32_t*>(const_cast<uint8_t*>(&ihdrData[8])));
@@ -239,8 +248,9 @@ private:
 			auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1))); };
 
 			if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth <= static_cast<uint8_t>(32u) &&
-				static_cast<uint8_t>(2u) == colorType /* RGB*/)
+				COLOR_RGB == colorType&& DEFLATE == compressionMethod)
 			{
+				m_CompressionMethod = compressionMethod;
 				m_bitDepth = static_cast<uint32_t>(bitDepth);
 				m_lutSize = static_cast<LutElement::lutSize>(std::cbrt(static_cast<float>(width * height)));
 				bRet = true;
