@@ -51,5 +51,4 @@ uint32_t crc32_reflected (const std::array<T,N>& buffer) noexcept
     return ~crc;		
 } 
 
-	
 #endif /* __LUT_LIBRARY_CHECKSUM_UTILS__ */ 
