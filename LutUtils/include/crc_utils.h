@@ -2,9 +2,10 @@
 #define __LUT_LIBRARY_CHECKSUM_UTILS__
 
 #include <array>
+#include <vector>
 
-template <typename T, size_t N>
-uint32_t crc32_reflected (const std::array<T,N>& buffer) noexcept
+template <typename T>
+uint32_t crc32_reflected (const T& buffer) noexcept
 {
   constexpr std::array<uint32_t, 256> crc32_reflected_table
   {

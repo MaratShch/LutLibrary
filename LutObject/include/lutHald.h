@@ -15,21 +15,6 @@
 #include <array>
 #include <cmath>
 
-//enum class PngChunkTypes
-//{
-//	'IHDR',
-//	'IDAT',
-//      'PLTE',
-//      'tEXt',
-//      'IEND',
-//      'pHYs',
-//      'iCCP',
-//      'gAMA',
-//      'cHRM',
-//      'HALD'
-//};
-
-constexpr int32_t i = 'IHDR';
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CHaldLut
@@ -56,16 +41,26 @@ public:
 
 		/* read and validate PNG signature in Hald LUT file */
 		bool isPng = verifyPngFileSignature(readPngSignature(lutFile));
+		bool continueRead = true;
 		if (true == isPng)
 		{
-			if (true == readIHDRChunk (lutFile))
+			do
 			{
-				/* read and encode LUT body using DEFLATE algorithm */
+				std::unordered_map<std::string, std::vector<uint8_t>> chunkMap = std::move(readPngChunk(lutFile));
+				mHaldChunkOrig.insert(chunkMap.begin(), chunkMap.end());
+				auto it1 = chunkMap.find({"IEND"});
+				auto it2 = chunkMap.find({"NONE"});
+				if (it1 != chunkMap.end() || it2 != chunkMap.end())
+				{
+					continueRead = false;
+					m_error = LutErrorCode::LutState::OK;
+				}
+			} while (true == continueRead);
 
-				m_error = LutErrorCode::LutState::OK;
+			if (true == parseIHDR (mHaldChunkOrig[{"IHDR"}]))
+			{
 			}
-			else
-				m_error = LutErrorCode::LutState::GenericError;
+
 		}
 		else
 			m_error = LutErrorCode::LutState::ReadError;
@@ -123,8 +118,7 @@ private:
 	LutElement::lutSize        m_lutSize;
 	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
 	
-	/* Original PNG file chunks. Let's save this chunks for keep possibilty restore original PNG file 
-	   and parse PNG/HALD LUT data from memory */
+	/* Original PNG file chunks. Let's save this chunks for keep possibility restore original PNG file */
 	std::unordered_map<std::string, std::vector<uint8_t>> mHaldChunkOrig{};
 
 	uint32_t m_bitDepth;
@@ -153,75 +147,109 @@ private:
 		return signature_le;
 	}
 
-	std::vector<uint8_t> readPngChunk (std::ifstream& lutFile, size_t& chunkSize, uint32_t& chunkType)
+	std::string encodeChunkName (const uint32_t& chankN)
 	{
-		chunkSize = -1;
-		uint32_t crc32  = 0u;
-		/* read chunk */
-		/* validate CRC */
-		/* detect chunkSize and chunkType */
-		return false;
+		switch (chankN)
+		{
+			case 'IHDR':
+				return "IHDR";
+			case 'pHYs':
+				return "pHYs";
+			case 'iCCP':
+				return "iCCP";
+			case 'gAMA':
+				return "gAMA";
+			case 'IDAT':
+				return "IDAT";
+			case 'PLTE':
+				return "PLTE";
+			case 'tEXt':
+				return "tEXt";
+			case 'cHRM':
+				return "cHRM";
+			case'HALD':
+				return "HALD";
+			case 'IEND':
+				return "IEND";
+			default:
+				return "NONE";
+		}
+		return "NONE"; /* just for avoid compilation warning */
 	}
 
-	bool readIHDRChunk (std::ifstream& lutFile)
+	std::unordered_map<std::string, std::vector<uint8_t>> readPngChunk (std::ifstream& lutFile)
 	{
+		using byte = uint8_t;
 		int32_t chunkSize = -1;
-		uint32_t crc32  = 0u;
-		uint32_t width  = 0u, height = 0u;
-		uint8_t  bitDepth = 0u, colorType = 0u, compressionMethod = 0u, filterMethod = 0u, interlaceMethod = 0u;
-		bool bRet = false;
 
-		constexpr int32_t nameIHDR = static_cast<const int32_t>('IHDR');
- 		constexpr size_t  sizeIHDRData = sizeof(width) + sizeof(height) + sizeof(bitDepth) + sizeof(colorType) + 
-                                                 sizeof(compressionMethod) + sizeof(filterMethod) + sizeof(interlaceMethod); 
-		constexpr size_t  sizeIHDR = sizeof(nameIHDR) + sizeIHDRData;
-		std::array<uint8_t, sizeIHDR> ihdr_data{};
+		std::unordered_map<std::string, std::vector<uint8_t>> invalid_dict;
+		invalid_dict["NONE"] = {};
 
-		/* Read IHDR chunk size value   */	
-		lutFile.read (reinterpret_cast<char*>(&chunkSize), sizeof(chunkSize));
-		/* Read IHDR chunk data content */
-		lutFile.read (reinterpret_cast<char*>(&ihdr_data[0]), ihdr_data.size());
-		/* Read IHDR chunk CRC32 value  */
-		lutFile.read (reinterpret_cast<char*>(&crc32), sizeof(crc32));
-
+		/* read chunk size and name */
+		lutFile.read(reinterpret_cast<char*>(&chunkSize), sizeof(chunkSize));
 		if (true == lutFile.good())
 		{
-			/* convert IHDR chunk size to Little Endian  */
-			const int32_t  chunkSize_le = endian_convert (chunkSize);
-			/* convert IHDR chunk name to Little Endian  */
-			const int32_t  chunkName_le = endian_convert (*reinterpret_cast<int32_t* >(&ihdr_data[0]));
-			/* convert IHDR chunk CRC32 to Little Endian */
-			const uint32_t crc32_le     = endian_convert (crc32);
+			/* get chunk size in little endian byte order */
+			const int32_t chunkSize_le = endian_convert (chunkSize);
+			const int32_t rSize = sizeof(uint32_t) + chunkSize_le; /* chunk name + chunk size */
 
-			/* compute CRC32 for IHDR chunk: a four-byte CRC calculated on the preceding bytes in the chunk, 
-                           including the chunk type field and chunk data fields, but not including the length field. */	
-			const uint32_t computed_crc32 = crc32_reflected (ihdr_data);
-			
-			if (computed_crc32 == crc32_le) /* validate CRC from IHDR chunk */
+			std::vector<uint8_t> data (rSize);
+			uint32_t crc32 = 0u, crc32_le = 0u;
+
+			/* read chunk name and chunk data */
+			lutFile.read(reinterpret_cast<char*>(&data[0]), data.size());
+			/* read chunk CRC32 */
+			lutFile.read(reinterpret_cast<char*>(&crc32), sizeof(crc32));
+			if (true == lutFile.good())
 			{
-				if (nameIHDR == chunkName_le && sizeIHDRData == chunkSize_le)
+				crc32_le = endian_convert(crc32);
+				const uint32_t computed_crc32 = crc32_reflected(data);
+				if (computed_crc32 == crc32_le)
 				{
-					width  = endian_convert(*reinterpret_cast<uint32_t*>(&ihdr_data[4]));
-					height = endian_convert(*reinterpret_cast<uint32_t*>(&ihdr_data[8]));
-					bitDepth = ihdr_data[12], colorType = ihdr_data[13], compressionMethod = ihdr_data[14], filterMethod = ihdr_data[15], interlaceMethod = ihdr_data[16];
-					auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1)));};
-
-					if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth <= static_cast<uint8_t>(32u) &&
-                                            static_cast<uint8_t>(2u) == colorType /* RGB*/)
-					{
-						m_bitDepth = static_cast<uint32_t>(bitDepth);
-						m_lutSize  = static_cast<LutElement::lutSize>(std::cbrt(static_cast<float>(width * height)));
-						bRet = true;
-					} /* if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth .... */
-
-				} /* if (nameIHDR == chunkName && sizeIHDR == chunkSize) */
-
-			} /* if (computed_crc32 == crc32)  */
+					std::string chunkName = encodeChunkName(endian_convert(*reinterpret_cast<uint32_t*>(&data[0])));
+					std::unordered_map<std::string, std::vector<uint8_t>> dict;
+					dict[chunkName] = std::move(data);
+					return dict;
+				}
+			} /* if (true == lutFile.good()) */
 
 		} /* if (true == lutFile.good()) */
+		
+		return invalid_dict;
+	}
 
+	bool parseIDAT (std::vector<uint8_t>& ihdrData)
+	{
+		return true;
+	}
+
+	bool parseIHDR (const std::vector<uint8_t>& ihdrData)
+	{
+		uint32_t width = 0u, height = 0u; 
+		uint8_t  bitDepth = 0u, colorType = 0u, compressionMethod = 0u, filterMethod = 0u, interlaceMethod = 0u;
+
+		bool bRet = false;
+
+		if (17u == ihdrData.size()) /* let's check that vector contains IHDR data too and not only section name */
+		{
+			width  = endian_convert(*reinterpret_cast<uint32_t*>(const_cast<uint8_t*>(&ihdrData[4])));
+			height = endian_convert(*reinterpret_cast<uint32_t*>(const_cast<uint8_t*>(&ihdrData[8])));
+			bitDepth = ihdrData[12], colorType = ihdrData[13], compressionMethod = ihdrData[14], filterMethod = ihdrData[15], interlaceMethod = ihdrData[16];
+
+			auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1))); };
+
+			if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth <= static_cast<uint8_t>(32u) &&
+				static_cast<uint8_t>(2u) == colorType /* RGB*/)
+			{
+				m_bitDepth = static_cast<uint32_t>(bitDepth);
+				m_lutSize = static_cast<LutElement::lutSize>(std::cbrt(static_cast<float>(width * height)));
+				bRet = true;
+			} /* if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth .... */
+		}
 		return bRet;
 	}
+
+
 
 };
 
