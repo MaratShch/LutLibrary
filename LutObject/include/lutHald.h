@@ -19,7 +19,16 @@ namespace PNG
 {
 	constexpr uint8_t DEFLATE = static_cast<uint8_t>(0u);
 	constexpr uint8_t COLOR_RGB = static_cast<uint8_t>(2u);
+
+	constexpr std::uint32_t Chunk (const char& a, const char& b, const char& c, const char& d) noexcept
+        {
+		return ((static_cast<uint32_t>(a) << 24) +
+                        (static_cast<uint32_t>(b) << 16) +
+                        (static_cast<uint32_t>(c) << 8 ) +
+                        (static_cast<uint32_t>(d)));
+	}
 }
+
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CHaldLut
@@ -154,43 +163,43 @@ private:
 	{
 		switch (chunkN)
 		{
-			case 'IHDR':
+			case PNG::Chunk('I','H','D','R'):
 				return "IHDR";
-			case 'pHYs':
+			case PNG::Chunk('p','H','Y','s'):
 				return "pHYs";
-			case 'iCCP':
+			case PNG::Chunk('i','C','C','P'):
 				return "iCCP";
-			case 'gAMA':
+			case PNG::Chunk('g','A','M','A'):
 				return "gAMA";
-			case 'IDAT':
+			case PNG::Chunk('I','D','A','T'):
 				return "IDAT";
-			case 'PLTE':
+			case PNG::Chunk('P','L','T','E'):
 				return "PLTE";
-			case 'tEXt':
+			case PNG::Chunk('t','E','X','t'):
 				return "tEXt";
-			case 'cHRM':
+			case PNG::Chunk('c','H','R','M'):
 				return "cHRM";
-			case 'HALD':
+			case PNG::Chunk('H','A','L','D'):
 				return "HALD";
-			case 'IEND':
+			case PNG::Chunk('I','E','N','D'):
 				return "IEND";
-                        case 'tRNS':
+                        case PNG::Chunk('t','R','N','S'):
 				return "tRNS";
-                        case 'sBIT':
+                        case PNG::Chunk('s','B','I','T'):
 				return "sBIT";
-			case 'sRGB':
+			case PNG::Chunk('s','R','G','B'):
 				return "sRGB";
-			case 'iTXt':
+			case PNG::Chunk('i','T','X','t'):
 				return "iTXt";
-			case 'zTXt':
+			case PNG::Chunk('z','T','X','t'):
 				return "zTXt";
-			case 'bKGD':
+			case PNG::Chunk('b','K','G','D'):
 				return "bKGD";
-			case 'hIST':
+			case PNG::Chunk('h','I','S','T'):
 				return "hIST";
-			case 'sPLT':
+			case PNG::Chunk('s','P','L','T'):
 				return "sPLT";
-			case 'tIME':
+			case PNG::Chunk('t','I','M','E'):
 				return "tIME";	
 			default:
 				return "NONE";
