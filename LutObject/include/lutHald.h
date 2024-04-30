@@ -170,10 +170,28 @@ private:
 				return "tEXt";
 			case 'cHRM':
 				return "cHRM";
-			case'HALD':
+			case 'HALD':
 				return "HALD";
 			case 'IEND':
 				return "IEND";
+                        case 'tRNS':
+				return "tRNS";
+                        case 'sBIT':
+				return "sBIT";
+			case 'sRGB':
+				return "sRGB";
+			case 'iTXt':
+				return "iTXt";
+			case 'zTXt':
+				return "zTXt";
+			case 'bKGD':
+				return "bKGD";
+			case 'hIST':
+				return "hIST";
+			case 'sPLT':
+				return "sPLT";
+			case 'tIME':
+				return "tIME";	
 			default:
 				return "NONE";
 		}
