@@ -21,11 +21,11 @@ namespace PNG
 	constexpr uint8_t COLOR_RGB = static_cast<uint8_t>(2u);
 
 	constexpr std::uint32_t Chunk (const char& a, const char& b, const char& c, const char& d) noexcept
-        {
+    {
 		return ((static_cast<uint32_t>(a) << 24) +
-                        (static_cast<uint32_t>(b) << 16) +
-                        (static_cast<uint32_t>(c) << 8 ) +
-                        (static_cast<uint32_t>(d)));
+                (static_cast<uint32_t>(b) << 16) +
+                (static_cast<uint32_t>(c) << 8 ) +
+                (static_cast<uint32_t>(d)));
 	}
 }
 
@@ -183,9 +183,9 @@ private:
 				return "HALD";
 			case PNG::Chunk('I','E','N','D'):
 				return "IEND";
-                        case PNG::Chunk('t','R','N','S'):
+            case PNG::Chunk('t','R','N','S'):
 				return "tRNS";
-                        case PNG::Chunk('s','B','I','T'):
+            case PNG::Chunk('s','B','I','T'):
 				return "sBIT";
 			case PNG::Chunk('s','R','G','B'):
 				return "sRGB";
@@ -256,7 +256,8 @@ private:
 
 	bool encodeIDAT (const std::vector<uint8_t>& ihdrData)
 	{
-		/* TODO ... */
+		/* Read block header */
+
 		return true;
 	}
 
