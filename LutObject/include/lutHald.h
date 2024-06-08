@@ -256,8 +256,13 @@ private:
 
 	bool encodeIDAT (const std::vector<uint8_t>& ihdrData)
 	{
-		/* Read block header */
-
+		/* size of IDAT section in bytes, include section signature */
+		const size_t idatSize = ihdrData.size();
+		if (0u != idatSize)
+		{
+			/* Read and decode block header values */
+			const uint8_t blockHeader = ihdrData[4]; /* skip first 4 bytes containing section signature */
+		}
 		return true;
 	}
 
