@@ -288,8 +288,13 @@ private:
 #ifdef _DEBUG
 			idat_save_dbg(ihdrData);
 #endif
+			size_t blockOffset = 4ul; /* skip first 4 bytes containing section signature - IDAT */
+			bool bBlockFinal = false;
+			do {
+				const uint8_t CMF = ihdrData[blockOffset       ];
+				const uint8_t FLG = ihdrData[blockOffset += 1ul];
+			} while (false == bBlockFinal);
 			/* Read and decode block header values */
-			const uint8_t blockHeader = ihdrData[4]; /* skip first 4 bytes containing section signature */
 		}
 		return true;
 	}
