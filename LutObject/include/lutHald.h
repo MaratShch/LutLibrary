@@ -226,7 +226,7 @@ private:
 			const int32_t rSize = sizeof(uint32_t) + chunkSize_le; /* chunk name + chunk size */
 
 			std::vector<uint8_t> data (rSize);
-			uint32_t crc32 = 0u, crc32_le = 0u;
+			uint32_t crc32 = 0u;
 
 			/* read chunk name and chunk data */
 			lutFile.read(reinterpret_cast<char*>(&data[0]), data.size());
@@ -235,7 +235,7 @@ private:
 			if (true == lutFile.good())
 			{
 				/* convert readed CRC32 value from BE to LE */
-				crc32_le = endian_convert(crc32);
+				const uint32_t crc32_le = endian_convert(crc32);
 				/* compute CRC32 value of current chunk */
 				const uint32_t computed_crc32 = crc32_reflected(data);
 				/* validate CRC32: compare betwen value readed from file and computed */
