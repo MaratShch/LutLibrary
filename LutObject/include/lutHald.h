@@ -213,9 +213,7 @@ private:
 
 	std::unordered_map<std::string, std::vector<uint8_t>> readPngChunk (std::ifstream& lutFile)
 	{
-		using byte = uint8_t;
 		int32_t chunkSize = -1;
-
 		std::unordered_map<std::string, std::vector<uint8_t>> invalid_dict;
 		invalid_dict["NONE"] = {};
 
@@ -243,8 +241,8 @@ private:
 				/* validate CRC32: compare betwen value readed from file and computed */
 				if (computed_crc32 == crc32_le)
 				{
-					/* if CRC32 is valid - create and retirn to caller map with key and data, 
-					   where as a key used chunk name as string value */
+					/* If the CRC32 is valid, create and return a map to the caller with keys and data, 
+					   where the chunk name is used as the string value for the key */
 					std::string chunkName = encodeChunkName(endian_convert(*reinterpret_cast<uint32_t*>(&data[0])));
 					std::unordered_map<std::string, std::vector<uint8_t>> dict;
 					dict[chunkName] = std::move(data);
