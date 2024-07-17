@@ -14,6 +14,9 @@
 #include <string>
 #include <array>
 #include <cmath>
+#ifdef _DEBUG
+ #include <iomanip>
+#endif
 
 namespace PNG
 {
@@ -87,6 +90,7 @@ public:
 			if (!haldLut.good())
 				return LutErrorCode::LutState::FileNotOpened;
 			
+			m_lutName = lutFileName;
 			err = LoadFile (haldLut);
 			haldLut.close();
 
@@ -111,6 +115,7 @@ public:
 			if (!haldLut.good())
 				return LutErrorCode::LutState::FileNotOpened;
 			
+			m_lutName = lutFileName;
 			err = LoadFile (haldLut);
 			haldLut.close();
 
@@ -140,7 +145,6 @@ private:
 	{
 		m_lutBody3D.clear();
 		m_lutBody1D.clear();
-		m_lutName.clear();
 		m_lutSize = 0u;
 		m_error = LutErrorCode::LutState::NotInitialized;
 		m_bitDepth = 0u;
@@ -254,12 +258,38 @@ private:
 		return invalid_dict;
 	}
 
+#ifdef _DEBUG
+	void idat_save_dbg (const std::vector<uint8_t>& data_vector)
+	{
+		const std::string fullFilePath = m_lutName + ".txt";
+		std::ofstream outFile (fullFilePath, std::ios::out | std::ios::trunc);
+		if (outFile.good())
+		{
+			const size_t size = data_vector.size();
+			outFile << "/* THIS IS IDAT SECTION SAVED FOR DEBUG PURPOSES FROM HALD LUT FILE: " << m_lutName << " */" << std::endl;
+			outFile << "/* DATA SIZE (without IDAT section signature) = " << (size - 4) << " BYTES   */" << std::endl;
+			for (size_t i = 4; i < size; i++) /* exclude IDAT pattern itself from record */
+			{
+				const int32_t val = static_cast<const int32_t>(data_vector.at(i));
+				outFile << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << val << (i != size-1 ? ", " : " ");
+				if (0u != i && 0u == (i % 32))
+					outFile << std::endl;
+			}
+			outFile.close();
+		} /* if (outFile.good()) */
+		return;
+	}
+#endif
+
 	bool encodeIDAT (const std::vector<uint8_t>& ihdrData)
 	{
 		/* size of IDAT section in bytes, include section signature */
 		const size_t idatSize = ihdrData.size();
 		if (0u != idatSize)
 		{
+#ifdef _DEBUG
+			idat_save_dbg(ihdrData);
+#endif
 			/* Read and decode block header values */
 			const uint8_t blockHeader = ihdrData[4]; /* skip first 4 bytes containing section signature */
 		}
