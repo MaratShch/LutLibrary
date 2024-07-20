@@ -5,6 +5,7 @@
 #include "lutErrors.h"
 #include "endian_utils.h"
 #include "crc_utils.h"
+#include "deflate_algo_utils.h"
 #include "string_view.h"
 #include <fstream>
 #include <sstream>
@@ -14,6 +15,7 @@
 #include <string>
 #include <array>
 #include <cmath>
+#include <memory>
 #ifdef _DEBUG
  #include <iomanip>
 #endif
@@ -281,22 +283,35 @@ private:
 
 	bool encodeIDAT (const std::vector<uint8_t>& ihdrData)
 	{
+		bool bRet = false;
 		/* size of IDAT section in bytes, include section signature */
 		const size_t idatSize = ihdrData.size();
 		if (0u != idatSize)
 		{
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT)
 			idat_save_dbg(ihdrData);
-#endif
-			size_t blockOffset = 4ul; /* skip first 4 bytes containing section signature - IDAT */
-			bool bBlockFinal = false;
-			do {
-				const uint8_t CMF = ihdrData[blockOffset       ];
-				const uint8_t FLG = ihdrData[blockOffset += 1ul];
-			} while (false == bBlockFinal);
-			/* Read and decode block header values */
+#endif /* defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT) */
+
+//			size_t blockOffset = 4ul; /* skip first 4 bytes containing section signature - IDAT */
+//			bool bBlockFinal = false;
+
+			auto pDeflateDecoder = std::make_unique<CDeflateBasicDecoder>();
+			if (nullptr != pDeflateDecoder)
+			{
+				const std::vector<uint8_t> decoded = pDeflateDecoder->Decode(ihdrData);
+				if (0ul != decoded.size())
+				{
+					/* fill LUT */
+
+					bRet = true;
+				}
+				//			do {
+				//				const uint8_t CMF = ihdrData[blockOffset++];
+				//				const uint8_t FLG = ihdrData[blockOffset++];
+				//			} while (false == bBlockFinal && blockOffset < idatSize);
+			}
 		}
-		return true;
+		return bRet;
 	}
 
 	bool parseIHDR (const std::vector<uint8_t>& ihdrData)
