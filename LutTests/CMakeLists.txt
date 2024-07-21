@@ -72,8 +72,11 @@ lutlib_test (
 )
 
 set (TST_PRIVATE_COMPILATION_DEFINES -DHALD_LUT_FOLDER=\"${CMAKE_INSTALL_HALD_LUT_DIRECTORY}/Hald\")
+set (TST_PRIVATE_LINK_LIBRARIES DeflateDecoder)
 lutlib_test (
 	ParseHald 
 	${LUT_TESTS_FILES_FOLDER}/src/ParseHald.cpp 
-	LutObject
-)
+	LutObject)
+unset(TST_PRIVATE_LINK_LIBRARIES)
+
+
