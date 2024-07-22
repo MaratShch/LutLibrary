@@ -189,9 +189,9 @@ private:
 				return "HALD";
 			case PNG::Chunk('I','E','N','D'):
 				return "IEND";
-            		case PNG::Chunk('t','R','N','S'):
+			case PNG::Chunk('t','R','N','S'):
 				return "tRNS";
-            		case PNG::Chunk('s','B','I','T'):
+			case PNG::Chunk('s','B','I','T'):
 				return "sBIT";
 			case PNG::Chunk('s','R','G','B'):
 				return "sRGB";
