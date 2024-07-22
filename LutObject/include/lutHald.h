@@ -189,9 +189,9 @@ private:
 				return "HALD";
 			case PNG::Chunk('I','E','N','D'):
 				return "IEND";
-            case PNG::Chunk('t','R','N','S'):
+            		case PNG::Chunk('t','R','N','S'):
 				return "tRNS";
-            case PNG::Chunk('s','B','I','T'):
+            		case PNG::Chunk('s','B','I','T'):
 				return "sBIT";
 			case PNG::Chunk('s','R','G','B'):
 				return "sRGB";
@@ -289,11 +289,8 @@ private:
 		if (0u != idatSize)
 		{
 #if defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT)
-			idat_save_dbg(ihdrData);
+			this->idat_save_dbg(ihdrData);
 #endif /* defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT) */
-
-//			size_t blockOffset = 4ul; /* skip first 4 bytes containing section signature - IDAT */
-//			bool bBlockFinal = false;
 
 			auto pDeflateDecoder = std::make_unique<CDeflateBasicDecoder>();
 			if (nullptr != pDeflateDecoder)
@@ -305,10 +302,6 @@ private:
 
 					bRet = true;
 				}
-				//			do {
-				//				const uint8_t CMF = ihdrData[blockOffset++];
-				//				const uint8_t FLG = ihdrData[blockOffset++];
-				//			} while (false == bBlockFinal && blockOffset < idatSize);
 			}
 		}
 		return bRet;
