@@ -1,5 +1,5 @@
-#ifndef __LUT_LIBRARY_HUFFMAN_STREAM_POINTER_CLASS__
-#define __LUT_LIBRARY_HUFFMAN_STREAM_POINTER_CLASS__
+#ifndef __LUT_LIBRARY_UTILS_HUFFMAN_STREAM_POINTER_CLASS__
+#define __LUT_LIBRARY_UTILS_HUFFMAN_STREAM_POINTER_CLASS__
 
 #include <cstdint>
 #include <iostream>
@@ -128,7 +128,7 @@ private:
 friend inline std::ostream& operator << (std::ostream& os, const CStreamPointer& sp) noexcept {	os << sp.byte << "." << sp.bit; return os; }
 friend inline std::istream& operator >> (std::istream& is, CStreamPointer& sp)       noexcept { is >> sp.byte; is >> sp.bit; return is; }
 
-};
+}; /* class CStreamPointer */
 
 
 inline bool operator != (const CStreamPointer& l, const CStreamPointer& r) noexcept { return l.get() != r.get(); }
@@ -164,4 +164,4 @@ inline bool operator -
 
 #endif
 
-#endif /* __LUT_LIBRARY_HUFFMAN_STREAM_POINTER_CLASS__ */
+#endif /* __LUT_LIBRARY_UTILS_HUFFMAN_STREAM_POINTER_CLASS__ */
