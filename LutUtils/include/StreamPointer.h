@@ -51,7 +51,7 @@ public:
       /* swap API */
       void swap (CStreamPointer& other) noexcept {std::swap(bit, other.bit), std::swap(byte, other.byte);}
 
-      void forward (const uint64_t add_offset) {;}
+      void forward (const uint64_t add_offset){;}
       void forward (const uint32_t byte_offset, uint32_t bit_offset) {;}
 	
 	  /* Prefix increment operator */
@@ -120,6 +120,35 @@ public:
 
 	  int compare (const CStreamPointer& other_sp) const noexcept { return compare (other_sp.get()); }
 
+	  inline CStreamPointer& operator += (const uint64_t& other) noexcept
+	  {
+		  auto const bits_sum  = bit  + static_cast<uint32_t>(other & 0x07u);
+		  auto const bytes_sum = byte + static_cast<uint32_t>(other >> 32);
+		  byte = (bytes_sum + bits_sum / 8);
+		  bit  = bits_sum & 0x07u;
+		  return *this;
+	  }
+
+	  inline CStreamPointer& operator += (CStreamPointer other) noexcept
+	  {
+		  auto const bits_sum  = bit  + other.bit;
+		  auto const bytes_sum = byte + other.byte;
+		  byte = (bytes_sum + bits_sum / 8);
+		  bit  = bits_sum & 0x07u;
+		  return *this;
+	  }
+
+	  inline CStreamPointer& operator -= (const uint64_t& other) noexcept
+	  {
+		  /* TODO */
+		  return *this;
+	  }
+
+	  inline CStreamPointer& operator -= (CStreamPointer other) noexcept
+	  {
+		  /* TODO */
+		  return *this;
+	  }
 
 private:
 	uint32_t bit;	/* offset in bits in current byte [valid value - 0...7]   */	 
@@ -129,6 +158,43 @@ friend inline std::ostream& operator << (std::ostream& os, const CStreamPointer&
 friend inline std::istream& operator >> (std::istream& is, CStreamPointer& sp)       noexcept { is >> sp.byte; is >> sp.bit; return is; }
 
 }; /* class CStreamPointer */
+
+
+inline CStreamPointer operator + (const CStreamPointer& sp1, const CStreamPointer& sp2) noexcept
+{
+	/* TODO */
+	return sp1;
+}
+
+inline CStreamPointer operator + (const CStreamPointer& sp1, const uint64_t& sp2) noexcept
+{
+	/* TODO */
+	return sp1;
+}
+
+inline CStreamPointer operator + (const uint64_t& sp1, const CStreamPointer& sp2) noexcept
+{
+	/* TODO */
+	return sp1;
+}
+
+inline CStreamPointer operator - (const CStreamPointer& sp1, const CStreamPointer& sp2) noexcept
+{
+	/* TODO */
+	return sp1;
+}
+
+inline CStreamPointer operator - (const CStreamPointer& sp1, const uint64_t& sp2) noexcept
+{
+	/* TODO */
+	return sp1;
+}
+
+inline CStreamPointer operator - (const uint64_t& sp1, const CStreamPointer& sp2) noexcept
+{
+	/* TODO */
+	return sp1;
+}
 
 
 inline bool operator != (const CStreamPointer& l, const CStreamPointer& r) noexcept { return l.get() != r.get(); }
@@ -155,13 +221,5 @@ inline bool operator >=  (const CStreamPointer& l, const CStreamPointer& r) noex
 inline bool operator >=  (const CStreamPointer& l, const uint64_t& r)       noexcept { return l.get() >= r;       }
 inline bool operator >=  (const uint64_t& l, const CStreamPointer& r)       noexcept { return l       >= r.get(); }
 
-#if 0
-inline bool operator +=
-inline bool operator +
-inline bool operator -=
-inline bool operator -
-
-
-#endif
 
 #endif /* __LUT_LIBRARY_UTILS_HUFFMAN_STREAM_POINTER_CLASS__ */
