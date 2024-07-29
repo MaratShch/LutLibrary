@@ -9,9 +9,9 @@ class CStreamPointer
 public:
       /* default constructor */
       constexpr	CStreamPointer (void) noexcept : bit {0u}, byte {0u} {};
-	  /* class constructors with parameters */	
-      constexpr	CStreamPointer (const uint32_t& _bit,    const uint32_t& _byte) noexcept : bit {_bit}, byte {_byte} {};
-	  constexpr	CStreamPointer (const uint64_t& _offset) noexcept : bit { static_cast<uint32_t>(_offset & 0x07u) }, byte{ static_cast<uint32_t>((_offset >> 32) & 0xFFFFFFFFu) } {};
+      /* class constructors with parameters */	
+      constexpr	CStreamPointer (const uint32_t& _byte,    const uint32_t& _bit) noexcept : byte {_byte}, bit {_bit}  {};
+      constexpr	CStreamPointer (const uint64_t& _offset) noexcept : bit { static_cast<uint32_t>(_offset & 0x07u) }, byte{ static_cast<uint32_t>((_offset >> 32) & 0xFFFFFFFFu) } {};
 
       /* copy and move constructors */
       constexpr CStreamPointer (const CStreamPointer& other_sp) noexcept = default;
@@ -24,35 +24,35 @@ public:
       CStreamPointer& operator= (const CStreamPointer& other) = default;
       CStreamPointer& operator= (CStreamPointer&& other) noexcept {swap(other); return *this;}
 
-	  /* member access API's */	
-	  uint32_t bits (void) const noexcept { return bit; }
-	  uint32_t bytes(void) const noexcept { return byte; }
+     /* member access API's */	
+     uint32_t bits (void) const noexcept { return bit; }
+     uint32_t bytes(void) const noexcept { return byte; }
 	  
-	  const uint64_t get(void) const noexcept
-	  {
-		  return (static_cast<uint64_t>(byte) << 32 | static_cast<uint64_t>(bit));
-	  }
+     const uint64_t get(void) const noexcept
+     {
+ 	  return (static_cast<uint64_t>(byte) << 32 | static_cast<uint64_t>(bit));
+     }
 
-	  void set (const uint32_t& byte_offset, const uint32_t& bits_offset) noexcept
-	  { 
-		  byte = byte_offset + (bits_offset / 8u);
-		  bit  = bits_offset & 0x0000007u;  
-	  }
+     void set (const uint32_t& byte_offset, const uint32_t& bits_offset) noexcept
+     { 
+	  byte = byte_offset + (bits_offset / 8u);
+	  bit  = bits_offset & 0x0000007u;  
+     }
 
-	  void set (const uint64_t& new_offset) noexcept
-	  { 
-		  const uint32_t _byte_offset = static_cast<const uint32_t>((new_offset >> 32) & 0xFFFFFFFFu);
-		  const uint32_t _bit_offset  = static_cast<const uint32_t>(new_offset & 0xFFFFFFFFu);
-		  set (_byte_offset, _bit_offset);
-	  }
+     void set (const uint64_t& new_offset) noexcept
+     { 
+	  const uint32_t _byte_offset = static_cast<const uint32_t>((new_offset >> 32) & 0xFFFFFFFFu);
+	  const uint32_t _bit_offset  = static_cast<const uint32_t>(new_offset & 0xFFFFFFFFu);
+	  set (_byte_offset, _bit_offset);
+     }
 
-	  void reset (void) noexcept { set(0u, 0u); }
+     void reset (void) noexcept { set(0u, 0u); }
 
-      /* swap API */
-      void swap (CStreamPointer& other) noexcept {std::swap(bit, other.bit), std::swap(byte, other.byte);}
+     /* swap API */
+     void swap (CStreamPointer& other) noexcept {std::swap(bit, other.bit), std::swap(byte, other.byte);}
 
-      void forward (const uint64_t add_offset){;}
-      void forward (const uint32_t byte_offset, uint32_t bit_offset) {;}
+     void forward (const uint64_t add_offset){;}
+     void forward (const uint32_t byte_offset, uint32_t bit_offset) {;}
 	
 	  /* Prefix increment operator */
 	  CStreamPointer& operator ++ () noexcept
@@ -154,47 +154,51 @@ private:
 	uint32_t bit;	/* offset in bits in current byte [valid value - 0...7]   */	 
 	uint32_t byte;	/* offset in bytes from start of stream [zero enumerated] */	
 
-friend inline std::ostream& operator << (std::ostream& os, const CStreamPointer& sp) noexcept {	os << sp.byte << "." << sp.bit; return os; }
-friend inline std::istream& operator >> (std::istream& is, CStreamPointer& sp)       noexcept { is >> sp.byte; is >> sp.bit; return is; }
+	friend inline std::ostream& operator << (std::ostream& os, const CStreamPointer& sp) noexcept {	os << sp.byte << "." << sp.bit; return os; }
+	friend inline std::istream& operator >> (std::istream& is, CStreamPointer& sp)       noexcept { is >> sp.byte; is >> sp.bit; return is; }
+
+	friend inline CStreamPointer operator + (const CStreamPointer& sp1, const CStreamPointer& sp2) noexcept
+	{
+		auto const bit_sum = sp1.bit + sp2.bit;
+		auto const byte_sum= sp1.byte+ sp2.byte + bit_sum / 8;
+		return CStreamPointer{byte_sum, bit_sum & 0x07u};
+	}
+
+	friend inline CStreamPointer operator + (const CStreamPointer& sp1, const uint64_t& sp2) noexcept
+	{
+		auto const bit_sum = sp1.bit + static_cast<uint32_t>(sp2 & 0x07u);
+		auto const byte_sum= sp1.byte+ static_cast<uint32_t>(sp2 >> 32) + bit_sum / 8;
+		return CStreamPointer{byte_sum, bit_sum & 0x07u};
+	}
+
+	friend inline CStreamPointer operator + (const uint64_t& sp1, const CStreamPointer& sp2) noexcept
+	{
+		auto const bit_sum = sp2.bit + static_cast<uint32_t>(sp1 & 0x07u);
+		auto const byte_sum= sp2.byte+ static_cast<uint32_t>(sp1 >> 32) + bit_sum / 8;
+		return CStreamPointer{byte_sum, bit_sum & 0x07u};
+	}
+
+	friend inline CStreamPointer operator - (const CStreamPointer& sp1, const CStreamPointer& sp2) noexcept
+	{
+		/* TODO */
+		return sp1;
+	}
+
+	friend inline CStreamPointer operator - (const CStreamPointer& sp1, const uint64_t& sp2) noexcept
+	{
+		/* TODO */
+		return sp1;
+	}
+
+	friend inline CStreamPointer operator - (const uint64_t& sp1, const CStreamPointer& sp2) noexcept
+	{
+		/* TODO */
+		return sp1;
+	}
+
 
 }; /* class CStreamPointer */
 
-
-inline CStreamPointer operator + (const CStreamPointer& sp1, const CStreamPointer& sp2) noexcept
-{
-	/* TODO */
-	return sp1;
-}
-
-inline CStreamPointer operator + (const CStreamPointer& sp1, const uint64_t& sp2) noexcept
-{
-	/* TODO */
-	return sp1;
-}
-
-inline CStreamPointer operator + (const uint64_t& sp1, const CStreamPointer& sp2) noexcept
-{
-	/* TODO */
-	return sp1;
-}
-
-inline CStreamPointer operator - (const CStreamPointer& sp1, const CStreamPointer& sp2) noexcept
-{
-	/* TODO */
-	return sp1;
-}
-
-inline CStreamPointer operator - (const CStreamPointer& sp1, const uint64_t& sp2) noexcept
-{
-	/* TODO */
-	return sp1;
-}
-
-inline CStreamPointer operator - (const uint64_t& sp1, const CStreamPointer& sp2) noexcept
-{
-	/* TODO */
-	return sp1;
-}
 
 
 inline bool operator != (const CStreamPointer& l, const CStreamPointer& r) noexcept { return l.get() != r.get(); }
