@@ -6,6 +6,7 @@
 
 class CStreamPointer
 {
+/* public members and methods */
 public:
       /* default constructor */
       constexpr	CStreamPointer (void) noexcept : bit {0u}, byte {0u} {};
@@ -150,10 +151,12 @@ public:
 		  return *this;
 	  }
 
+/* private members and methods */
 private:
 	uint32_t bit;	/* offset in bits in current byte [valid value - 0...7]   */	 
 	uint32_t byte;	/* offset in bytes from start of stream [zero enumerated] */	
 
+/* friends */
 	friend inline std::ostream& operator << (std::ostream& os, const CStreamPointer& sp) noexcept {	os << sp.byte << "." << sp.bit; return os; }
 	friend inline std::istream& operator >> (std::istream& is, CStreamPointer& sp)       noexcept { is >> sp.byte; is >> sp.bit; return is; }
 
