@@ -4,7 +4,7 @@
 const std::string dbgLutsFolder = { CSP_LUT_FOLDER };
 
 
-TEST (Parse_CSP_3D_f32, help_option)
+TEST (ParseCsp3d, Parse_CSP_3D_f32)
 {
 	const std::string lutName{ dbgLutsFolder + "/non-uniform.csp" };
 	CCineSpaceLut3D<float> lutFileF32;
@@ -14,7 +14,7 @@ TEST (Parse_CSP_3D_f32, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST (Parse_CSP_3D_f64, help_option)
+TEST (ParseCsp3d, Parse_CSP_3D_f64)
 {
 	const std::string lutName{ dbgLutsFolder + "/non-uniform.csp" };
 	CCineSpaceLut3D<float> lutFileF64;

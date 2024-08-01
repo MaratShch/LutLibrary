@@ -3,7 +3,7 @@
 
 const std::string dbgLutsFolder = { HALD_LUT_FOLDER };
 
-TEST(Parse_Contrast_HCLUT, help_option)
+TEST(ParseHald, Parse_Contrast_HCLUT)
 {
 	const std::string lutName{ dbgLutsFolder + "/contrast.HCLUT.png" };
 	CHaldLut<float> lutFileF32;
@@ -13,7 +13,7 @@ TEST(Parse_Contrast_HCLUT, help_option)
 }
 
 
-TEST(Parse_DarkBlue_HCLUT, help_option)
+TEST(ParseHald, Parse_DarkBlue_HCLUT)
 {
 	const std::string lutName{ dbgLutsFolder + "/Dark_blue.HCLUT.png" };
 	CHaldLut<float> lutFileF32;
@@ -22,7 +22,7 @@ TEST(Parse_DarkBlue_HCLUT, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_DeepDarkBlue_HCLUT, help_option)
+TEST(ParseHald, Parse_DeepDarkBlue_HCLUT)
 {
 	const std::string lutName{ dbgLutsFolder + "/Deep_dark_blue.HCLUT.png" };
 	CHaldLut<float> lutFileF32;
@@ -31,7 +31,7 @@ TEST(Parse_DeepDarkBlue_HCLUT, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_DesaturationDark_HCLUT, help_option)
+TEST(ParseHald, Parse_DesaturationDark_HCLUT)
 {
 	const std::string lutName{ dbgLutsFolder + "/Desat_dark.HCLUT.png" };
 	CHaldLut<float> lutFileF32;
@@ -40,7 +40,7 @@ TEST(Parse_DesaturationDark_HCLUT, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_DesaturationEdge_HCLUT, help_option)
+TEST(ParseHald, Parse_DesaturationEdge_HCLUT)
 {
 	const std::string lutName{ dbgLutsFolder + "/Desat_edge.HCLUT.png" };
 	CHaldLut<float> lutFileF32;
@@ -49,7 +49,7 @@ TEST(Parse_DesaturationEdge_HCLUT, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Desaturate_HCLUT, help_option)
+TEST(ParseHald, Parse_Desaturate_HCLUT)
 {
 	const std::string lutName{ dbgLutsFolder + "/desaturate.HCLUT.png" };
 	CHaldLut<float> lutFileF32;
@@ -58,7 +58,7 @@ TEST(Parse_Desaturate_HCLUT, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_IdentifyLevel8_HCLUT, help_option)
+TEST(ParseHald, Parse_IdentifyLevel8_HCLUT)
 {
 	const std::string lutName{ dbgLutsFolder + "/Identity_level_8.HCLUT.png" };
 	CHaldLut<float> lutFileF32;
@@ -67,7 +67,7 @@ TEST(Parse_IdentifyLevel8_HCLUT, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_IdentifyLevel16_HCLUT, help_option)
+TEST(ParseHald, Parse_IdentifyLevel16_HCLUT)
 {
 	const std::string lutName{ dbgLutsFolder + "/Identity_level_16.HCLUT.png" };
 	CHaldLut<float> lutFileF32;

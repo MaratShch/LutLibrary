@@ -4,7 +4,7 @@
 const std::string dbgLutsFolder = { CUBE_3D_LUT_FOLDER };
 
 
-TEST (Parse_Tiny_Cube3D_f32, help_option)
+TEST (ParseCube3d, Parse_Tiny_Cube3D_f32)
 {
 	const std::string lutName{ dbgLutsFolder + "/Tiny.cube" };
 	CCubeLut3D<float> lutFileF32;
@@ -14,7 +14,7 @@ TEST (Parse_Tiny_Cube3D_f32, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Tiny_Cube3D_f64, help_option)
+TEST(ParseCube3d, Parse_Tiny_Cube3D_f64)
 {
 	const std::string lutName{ dbgLutsFolder + "/Tiny.cube" };
 	CCubeLut3D<double> lutFileF64;
@@ -24,7 +24,7 @@ TEST(Parse_Tiny_Cube3D_f64, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Tiny_With_Blob_Cube3D_f32, help_option)
+TEST(ParseCube3d, Parse_Tiny_With_Blob_Cube3D_f32)
 {
 	const std::string lutName{ dbgLutsFolder + "/Tiny_with_Blob.cube" };
 	CCubeLut3D<float> lutFileF32;
@@ -34,7 +34,7 @@ TEST(Parse_Tiny_With_Blob_Cube3D_f32, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Tiny_With_Blob_Cube3D_f64, help_option)
+TEST(ParseCube3d, Parse_Tiny_With_Blob_Cube3D_f64)
 {
 	const std::string lutName{ dbgLutsFolder + "/Tiny_with_Blob.cube" };
 	CCubeLut3D<double> lutFileF64;
@@ -45,7 +45,7 @@ TEST(Parse_Tiny_With_Blob_Cube3D_f64, help_option)
 }
 
 
-TEST(Parse_Small25_Cube3D_f32, help_option)
+TEST(ParseCube3d, Parse_Small25_Cube3D_f32)
 {
 	const std::string lutName{ dbgLutsFolder + "/Small25.cube" };
 	CCubeLut3D<float> lutFileF32;
@@ -55,7 +55,7 @@ TEST(Parse_Small25_Cube3D_f32, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Small25_Cube3D_f64, help_option)
+TEST(ParseCube3d, Parse_Small25_Cube3D_f64)
 {
 	const std::string lutName{ dbgLutsFolder + "/Small25.cube" };
 	CCubeLut3D<double> lutFileF64;
@@ -65,7 +65,7 @@ TEST(Parse_Small25_Cube3D_f64, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Small25_With_Blob_Cube3D_f32, help_option)
+TEST(ParseCube3d, Parse_Small25_With_Blob_Cube3D_f32)
 {
 	const std::string lutName{ dbgLutsFolder + "/Small25_with_Blob.cube" };
 	CCubeLut3D<float> lutFileF32;
@@ -75,7 +75,7 @@ TEST(Parse_Small25_With_Blob_Cube3D_f32, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Small25_With_Blob_Cube3D_f64, help_option)
+TEST(ParseCube3d, Parse_Small25_With_Blob_Cube3D_f64)
 {
 	const std::string lutName{ dbgLutsFolder + "/Small25_with_Blob.cube" };
 	CCubeLut3D<double> lutFileF64;
@@ -85,7 +85,7 @@ TEST(Parse_Small25_With_Blob_Cube3D_f64, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Medium_Cube3D_f32, help_option)
+TEST(ParseCube3d, Parse_Medium_Cube3D_f32)
 {
 	const std::string lutName{ dbgLutsFolder + "/Medium.cube" };
 	CCubeLut3D<float> lutFileF32;
@@ -95,7 +95,7 @@ TEST(Parse_Medium_Cube3D_f32, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Medium_Cube3D_f64, help_option)
+TEST(ParseCube3d, Parse_Medium_Cube3D_f64)
 {
 	const std::string lutName{ dbgLutsFolder + "/Medium.cube" };
 	CCubeLut3D<double> lutFileF64;
@@ -105,7 +105,7 @@ TEST(Parse_Medium_Cube3D_f64, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Large_Cube3D_f32, help_option)
+TEST(ParseCube3d, Parse_Large_Cube3D_f32)
 {
 	const std::string lutName{ dbgLutsFolder + "/Large.cube" };
 	CCubeLut3D<float> lutFileF32;
@@ -115,7 +115,7 @@ TEST(Parse_Large_Cube3D_f32, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Large_Cube3D_f64, help_option)
+TEST(ParseCube3d, Parse_Large_Cube3D_f64)
 {
 	const std::string lutName{ dbgLutsFolder + "/Large.cube" };
 	CCubeLut3D<double> lutFileF64;
@@ -125,7 +125,7 @@ TEST(Parse_Large_Cube3D_f64, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Large65_Cube3D_f32, help_option)
+TEST(ParseCube3d, Parse_Large65_Cube3D_f32)
 {
 	const std::string lutName{ dbgLutsFolder + "/Large65.cube" };
 	CCubeLut3D<float> lutFileF32;
@@ -135,7 +135,7 @@ TEST(Parse_Large65_Cube3D_f32, help_option)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Parse_Large65_Cube3D_f64, help_option)
+TEST(ParseCube3d, Parse_Large65_Cube3D_f64)
 {
 	const std::string lutName{ dbgLutsFolder + "/Large65.cube" };
 	CCubeLut3D<double> lutFileF64;

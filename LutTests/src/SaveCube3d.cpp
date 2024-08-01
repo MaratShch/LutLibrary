@@ -4,7 +4,7 @@
 const std::string dbgLutsFolder = { CUBE_3D_LUT_FOLDER };
 
 
-TEST (Parse_Tiny_Cube3D_f32, help_option)
+TEST (SaveCube3d, Parse_Tiny_Cube3D_f32)
 {
 	const std::string lutName{ dbgLutsFolder + "/Tiny.cube" };
 	const std::string savedLutName{ dbgLutsFolder + "/Tiny_saved.cube" };

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include "StreamPointer.h"
 
-TEST (operator_equal, help_option)
+TEST (stream_pointer_operators, operator_equal)
 {
 	constexpr uint64_t zer0 = make_stream_pointer_offset(0u, 0u);
 	constexpr uint64_t offset1 = make_stream_pointer_offset(100u, 7u);
@@ -39,7 +39,7 @@ TEST (operator_equal, help_option)
 }
 
 
-TEST (operator_not_equal, help_option)
+TEST(stream_pointer_operators, operator_not_equal)
 {
 	constexpr uint64_t zer0 = make_stream_pointer_offset(0u, 0u);
 	constexpr uint64_t offset1 = make_stream_pointer_offset(100u, 7u);
@@ -76,7 +76,7 @@ TEST (operator_not_equal, help_option)
 }
 
 
-TEST (operator_plus_plus, help_option)
+TEST(stream_pointer_operators, operator_prefix_plus_plus)
 {
 	CStreamPointer streamA (0u, 7u);
 	CStreamPointer streamB (10u, 0u);
@@ -90,7 +90,7 @@ TEST (operator_plus_plus, help_option)
 }
 
 
-TEST (operator_plus_plus_postfix, help_option)
+TEST(stream_pointer_operators, operator_postfix_plus_plus)
 {
 	CStreamPointer streamA (0u, 7u);
 
@@ -102,7 +102,7 @@ TEST (operator_plus_plus_postfix, help_option)
 }
 
 
-TEST (operator_minus_minus, help_option)
+TEST(stream_pointer_operators, operator_prefix_minus_minus)
 {
 	CStreamPointer streamA (0u, 0u);
 	CStreamPointer streamB (1u, 0u);
@@ -125,7 +125,7 @@ TEST (operator_minus_minus, help_option)
 	return;
 }
 
-TEST (operator_minus_equal, help_option)
+TEST(stream_pointer_operators, operator_minus_equal)
 {
 	constexpr uint64_t zer0 = make_stream_pointer_offset(0u, 0u);
 	constexpr uint64_t offset1 = make_stream_pointer_offset(100u, 7u);
@@ -153,7 +153,7 @@ TEST (operator_minus_equal, help_option)
 }
 
 
-TEST (operator_plus, help_option)
+TEST(stream_pointer_operators, operator_plus)
 {
 	const CStreamPointer streamA (0u, 3u);
 	const CStreamPointer streamB (1u, 0u);
@@ -172,7 +172,7 @@ TEST (operator_plus, help_option)
 }
 
 
-TEST (operator_minus, help_option)
+TEST(stream_pointer_operators, operator_minus)
 {
 	const CStreamPointer streamA (0u, 3u);
 	const CStreamPointer streamB (1u, 0u);
