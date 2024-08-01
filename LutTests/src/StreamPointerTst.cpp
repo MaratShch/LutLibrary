@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include <iostream>
+#include <algorithm>
 #include "StreamPointer.h"
 
 TEST (operator_equal, help_option)
@@ -110,14 +111,14 @@ TEST (operator_minus_minus, help_option)
 	constexpr int32_t loopCnt = 9;
 	for (i = 0; i < loopCnt; i++)
         {
-   	  std::cout << streamA << " prefix -- " << " will be equal to " << --streamA << std::endl; 
+   	      std::cout << streamA << " prefix -- " << " will be equal to " << --streamA << std::endl; 
           EXPECT_EQ(0u, streamA.get());
         }
 
         int32_t idx = 7;
 	for (i = 0; i < loopCnt; i++)
         {
-   	  std::cout << streamB << " prefix -- " << " will be equal to " << --streamB << std::endl; 
+   	      std::cout << streamB << " prefix -- " << " will be equal to " << --streamB << std::endl; 
           EXPECT_EQ(make_stream_pointer_offset(0, std::max(0, idx)), streamB.get());
           idx--;
         }
