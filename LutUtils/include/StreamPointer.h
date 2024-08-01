@@ -123,41 +123,41 @@ public:
 
 	  int compare (const uint64_t& other_sp)  const noexcept
 	  {
-		  const uint64_t current = get();
-		  if (current == other_sp) return 0;
-		  else if (current < other_sp) return -1;
-		  else return 1;
+		const uint64_t current = get();
+		if (current == other_sp) return 0;
+		else if (current < other_sp) return -1;
+		else return 1;
 	  }
 
 	  int compare (const CStreamPointer& other_sp) const noexcept { return compare (other_sp.get()); }
 
 	  inline CStreamPointer& operator += (const uint64_t& other) noexcept
 	  {
-		  auto const bits_sum  = bit  + static_cast<uint32_t>(other & 0x07u);
-		  auto const bytes_sum = byte + static_cast<uint32_t>(other >> 32);
-		  byte = (bytes_sum + bits_sum / 8);
-		  bit  = bits_sum & 0x07u;
-		  return *this;
+		auto const bits_sum  = bit  + static_cast<uint32_t>(other & 0x07u);
+		auto const bytes_sum = byte + static_cast<uint32_t>(other >> 32);
+		byte = (bytes_sum + bits_sum / 8);
+		bit  = bits_sum & 0x07u;
+		return *this;
 	  }
 
 	  inline CStreamPointer& operator += (CStreamPointer other) noexcept
 	  {
-		  auto const bits_sum  = bit  + other.bit;
-		  auto const bytes_sum = byte + other.byte;
-		  byte = (bytes_sum + bits_sum / 8);
-		  bit  = bits_sum & 0x07u;
-		  return *this;
+		auto const bits_sum  = bit  + other.bit;
+		auto const bytes_sum = byte + other.byte;
+		byte = (bytes_sum + bits_sum / 8);
+		bit  = bits_sum & 0x07u;
+		return *this;
 	  }
 
 	  inline CStreamPointer& operator -= (const uint64_t& other) noexcept
 	  {
-                  const int64_t currn_bits_offset = _absolute_bits_offset();
-                  const int64_t other_byte_offset = _absolute_bits_offset(other);
-		  const int64_t tmp_sub = currn_bits_offset - other_byte_offset;
-		  const int64_t sub = (tmp_sub < 0ll ? 0ll : tmp_sub);                  
-                  bit  = static_cast<uint32_t>(sub & 0x07);
-		  byte = static_cast<uint32_t>((sub >> 3) & 0xFFFFFFFF);
-		  return *this;
+        const int64_t currn_bits_offset = _absolute_bits_offset();
+        const int64_t other_byte_offset = _absolute_bits_offset(other);
+		const int64_t tmp_sub = currn_bits_offset - other_byte_offset;
+		const int64_t sub = (tmp_sub < 0ll ? 0ll : tmp_sub);                  
+        bit  = static_cast<uint32_t>(sub & 0x07);
+		byte = static_cast<uint32_t>((sub >> 3) & 0xFFFFFFFF);
+		return *this;
 	  }
 
 	  inline CStreamPointer& operator -= (CStreamPointer other) noexcept
@@ -174,7 +174,7 @@ private:
 
 	constexpr int64_t _absolute_bits_offset (void)                                      const noexcept {return (static_cast<int64_t>(this->byte) << 3) + static_cast<int64_t>(this->bit);}
 	constexpr int64_t _absolute_bits_offset (const uint32_t& byte, const uint32_t& bit) const noexcept {return (static_cast<int64_t>(byte) << 3) + static_cast<int64_t>(bit);}
-        constexpr int64_t _absolute_bits_offset (const uint64_t& offset)                    const noexcept {return ((offset >> 29) | (offset & 0x07u));}
+    constexpr int64_t _absolute_bits_offset (const uint64_t& offset)                    const noexcept {return ((offset >> 29) | (offset & 0x07u));}
 
 /* friends */
 	friend std::ostream& operator << (std::ostream& os, const CStreamPointer& sp)  noexcept { os << sp.byte << "." << sp.bit; return os; }
@@ -203,25 +203,25 @@ private:
 
 	friend inline CStreamPointer operator - (const CStreamPointer& sp1, const CStreamPointer& sp2) noexcept
 	{
-                const int64_t sp1_bits_abs_offset = sp1.absolute_bits_offset();
-                const int64_t sp2_bits_abs_offset = sp2.absolute_bits_offset();
+        const int64_t sp1_bits_abs_offset = sp1.absolute_bits_offset();
+        const int64_t sp2_bits_abs_offset = sp2.absolute_bits_offset();
 		const int64_t tmp_sub = sp1_bits_abs_offset - sp2_bits_abs_offset;
-                const uint64_t newVal = static_cast<const uint64_t>(tmp_sub < 0ll ? 0ll : tmp_sub);
+        const uint64_t newVal = static_cast<const uint64_t>(tmp_sub < 0ll ? 0ll : tmp_sub);
 		return CStreamPointer{static_cast<uint32_t>((newVal >> 3) & 0xFFFFFFFFu), static_cast<uint32_t>(newVal & 0x07u)};
 	}
 
 	friend inline CStreamPointer operator - (const CStreamPointer& sp1, const uint64_t& sp2) noexcept
 	{
-                const int64_t sp1_bits_abs_offset = sp1.absolute_bits_offset();
- 		const int64_t tmp_sub = sp1_bits_abs_offset - static_cast<int64_t>(sp2);
-                const uint64_t newVal = static_cast<const uint64_t>(tmp_sub < 0ll ? 0ll : tmp_sub);
+        const int64_t sp1_bits_abs_offset = sp1.absolute_bits_offset();
+        const int64_t tmp_sub = sp1_bits_abs_offset - static_cast<int64_t>(sp2);
+        const uint64_t newVal = static_cast<const uint64_t>(tmp_sub < 0ll ? 0ll : tmp_sub);
 		return CStreamPointer{static_cast<uint32_t>((newVal >> 3) & 0xFFFFFFFFu), static_cast<uint32_t>(newVal & 0x07u)};
 	}
 
 	friend inline CStreamPointer operator - (const uint64_t& sp1, const CStreamPointer& sp2) noexcept
 	{
-		const int64_t tmp_sub = sp1 - sp2.absolute_bits_offset();
-                const uint64_t newVal = static_cast<const uint64_t>(tmp_sub < 0ll ? 0ll : tmp_sub);
+        const int64_t tmp_sub = sp1 - sp2.absolute_bits_offset();
+        const uint64_t newVal = static_cast<const uint64_t>(tmp_sub < 0ll ? 0ll : tmp_sub);
 		return CStreamPointer{static_cast<uint32_t>((newVal >> 3) & 0xFFFFFFFFu), static_cast<uint32_t>(newVal & 0x07u)};
 	}
 
