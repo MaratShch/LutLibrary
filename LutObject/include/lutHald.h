@@ -5,6 +5,7 @@
 #include "lutErrors.h"
 #include "endian_utils.h"
 #include "crc_utils.h"
+#include "BinTree.h"
 #include "deflate_algo_utils.h"
 #include "string_view.h"
 #include <fstream>
