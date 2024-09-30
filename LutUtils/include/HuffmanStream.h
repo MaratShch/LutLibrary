@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <cstdint>
 
+
 class CHuffmanStream
 {
 
@@ -14,7 +15,7 @@ public:
   pStream = nullptr;
   streamSize = streamOffset = 0ull;
  }
- CHuffmanStream (void* ptr, const size_t& bits_size)
+ CHuffmanStream(const void* ptr, const size_t& bits_size)
  {
    pStream = static_cast<uint8_t*>(ptr);
    streamSize = bits_size;

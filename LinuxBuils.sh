@@ -2,7 +2,7 @@
 
 WORK_DIR=$PWD
 
-CMAKE_BIN=~/cmake-3.28.0-rc2-linux-x86_64/bin/cmake
+CMAKE_BIN=~/cmake-3.30.2-linux-x86_64/bin/cmake
 BUILD_FOLDER=$WORK_DIR/build
 INSTALL_FOLDER=$WORK_DIR/install
 
