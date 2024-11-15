@@ -1,6 +1,8 @@
 #include "CHuffmanBlock.h"
 #include "CHuffmanStream.h"
-#include "IBlockDecoderInterface.h"
+#include "CStatBlockDecoder.h"
+#include "CDynBlockDecoder.h"
+
 
 using namespace HuffmanUtils;
 

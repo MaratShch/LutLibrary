@@ -2,7 +2,7 @@
 #define __HUFFMAN_BLOCK_DEFLATE_ALGO__
 
 #include "CHuffmanStreamPointer.h"
-#include "IBlockDecoderInterface.h"
+#include "IBlockDecoder.h"
 
 namespace HuffmanUtils
 {

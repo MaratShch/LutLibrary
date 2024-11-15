@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 3.25)
 
 project (LutUtils LANGUAGES CXX)
 
+add_subdirectory (HuffmanLib)
+
 add_library (StringView INTERFACE)
 
 target_include_directories (StringView INTERFACE 

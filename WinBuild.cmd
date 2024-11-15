@@ -15,5 +15,5 @@ md %BUILD_FOLDER%
 cd %BUILD_FOLDER%
 
 %CMAKE_BIN% .. -DCMAKE_GENERATOR_PLATFORM=x64 -DLUT_LIB_TESTS=ON
-%CMAKE_BIN% -DCMAKE_INSTALL_PREFIX:PATH=..\install .. && %CMAKE_BIN% --build . --target install --config Release
+%CMAKE_BIN% -DCMAKE_INSTALL_PREFIX:PATH=..\install .. && %CMAKE_BIN% --build . --target install --config Release -j %NUMBER_OF_PROCESSORS%
 cd ..
