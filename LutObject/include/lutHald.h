@@ -5,8 +5,6 @@
 #include "lutErrors.h"
 #include "endian_utils.h"
 #include "crc_utils.h"
-#include "BinTree.h"
-#include "deflate_algo_utils.h"
 #include "string_view.h"
 #include <fstream>
 #include <sstream>
@@ -293,17 +291,7 @@ private:
 			this->idat_save_dbg(ihdrData);
 #endif /* defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT) */
 
-			auto pDeflateDecoder = std::make_unique<CDeflateBasicDecoder>();
-			if (nullptr != pDeflateDecoder)
-			{
-				const std::vector<uint8_t> decoded = pDeflateDecoder->Decode(ihdrData);
-				if (0ul != decoded.size())
-				{
-					/* fill LUT */
-
-					bRet = true;
-				}
-			}
+		
 		}
 		return bRet;
 	}
