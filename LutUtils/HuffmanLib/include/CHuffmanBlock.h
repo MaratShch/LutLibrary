@@ -1,8 +1,12 @@
 #ifndef __HUFFMAN_BLOCK_DEFLATE_ALGO__
 #define __HUFFMAN_BLOCK_DEFLATE_ALGO__
 
+#include <cstdint>
+#include <array>
+#include <cmath>
 #include "CHuffmanStreamPointer.h"
 #include "IBlockDecoder.h"
+
 
 namespace HuffmanUtils
 {
