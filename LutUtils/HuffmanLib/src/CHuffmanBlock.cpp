@@ -47,7 +47,7 @@ void CHuffmanBlock::parse_block_header (CStreamPointer& sp) noexcept
     {
         m_WindowSize = static_cast<uint32_t>(std::pow(2.0, (static_cast<double>(CINFO) + 8.0)));
 
-        m_FCHECK = m_FLG & 0x1Fu;	        // Check bits for CMF and FLG
+        m_FCHECK = m_FLG & 0x1Fu;	    // Check bits for CMF and FLG
         m_FDICT = (m_FLG >> 5) & 0x01u;     // Preset Dictionary
         m_FLEVEL = (m_FLG >> 6) & 0x03u;    // Compression Level
 

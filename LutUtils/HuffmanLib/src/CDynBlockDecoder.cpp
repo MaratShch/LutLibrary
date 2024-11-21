@@ -1,5 +1,6 @@
 #include "CDynBlockDecoder.h"
 #include "CHuffmanStream.h"
+#include "CHuffmanTree.h"
 
 using namespace HuffmanUtils;
 
@@ -18,12 +19,30 @@ void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
         cl4cl[i] = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values
 
     // generate Huffman Code Lengths for Code Legths codes
-    std::vector<std::pair</* code */ uint32_t, /* length */ uint32_t>> cl4clCodes = generate_huffman_codes(cl4cl, m_HCLEN);
+    std::vector<std::pair</* code */ uint32_t, /* length */ uint32_t>> huffmanCodes = generate_huffman_codes(cl4cl, m_HCLEN);
+
+    // re-order Cl4Cl alphabet
+    std::vector<uint32_t> vecCodeLengths(cl4cl_dictionary_idx.size());
+    for (size_t i = 0ull; i < huffmanCodes.size(); i++)
+        vecCodeLengths[cl4cl_dictionary_idx[i]] = huffmanCodes.at(i).second;
+
+    // build Cl4Cl Huffman Tree
+    m_cl4cl_root = buildHuffmanTreeFromLengths (vecCodeLengths);
+#ifdef _DEBUG
+    std::cout << "m_cl4cl_root:" << std::endl;
+    printHuffmanTree(m_cl4cl_root);
+#endif
+
+    return;
 }
 
 
 CStreamPointer CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
 {
+    // cleanup output vector
+    out.clear();
+
+    // Initialize and Build all Huffman Dynamic Decoder Infrastructures (Cl4Cl, Huffman trees, etc...)
     pre_decode(in, sp);
 
   return sp;
