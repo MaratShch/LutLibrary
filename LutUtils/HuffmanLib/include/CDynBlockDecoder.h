@@ -10,6 +10,8 @@ namespace HuffmanUtils
     class CDynBlockDecoder : public IBlockDecoder
     {
        public:
+           virtual ~CDynBlockDecoder(void);
+
            CStreamPointer decode (const uint8_t* in, uint8_t* out, size_t outSstorageSize, CStreamPointer& inSp);
            CStreamPointer decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& inSp);
            uint8_t get_decoder_type(void) { return 0x02u; }
@@ -37,6 +39,8 @@ namespace HuffmanUtils
            uint32_t get_HDIST(const std::vector<uint8_t>& in, CStreamPointer& sp);
 
            void pre_decode (const std::vector<uint8_t>& in, CStreamPointer& sp);
+           void build_literal_tree (const std::vector<uint8_t>& in, CStreamPointer& sp);
+           void build_distance_tree(const std::vector<uint8_t>& in, CStreamPointer& sp);
 
     }; // class CDynBlockDecoder : public IBlockDecoder
 	

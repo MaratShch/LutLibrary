@@ -100,6 +100,25 @@ namespace HuffmanUtils
         return;
     }
 
+
+    // Recursive cleanup function
+    template <typename T>
+    void deleteTree (std::shared_ptr<Node<T>>& node)
+    {
+        if (!node) return;
+
+        // Post-order traversal: clean left, right, then the current node
+        deleteTree(node->left);
+        deleteTree(node->right);
+
+        // Explicitly reset the current node's children
+        node->left.reset();
+        node->right.reset();
+
+        // Finally reset the current node itself
+        node.reset();
+    }
+
 };
 
 

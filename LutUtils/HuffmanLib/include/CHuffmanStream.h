@@ -3,7 +3,9 @@
 
 #include <vector>
 #include <utility>
+#include <memory>
 #include "CHuffmanStreamPointer.h"
+#include "CHuffmanTree.h"
 
 namespace HuffmanUtils
 {
@@ -32,6 +34,29 @@ namespace HuffmanUtils
             streamOffset++;
         }
         return value;
+    }
+
+    // Read Huffman Codes from Huffman stream. Stream pointer will be automatically incremented
+    template <typename T>
+    inline const std::shared_ptr<Node<T>> readHuffmanBits
+    (
+        const std::vector<uint8_t>& stream,     // input Huffman Stream 
+        CStreamPointer& streamOffset,           // stream pointer (bits offset) 
+        const std::shared_ptr<Node<T>>& node    // tree for traversing and stop read when code will be find
+    )
+    {
+        std::shared_ptr<Node<T>> huffmanNode = node;
+        uint32_t huffmanCode = 0u;
+        uint32_t position = 0u;
+
+        do {
+            const uint32_t huffmanBit = readBit(stream, streamOffset);;
+            (huffmanCode <<= position) |= huffmanBit;
+            streamOffset++, position++;
+            huffmanNode = ((0u == huffmanBit) ? huffmanNode->left : huffmanNode->right);
+        } while (nullptr != huffmanNode->left || nullptr != huffmanNode->right);
+
+        return huffmanNode;
     }
 
 }; // namespace HuffmanUtils
