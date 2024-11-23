@@ -25,7 +25,7 @@ CDynBlockDecoder::~CDynBlockDecoder(void)
 
 
 // Build Literal tree based on the Cl4Cl4
-void CDynBlockDecoder::build_literal_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
+void CDynBlockDecoder::build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
 {
     std::vector<uint32_t> litLens(m_HLIT, 0);
     uint32_t lastCode = 0u;
@@ -41,14 +41,17 @@ void CDynBlockDecoder::build_literal_tree (const std::vector<uint8_t>& in, CStre
             case 16:
             {
                 constexpr uint32_t extraBits = 2u;
+                const uint32_t repeatCount = 3u + readBits (in, sp, extraBits) - 1u;
+                std::fill (litLens.begin() + i, litLens.begin() + i + repeatCount, lastCode);
+                i += repeatCount;
             }
             break;
 
             case 17:
             {
                 constexpr uint32_t extraBits = 3u;
-                const uint32_t zeroCount = 3u + readBits (in, sp, extraBits);
-                std::fill (litLens.begin() + i, litLens.begin() + i + zeroCount - 1u, 0u);
+                const uint32_t zeroCount = 3u + readBits (in, sp, extraBits) - 1u;
+                std::fill (litLens.begin() + i, litLens.begin() + i + zeroCount, 0u);
                 i += zeroCount;
             }
             break;
@@ -56,8 +59,8 @@ void CDynBlockDecoder::build_literal_tree (const std::vector<uint8_t>& in, CStre
             case 18:
             {
                 constexpr uint32_t extraBits = 7u;
-                const uint32_t zeroCount = 11u + readBits (in, sp, extraBits);
-                std::fill (litLens.begin() + i, litLens.begin() + i + zeroCount - 1u, 0u);
+                const uint32_t zeroCount = 11u + readBits (in, sp, extraBits) - 1u;
+                std::fill (litLens.begin() + i, litLens.begin() + i + zeroCount, 0u);
                 i += zeroCount;
             }
             break;
@@ -70,7 +73,19 @@ void CDynBlockDecoder::build_literal_tree (const std::vector<uint8_t>& in, CStre
 
     // build Literal and Distance Codes Lengths Huffman Tree
     m_cl_root = buildHuffmanTreeFromLengths (litLens);
+#ifdef _DEBUG
+    std::cout << "m_cl_root tree [size = " << computeTreeSize<uint32_t>(m_cl_root) << " leaves]:" << std::endl;
+    printHuffmanTree(m_cl_root);
+    std::cout << std::endl;
+#endif
 
+    return;
+}
+
+
+// Build Distance tree based on the Cl4Cl4
+void CDynBlockDecoder::build_literal_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
+{
     return;
 }
 
@@ -78,12 +93,6 @@ void CDynBlockDecoder::build_literal_tree (const std::vector<uint8_t>& in, CStre
 // Build Distance tree based on the Cl4Cl4
 void CDynBlockDecoder::build_distance_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
 {
-    // Build Literal and Distance Code Lengths Tree from Code Lengths for Code Lengths Tree
-    for (uint32_t i = 0u; i < m_HDIST; i++)
-    {
-
-    }
-
     return;
 }
 
@@ -112,12 +121,18 @@ void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
     // build Cl4Cl Huffman Tree
     m_cl4cl_root = buildHuffmanTreeFromLengths (vecCodeLengths);
 #ifdef _DEBUG
-    std::cout << "m_cl4cl_root:" << std::endl;
+    std::cout << "m_cl4cl_root tree [size = " << computeTreeSize<uint32_t>(m_cl4cl_root) << " leaves]:" << std::endl;
     printHuffmanTree(m_cl4cl_root);
     std::cout << std::endl;
 #endif
 
+    // build Code Lengts Tree
+    build_code_lenghts_tree(in, sp);
+
+    // build Literal Codes Tree
     build_literal_tree(in, sp);
+
+    // build Disatnce Codes Tree
     build_distance_tree(in, sp);
 
     return;

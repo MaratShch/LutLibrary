@@ -119,6 +119,26 @@ namespace HuffmanUtils
         node.reset();
     }
 
+
+    // Function to compute the size (number of leaves) in the tree
+    template <typename T>
+    size_t computeTreeSize (const std::shared_ptr<Node<T>>& root)
+    {
+        if (!root)
+        {
+            return 0; // No nodes in an empty tree
+        }
+
+        // If it's a leaf node (no children), count it
+        if (!root->left && !root->right)
+        {
+            return 1;
+        }
+
+        // Otherwise, count leaves in the left and right subtrees
+        return computeTreeSize(root->left) + computeTreeSize(root->right);
+    }
+
 };
 
 

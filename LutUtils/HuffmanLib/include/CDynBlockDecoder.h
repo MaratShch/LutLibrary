@@ -39,7 +39,8 @@ namespace HuffmanUtils
            uint32_t get_HDIST(const std::vector<uint8_t>& in, CStreamPointer& sp);
 
            void pre_decode (const std::vector<uint8_t>& in, CStreamPointer& sp);
-           void build_literal_tree (const std::vector<uint8_t>& in, CStreamPointer& sp);
+           void build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp);
+           void build_literal_tree(const std::vector<uint8_t>& in, CStreamPointer& sp);
            void build_distance_tree(const std::vector<uint8_t>& in, CStreamPointer& sp);
 
     }; // class CDynBlockDecoder : public IBlockDecoder
