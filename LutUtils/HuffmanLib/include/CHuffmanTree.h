@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <bitset>
+#include <iostream>
 
 namespace HuffmanUtils
 {
@@ -83,7 +84,10 @@ namespace HuffmanUtils
     {
         if (!node->left && !node->right)
         {
-            std::cout << "Symbol: " << node->symbol << ", Code: " << prefix << std::endl;
+            if (node->symbol <= 255 && node->symbol >= 33)
+               std::cout << "Symbol: \'" << static_cast<char>(node->symbol) << "\' ASCII value = " << node->symbol << ", Code: " << prefix << std::endl;
+            else
+               std::cout << "Symbol: " << node->symbol << ", Code: " << prefix << std::endl;
         }
         else
         {

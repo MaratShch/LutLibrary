@@ -3,17 +3,10 @@
 
 #include "IBlockDecoder.h"
 #include "CHuffmanTree.h"
-#include <array>
+#include "CHuffmanStreamPointer.h"
 
 namespace HuffmanUtils
 {
-    // Alpahabet for build Code Lenghts For Code Lengths Tree
-    constexpr std::array<uint32_t, 19> cl4cl_dictionary_idx =
-    {
-        // https://datatracker.ietf.org/doc/html/rfc1951
-        16u, 17u, 18u, 0u, 8u, 7u, 9u, 6u, 10u, 5u, 11u, 4u, 12u, 3u, 13u, 2u, 14u, 1u, 15u
-    };
-
 
     class CDynBlockDecoder : public IBlockDecoder
     {
@@ -38,9 +31,11 @@ namespace HuffmanUtils
            uint32_t get_HCLEN(const std::vector<uint8_t>& in, CStreamPointer& sp);
            uint32_t get_HDIST(const std::vector<uint8_t>& in, CStreamPointer& sp);
 
-           void pre_decode (const std::vector<uint8_t>& in, CStreamPointer& sp);
-           void build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp);
-           void build_distance_tree(const std::vector<uint8_t>& in, CStreamPointer& sp);
+           void pre_decode (const std::vector<uint8_t>& in, CStreamPointer& sp); // initialize Dynamic Huffman Decoder infrastruture
+           void build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp); // build Literal Tree
+           void build_distance_tree(const std::vector<uint8_t>& in, CStreamPointer& sp); // build Distance Tree
+
+           std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree (const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize);
 
     }; // class CDynBlockDecoder : public IBlockDecoder
 	

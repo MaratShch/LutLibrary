@@ -1,6 +1,8 @@
+#include "CDecoderConstants.h"
 #include "CDynBlockDecoder.h"
 #include "CHuffmanStream.h"
 #include "CHuffmanTree.h"
+
 
 using namespace HuffmanUtils;
 
@@ -21,25 +23,23 @@ CDynBlockDecoder::~CDynBlockDecoder(void)
 }
 
 
-// Build Literal tree based on the Cl4Cl4
-void CDynBlockDecoder::build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
+std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize)
 {
-    std::vector<uint32_t> litLens(m_HLIT, 0);
+    std::vector<uint32_t> tmpVector(treeSize, 0);
     uint32_t lastCode = 0u;
 
-    // Build Literal and Distance Code Lengths Tree from Code Lengths for Code Lengths Tree
-    for (uint32_t i = 0u; i < m_HLIT; i++)
+    for (uint32_t i = 0u; i < treeSize; /* i incremented inside of loop */)
     {
         // read Huffman Codes from stream with parallel traversing of the Cl4Cl tree
-        const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t> (in, sp, m_cl4cl_root);
+        const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t>(in, sp, m_cl4cl_root);
 
         switch (hTreeLeaf->symbol)
         {
             case 16: // repeat code
             {
                 constexpr uint32_t extraBits = 2u;
-                const uint32_t repeatCount = 3u + readBits (in, sp, extraBits) - 1u;
-                std::fill (litLens.begin() + i, litLens.begin() + i + repeatCount, lastCode);
+                const uint32_t repeatCount = 3u + readBits(in, sp, extraBits);
+                std::fill(tmpVector.begin() + i, tmpVector.begin() + i + repeatCount - 1u, lastCode);
                 i += repeatCount;
             }
             break;
@@ -47,8 +47,8 @@ void CDynBlockDecoder::build_code_lenghts_tree (const std::vector<uint8_t>& in, 
             case 17: // zero code
             {
                 constexpr uint32_t extraBits = 3u;
-                const uint32_t zeroCount = 3u + readBits (in, sp, extraBits) - 1u;
-                std::fill (litLens.begin() + i, litLens.begin() + i + zeroCount, 0u);
+                const uint32_t zeroCount = 3u + readBits(in, sp, extraBits);
+                std::fill(tmpVector.begin() + i, tmpVector.begin() + i + zeroCount - 1u, 0u);
                 i += zeroCount;
             }
             break;
@@ -56,26 +56,27 @@ void CDynBlockDecoder::build_code_lenghts_tree (const std::vector<uint8_t>& in, 
             case 18: // zero code
             {
                 constexpr uint32_t extraBits = 7u;
-                const uint32_t zeroCount = 11u + readBits (in, sp, extraBits) - 1u;
-                std::fill (litLens.begin() + i, litLens.begin() + i + zeroCount, 0u);
+                const uint32_t zeroCount = 11u + readBits(in, sp, extraBits);
+                std::fill(tmpVector.begin() + i, tmpVector.begin() + i + zeroCount - 1u, 0u);
                 i += zeroCount;
             }
             break;
 
             default: // rest of literal and distance codes
-                litLens[i] = lastCode = hTreeLeaf->symbol;
+                tmpVector[i] = lastCode = hTreeLeaf->symbol;
+                i++;
             break;
         }
     }
 
-    // build Literal Tree (Huffman alphabet)
-    m_literal_root = buildHuffmanTreeFromLengths<uint32_t>(litLens);
-#ifdef _DEBUG
-    std::cout << "m_literal_root tree [size = " << computeTreeSize<uint32_t>(m_literal_root) << " leaves]:" << std::endl;
-    printHuffmanTree(m_literal_root);
-    std::cout << std::endl;
-#endif
+    return buildHuffmanTreeFromLengths<uint32_t>(tmpVector);
+}
 
+
+// Build Literal tree based on the Cl4Cl4
+void CDynBlockDecoder::build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
+{
+    m_literal_root = build_huffman_tree (in, sp, m_HLIT);
     return;
 }
 
@@ -83,8 +84,10 @@ void CDynBlockDecoder::build_code_lenghts_tree (const std::vector<uint8_t>& in, 
 // Build Distance tree based on the Cl4Cl4
 void CDynBlockDecoder::build_distance_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
 {
+    m_distance_root = build_huffman_tree (in, sp, m_HDIST);
     return;
 }
+
 
 // Parse Huffman stream, get HLIT, HDIST and HCLEN values, build Cl4Cl tree
 void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointer& sp)
@@ -96,10 +99,12 @@ void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
     // read Codel Lengths forCode Lengths (stream pointer incremented internally)
     m_HCLEN = get_HCLEN(in, sp);
 
+    std::cout << std::endl;
+
     std::vector<uint32_t> cl4cl(m_HCLEN, 0u); // prepare storage for read from Huffman stream Code Lengths for Code Lengths alphabet
     for (uint32_t i = 0u; i < m_HCLEN; i++)
         cl4cl[i] = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values
-
+ 
     // generate Huffman Code Lengths for Code Legths codes
     std::vector<std::pair</* code */ uint32_t, /* length */ uint32_t>> huffmanCodes = generate_huffman_codes(cl4cl, m_HCLEN);
 
@@ -110,11 +115,6 @@ void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
 
     // build Cl4Cl Huffman Tree
     m_cl4cl_root = buildHuffmanTreeFromLengths (vecCodeLengths);
-#ifdef _DEBUG
-    std::cout << "m_cl4cl_root tree [size = " << computeTreeSize<uint32_t>(m_cl4cl_root) << " leaves]:" << std::endl;
-    printHuffmanTree(m_cl4cl_root);
-    std::cout << std::endl;
-#endif
 
     // build Code Lengts and Literal Tree
     build_code_lenghts_tree(in, sp);
@@ -133,6 +133,18 @@ CStreamPointer CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::ve
 
     // Initialize and Build all Huffman Dynamic Decoder Infrastructures (Cl4Cl, Huffman trees, etc...)
     pre_decode(in, sp);
+
+    bool EndOfBlock = false;
+
+    do {
+        const std::shared_ptr<Node<uint32_t>> hLiteraLeaf = readHuffmanBits<uint32_t>(in, sp, m_literal_root);
+        const uint32_t letter = hLiteraLeaf->symbol;
+        if (letter > 255)
+            EndOfBlock = true, std::cout << "Distance code " << letter << " detected. SP = " << sp << std::endl;
+        else
+            std::cout << "First character \'" << static_cast<char>(letter) << "\' decoded. SP = " << sp << std::endl;
+    } while (EndOfBlock == false);
+
 
   return sp;
 }
