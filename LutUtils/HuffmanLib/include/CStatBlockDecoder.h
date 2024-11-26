@@ -9,7 +9,6 @@ namespace HuffmanUtils
     class CStatBlockDecoder : public IBlockDecoder
     {
        public:
-           CStreamPointer decode (const uint8_t* in, uint8_t* out, size_t outSstorageSize, CStreamPointer& inSp);
            CStreamPointer decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& inSp);
            uint8_t get_decoder_type(void) { return 0x01u; }
 

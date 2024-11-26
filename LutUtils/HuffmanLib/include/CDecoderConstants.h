@@ -9,6 +9,8 @@
 
 namespace HuffmanUtils
 {
+    constexpr uint32_t EndOfBlock = 256u;
+
     // Alpahabet for build Code Lenghts For Code Lengths Tree
     constexpr std::array<uint32_t, 19> cl4cl_dictionary_idx =
     {
@@ -16,7 +18,7 @@ namespace HuffmanUtils
         16u, 17u, 18u, 0u, 8u, 7u, 9u, 6u, 10u, 5u, 11u, 4u, 12u, 3u, 13u, 2u, 14u, 1u, 15u
     };
 
-    using DistanceTable = std::tuple<uint32_t, uint32_t, uint32_t>;
+    using DistanceTable = std::tuple<uint32_t /* code */, uint32_t /* extra bits */, uint32_t /* base length */>;
 
     constexpr std::array<DistanceTable, 29> cLengthCodes = 
     {{    // rfc1951
@@ -55,7 +57,8 @@ namespace HuffmanUtils
     constexpr uint32_t cLengthGetBaseLen (const uint32_t& idx) {return std::get<2>(cLengthCodes[idx]);}
 
     constexpr size_t   cLengthCodesSize = cLengthCodes.size();
-    constexpr uint32_t cLengthCodesMin  = cLengthGetCode(0);
+    constexpr uint32_t cLengthCodesMin  = cLengthGetCode(0u);
+    constexpr uint32_t cLengthCodesMax  = cLengthGetCode(28u);
 
 
     constexpr std::array<DistanceTable, 30> cDistanceCodes = 

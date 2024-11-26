@@ -22,6 +22,7 @@ IBlockDecoder* CHuffmanBlock::create_decoder (const uint32_t& BTYPE)
         break;
 
         default:    // broken stream - nothing to do
+            iDecoder = nullptr;
         break;
     }
 
@@ -47,8 +48,8 @@ void CHuffmanBlock::parse_block_header (CStreamPointer& sp) noexcept
     {
         m_WindowSize = static_cast<uint32_t>(std::pow(2.0, (static_cast<double>(CINFO) + 8.0)));
 
-        m_FCHECK = m_FLG & 0x1Fu;	    // Check bits for CMF and FLG
-        m_FDICT = (m_FLG >> 5) & 0x01u;     // Preset Dictionary
+        m_FCHECK = m_FLG & 0x1Fu;	        // Check bits for CMF and FLG
+        m_FDICT  = (m_FLG >> 5) & 0x01u;    // Preset Dictionary
         m_FLEVEL = (m_FLG >> 6) & 0x03u;    // Compression Level
 
         const uint32_t huffmanBlockHeader = readBits(m_BlockData, m_Sp, 3u);

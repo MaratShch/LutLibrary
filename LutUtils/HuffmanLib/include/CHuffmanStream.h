@@ -13,7 +13,7 @@ namespace HuffmanUtils
     std::vector<std::pair<uint32_t, uint32_t>> generate_huffman_codes (const std::vector<uint32_t>& code_lengths, int32_t num_symbols);
 
     // Read bit from specific position pointed by Stream Pointer.
-    // Pay attention! This function isn't modfify Stream Pointer after read.
+    // Pay attention! This function isn't modify Stream Pointer after read.
     inline uint32_t readBit (const std::vector<uint8_t>& stream, const CStreamPointer& streamOffset) 
     {
 #ifdef _DEBUG
@@ -41,8 +41,8 @@ namespace HuffmanUtils
     inline const std::shared_ptr<Node<T>> readHuffmanBits
     (
         const std::vector<uint8_t>& stream,     // input Huffman Stream 
-        CStreamPointer& streamOffset,           // stream pointer (bits offset) 
-        const std::shared_ptr<Node<T>>& node    // tree for traversing and stop read when code will be find
+        CStreamPointer& streamOffset,           // stream pointer (bits offset), value incremented internally 
+        const std::shared_ptr<Node<T>>& node    // Huffman Tree for traversing and stop read when code will be find
     )
     {
         std::shared_ptr<Node<T>> huffmanNode = node;

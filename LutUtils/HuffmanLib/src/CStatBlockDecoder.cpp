@@ -9,7 +9,3 @@ CStreamPointer CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::v
   return sp;
 }
 
-CStreamPointer CStatBlockDecoder::decode (const uint8_t* in, uint8_t* out, size_t outSstorageSize, CStreamPointer& inSp)
-{
-    return{ 0 };
-}

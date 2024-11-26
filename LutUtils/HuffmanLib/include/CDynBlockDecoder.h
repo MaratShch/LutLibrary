@@ -13,7 +13,6 @@ namespace HuffmanUtils
        public:
            virtual ~CDynBlockDecoder(void);
 
-           CStreamPointer decode (const uint8_t* in, uint8_t* out, size_t outSstorageSize, CStreamPointer& inSp);
            CStreamPointer decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& inSp);
            uint8_t get_decoder_type(void) { return 0x02u; }
 
@@ -36,6 +35,8 @@ namespace HuffmanUtils
            void build_distance_tree(const std::vector<uint8_t>& in, CStreamPointer& sp); // build Distance Tree
 
            std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree (const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize);
+           //const std::pair<uint32_t, uint32_t> process_distance_sequence (const std::vector<uint8_t>& in, CStreamPointer& sp, const uint32_t& distanceCode);
+
 
     }; // class CDynBlockDecoder : public IBlockDecoder
 	

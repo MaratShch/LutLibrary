@@ -2,7 +2,7 @@
 #include "CDynBlockDecoder.h"
 #include "CHuffmanStream.h"
 #include "CHuffmanTree.h"
-
+#include <cassert>
 
 using namespace HuffmanUtils;
 
@@ -99,8 +99,6 @@ void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
     // read Codel Lengths forCode Lengths (stream pointer incremented internally)
     m_HCLEN = get_HCLEN(in, sp);
 
-    std::cout << std::endl;
-
     std::vector<uint32_t> cl4cl(m_HCLEN, 0u); // prepare storage for read from Huffman stream Code Lengths for Code Lengths alphabet
     for (uint32_t i = 0u; i < m_HCLEN; i++)
         cl4cl[i] = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values
@@ -125,6 +123,25 @@ void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
     return;
 }
 
+#if 0
+const std::pair<uint32_t, uint32_t> CDynBlockDecoder::process_distance_sequence (const std::vector<uint8_t>& in, CStreamPointer& sp, const uint32_t& distanceCode)
+{
+    // get Length information
+    const uint32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
+    const uint32_t extraBitsInLen  = cLengthGetExtra  (LengtCodeArrayIdx);
+    const uint32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
+    const uint32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0u);
+
+    const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
+    const uint32_t DistanceCodeArrayIdx = hTreeLeaf->symbol - cDistanceCodesMin;
+    const uint32_t extraBitsInDist = cDistanceGetExtra (DistanceCodeArrayIdx);
+    const uint32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
+    const uint32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? readBits(in, sp, extraBitsInDist) : 0u);
+
+    return { finalLength , finalDistance };
+}
+#endif
+
 
 CStreamPointer CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
 {
@@ -134,24 +151,54 @@ CStreamPointer CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::ve
     // Initialize and Build all Huffman Dynamic Decoder Infrastructures (Cl4Cl, Huffman trees, etc...)
     pre_decode(in, sp);
 
-    bool EndOfBlock = false;
+    uint32_t symbol = 0u;
 
     do {
         const std::shared_ptr<Node<uint32_t>> hLiteraLeaf = readHuffmanBits<uint32_t>(in, sp, m_literal_root);
-        const uint32_t letter = hLiteraLeaf->symbol;
-        if (letter > 255)
-            EndOfBlock = true, std::cout << "Distance code " << letter << " detected. SP = " << sp << std::endl;
-        else
-            std::cout << "First character \'" << static_cast<char>(letter) << "\' decoded. SP = " << sp << std::endl;
-    } while (EndOfBlock == false);
+        symbol = hLiteraLeaf->symbol;
+
+        if (symbol <= 255u)
+            out.push_back(static_cast<uint8_t>(hLiteraLeaf->symbol));
+        else if (symbol >= cLengthCodesMin && symbol <= cLengthCodesMax)
+        {
+            auto process_distance_sequence = [this]
+            (
+                const std::vector<uint8_t>& in,
+                CStreamPointer& sp,
+                const uint32_t& distanceCode  
+            )
+            {
+                // Get Length information
+                const uint32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
+                const uint32_t extraBitsInLen = cLengthGetExtra (LengtCodeArrayIdx);
+                const uint32_t baseLength = cLengthGetBaseLen (LengtCodeArrayIdx);
+                const uint32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0u);
+
+                // Read distance code
+                const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
+                const uint32_t DistanceCodeArrayIdx = hTreeLeaf->symbol - cDistanceCodesMin;
+                const uint32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
+                const uint32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
+                const uint32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? readBits(in, sp, extraBitsInDist) : 0u);
+
+                return std::make_pair(finalLength, finalDistance);
+            };
+
+            const std::pair<uint32_t, uint32_t> pair_distance = process_distance_sequence (in, sp, symbol);
+            auto const& size = pair_distance.first;
+            auto const& distance = pair_distance.second;
+            auto const& outVectorSize = out.size();
+            auto const pre = outVectorSize - distance;
+
+            for (uint32_t i = 0; i < size; i++)
+                out.push_back(out[pre + i]);
+ 
+        }
+
+    } while (symbol != EndOfBlock);
 
 
   return sp;
-}
-
-CStreamPointer CDynBlockDecoder::decode (const uint8_t* in, uint8_t* out, size_t outSstorageSize, CStreamPointer& inSp)
-{
-    return{ 0 };
 }
 
 uint32_t CDynBlockDecoder::get_HLIT (const std::vector<uint8_t>& in, CStreamPointer& sp)

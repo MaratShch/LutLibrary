@@ -13,7 +13,6 @@ namespace HuffmanUtils
     class IBlockDecoder
     {
        public:
-           virtual CStreamPointer decode (const uint8_t* in, uint8_t* out, size_t outSstorageSize, CStreamPointer& inSp) = 0;
            virtual CStreamPointer decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& inSp) = 0;
            virtual uint8_t get_decoder_type(void) = 0;
 
