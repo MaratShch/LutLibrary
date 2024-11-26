@@ -68,6 +68,10 @@ namespace HuffmanUtils
  
           const int compare (const CStreamPointer& other_sp) const noexcept {return compare (other_sp.m_StreamPointer);}  
 
+       // alignment 
+          void align2byte (void) noexcept { (m_StreamPointer += 7ll) &= 0x7FFFFFFFFFFFFFF8; }
+
+
        // Typecast operators overloading to convert the object to an int64_t and uint64_t
           constexpr operator int64_t () const noexcept {return m_StreamPointer;}
           constexpr operator uint64_t() const noexcept {return static_cast<uint64_t>(m_StreamPointer);}
@@ -123,7 +127,6 @@ namespace HuffmanUtils
              const int64_t diff = static_cast<int64_t>(sp1) - sp2.m_StreamPointer;
              return CStreamPointer (diff > 0ll ? diff : 0ll);
           }
-
 
        // out stream operator
   	      friend std::ostream& operator << (std::ostream& os, const CStreamPointer& sp) noexcept { os << (sp.byte()) << "." << (sp.bit()); return os; }

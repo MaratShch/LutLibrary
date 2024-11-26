@@ -121,8 +121,9 @@ CHuffmanBlock::~CHuffmanBlock()
 
 std::vector<uint8_t> CHuffmanBlock::DecodeBlock(void)
 {
+    bool integrity = false;
     std::vector<uint8_t> decodedData;
     if (true == m_isValid)
-        m_iBlockDecoder->decode (m_BlockData, decodedData, m_Sp);
+        integrity = m_iBlockDecoder->decode (m_BlockData, decodedData, m_Sp);
     return decodedData;
 }

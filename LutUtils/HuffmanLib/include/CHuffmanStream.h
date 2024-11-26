@@ -59,6 +59,22 @@ namespace HuffmanUtils
         return huffmanNode;
     }
 
+
+    inline uint32_t computeAdler32 (const std::vector<uint8_t> data)
+    {
+        uint32_t A = 1u; // A starts with 1
+        uint32_t B = 0u; // B starts with 0
+        constexpr uint32_t MOD_ADLER = 65521u;
+        const size_t length = data.size();
+
+        for (size_t i = 0ull; i < length; i++) {
+            A = (A + data[i]) % MOD_ADLER;
+            B = (B + A) % MOD_ADLER;
+        }
+
+        return (B << 16) | A; // Combine B (high) and A (low) into a 32-bit checksum
+    }
+
 }; // namespace HuffmanUtils
 
 #endif // __HUFFMAN_STREAM_API_DEFINITION__

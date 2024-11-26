@@ -123,28 +123,12 @@ void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
     return;
 }
 
-#if 0
-const std::pair<uint32_t, uint32_t> CDynBlockDecoder::process_distance_sequence (const std::vector<uint8_t>& in, CStreamPointer& sp, const uint32_t& distanceCode)
+
+bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
 {
-    // get Length information
-    const uint32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
-    const uint32_t extraBitsInLen  = cLengthGetExtra  (LengtCodeArrayIdx);
-    const uint32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
-    const uint32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0u);
+    // reset deocder integrity status
+    m_decoderIntegrityStatus = false;
 
-    const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
-    const uint32_t DistanceCodeArrayIdx = hTreeLeaf->symbol - cDistanceCodesMin;
-    const uint32_t extraBitsInDist = cDistanceGetExtra (DistanceCodeArrayIdx);
-    const uint32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
-    const uint32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? readBits(in, sp, extraBitsInDist) : 0u);
-
-    return { finalLength , finalDistance };
-}
-#endif
-
-
-CStreamPointer CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
-{
     // cleanup output vector
     out.clear();
 
@@ -197,8 +181,23 @@ CStreamPointer CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::ve
 
     } while (symbol != EndOfBlock);
 
+    auto convertEndian = [](uint32_t value) -> uint32_t
+    {
+        return ((value >> 24) & 0x000000FF) | // Move byte 3 to byte 0
+            ((value >> 8) & 0x0000FF00) | // Move byte 2 to byte 1
+            ((value << 8) & 0x00FF0000) | // Move byte 1 to byte 2
+            ((value << 24) & 0xFF000000);  // Move byte 0 to byte 3
+    };
 
-  return sp;
+    sp.align2byte(); // Skip any remaining padding bits until the byte boundary is reached
+    // integirty check: read ADLER-32 checksum
+    const uint32_t adler32Expected = convertEndian(readBits(in, sp, 32u));
+    // integirty check: compute ADLER-32 checksum
+    const uint32_t adler32Computed = computeAdler32(out);
+    // validate checksums
+    m_decoderIntegrityStatus = (adler32Expected == adler32Computed);
+
+  return m_decoderIntegrityStatus;
 }
 
 uint32_t CDynBlockDecoder::get_HLIT (const std::vector<uint8_t>& in, CStreamPointer& sp)
