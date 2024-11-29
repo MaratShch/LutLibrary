@@ -184,9 +184,9 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
     auto convertEndian = [](uint32_t value) -> uint32_t
     {
         return ((value >> 24) & 0x000000FF) | // Move byte 3 to byte 0
-            ((value >> 8) & 0x0000FF00) | // Move byte 2 to byte 1
-            ((value << 8) & 0x00FF0000) | // Move byte 1 to byte 2
-            ((value << 24) & 0xFF000000);  // Move byte 0 to byte 3
+               ((value >> 8 ) & 0x0000FF00) | // Move byte 2 to byte 1
+               ((value << 8 ) & 0x00FF0000) | // Move byte 1 to byte 2
+               ((value << 24) & 0xFF000000);  // Move byte 0 to byte 3
     };
 
     sp.align2byte(); // Skip any remaining padding bits until the byte boundary is reached

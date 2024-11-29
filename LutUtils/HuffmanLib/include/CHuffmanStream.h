@@ -60,6 +60,38 @@ namespace HuffmanUtils
     }
 
 
+    inline uint32_t readStaticHuffmanBits
+    (
+        const std::vector<uint8_t>& stream, // input Huffman Stream 
+        CStreamPointer& streamOffset,       // stream pointer (bits offset), value incremented internally
+        uint32_t bits                       // size of Huffman static code for read
+    )
+    {
+        uint32_t huffmanCode = 0u;
+        uint32_t shft = 0u;
+        for (uint32_t i = 0u; i < bits; i++)
+        {
+            const uint32_t huffmanBit = readBit(stream, streamOffset);
+            (huffmanCode <<= shft) |= huffmanBit;
+            shft = 1u;
+            streamOffset++;
+        }
+        return huffmanCode;
+    }
+
+    inline uint32_t readComplementarStaticHuffmanBits
+    (
+        const std::vector<uint8_t>& stream, // input Huffman Stream 
+        CStreamPointer& streamOffset,       // stream pointer (bits offset), value incremented internally
+        uint32_t code                       // size of Huffman static code for read
+    )
+    {
+        const uint32_t huffmanCode = (code << 1) | readBit(stream, streamOffset);
+        streamOffset++;
+        return huffmanCode;
+    }
+
+
     inline uint32_t computeAdler32 (const std::vector<uint8_t> data)
     {
         uint32_t A = 1u; // A starts with 1
@@ -67,8 +99,8 @@ namespace HuffmanUtils
         constexpr uint32_t MOD_ADLER = 65521u;
         const size_t length = data.size();
 
-        for (size_t i = 0ull; i < length; i++) {
-            A = (A + data[i]) % MOD_ADLER;
+        for (const auto& element : data) {
+            A = (A + element) % MOD_ADLER;
             B = (B + A) % MOD_ADLER;
         }
 

@@ -18,6 +18,7 @@
 #ifdef _DEBUG
  #include <iomanip>
 #endif
+#include "CHuffmanBlock.h"
 
 namespace PNG
 {
@@ -73,7 +74,7 @@ public:
 
 			if (true == parseIHDR (mHaldChunkOrig[{"IHDR"}]))
 			{
-				if (true == encodeIDAT (mHaldChunkOrig[{"IDAT"}]))
+				if (true == decodeIDAT (mHaldChunkOrig[{"IDAT"}]))
 					m_error = LutErrorCode::LutState::OK;
 			}
 		}
@@ -280,7 +281,7 @@ private:
 	}
 #endif
 
-	bool encodeIDAT (const std::vector<uint8_t>& ihdrData)
+	bool decodeIDAT (const std::vector<uint8_t>& ihdrData)
 	{
 		bool bRet = false;
 		/* size of IDAT section in bytes, include section signature */
@@ -291,7 +292,36 @@ private:
 			this->idat_save_dbg(ihdrData);
 #endif /* defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT) */
 
-		
+            HuffmanUtils::CStreamPointer sp(HuffmanUtils::byte2sp(4)); // forward stream pointer on 4 bytes for avoid IDAT header name
+            HuffmanUtils::CHuffmanBlock deflateBlock (std::move(ihdrData), sp);
+            std::vector<uint8_t> decodedData = deflateBlock.DecodeBlock();
+#ifdef _DEBUG
+            const HuffmanUtils::CStreamPointer spEnd = deflateBlock.GetStreamPointer();
+            const uint64_t ihdrDataOffset = HuffmanUtils::sp2byte(spEnd);
+            const uint64_t processedBits = static_cast<uint64_t>(spEnd - sp);
+
+            uint32_t dbgHistogram[256]{};
+            for (const auto& entry : decodedData)
+                dbgHistogram[entry]++;
+
+#endif
+            // resize LUT buffer
+            m_lutBody3D = std::move(LutElement::lutTable3D<T>(m_lutSize, LutElement::lutTable2D<T>(m_lutSize, LutElement::lutTable1D<T>(m_lutSize, LutElement::lutTableRaw<T>(3)))));
+
+            // fil LUT data
+            uint32_t b, g, r, dec = 0u;
+            for (b = 0u; b < m_lutSize; b++)
+                for (g = 0u; g < m_lutSize; g++)
+                    for (r = 0u; r < m_lutSize; r++)
+                    {
+                        m_lutBody3D[r][g][b] = { 
+                            static_cast<float>(decodedData.at(dec + 0u)),
+                            static_cast<float>(decodedData.at(dec + 1u)),
+                            static_cast<float>(decodedData.at(dec + 2u))
+                        };
+                        dec += 3u;
+                    }
+
 		}
 		return bRet;
 	}
