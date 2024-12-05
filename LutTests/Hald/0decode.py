@@ -11,6 +11,10 @@ def save_png_as_txt(input_png_file, output_txt_file):
     try:
         # Open the PNG file
         with Image.open(input_png_file) as img:
+            # Check interlace status
+            interlaced = img.info.get("interlace", 0)  # Default to 0 (non-interlaced)
+            print(f"Interlaced: {'Yes' if interlaced else 'No'}")
+
             # Ensure the image is in RGB mode
             img = img.convert("RGB")
             width, height = img.size
