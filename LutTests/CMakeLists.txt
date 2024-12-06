@@ -43,6 +43,12 @@ install (DIRECTORY ${CSP_FILES_FOLDER}     DESTINATION ${CMAKE_INSTALL_CSP_LUT_D
 install (DIRECTORY ${3DL_FILES_FOLDER}     DESTINATION ${CMAKE_INSTALL_3DL_LUT_DIRECTORY})
 install (DIRECTORY ${HALD_FILES_FOLDER}    DESTINATION ${CMAKE_INSTALL_HALD_LUT_DIRECTORY})
 
+lutlib_test (
+	Crc32Test 
+	${LUT_TESTS_FILES_FOLDER}/src/Crc32Test.cpp 
+	LutObject # actually we don't needed this library here. Just add it for correct includes and link 
+)
+
 set (TST_PRIVATE_COMPILATION_DEFINES -DCUBE_3D_LUT_FOLDER=\"${CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY}/3D\")
 lutlib_test (
 	ParseCube3d 
@@ -64,3 +70,11 @@ lutlib_test (
 	${LUT_TESTS_FILES_FOLDER}/src/ParseCsp3d.cpp 
 	LutObject
 )
+
+set (TST_PRIVATE_COMPILATION_DEFINES -DHALD_LUT_FOLDER=\"${CMAKE_INSTALL_HALD_LUT_DIRECTORY}/Hald\")
+lutlib_test (
+	ParseHald 
+	${LUT_TESTS_FILES_FOLDER}/src/ParseHald.cpp 
+	LutObject)
+unset(TST_PRIVATE_LINK_LIBRARIES)
+

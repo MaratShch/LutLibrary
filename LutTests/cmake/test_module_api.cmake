@@ -19,7 +19,7 @@ function (lutlib_test name source libraries)
 
  target_link_libraries (
 	${GTest_NAME}
-    PRIVATE ${GTest_PrivateLibraries}
+    PRIVATE ${GTest_PrivateLibraries} ${TST_PRIVATE_LINK_LIBRARIES}
     PUBLIC  ${libraries}
  )
 
