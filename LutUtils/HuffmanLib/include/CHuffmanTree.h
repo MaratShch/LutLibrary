@@ -112,8 +112,8 @@ namespace HuffmanUtils
         if (!node) return;
 
         // Post-order traversal: clean left, right, then the current node
-        deleteTree(node->left);
-        deleteTree(node->right);
+        deleteTree<T>(node->left);
+        deleteTree<T>(node->right);
 
         // Explicitly reset the current node's children
         node->left.reset();
