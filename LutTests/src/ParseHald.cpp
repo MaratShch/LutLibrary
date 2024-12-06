@@ -12,14 +12,13 @@ TEST(ParseHald, Parse_Contrast_HCLUT)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-
 TEST(ParseHald, Parse_DarkBlue_HCLUT)
 {
-	const std::string lutName{ dbgLutsFolder + "/Dark_blue.HCLUT.png" };
-	CHaldLut<float> lutFileF32;
-	auto const result  = lutFileF32.LoadFile(lutName);
-	auto const lutSize = lutFileF32.getLutSize();
-	EXPECT_EQ(result, LutErrorCode::LutState::OK);
+    const std::string lutName{ dbgLutsFolder + "/Dark_blue.HCLUT.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
 TEST(ParseHald, Parse_DeepDarkBlue_HCLUT)
