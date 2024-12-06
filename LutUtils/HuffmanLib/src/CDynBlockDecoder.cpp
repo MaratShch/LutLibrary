@@ -190,6 +190,11 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
     };
 
     sp.align2byte(); // Skip any remaining padding bits until the byte boundary is reached
+
+    const auto streamTail = in.size() - sp2byte(sp);
+    if (5ull == streamTail) // remove zero padding bit
+        sp.to_next_byte();
+
     // integirty check: read ADLER-32 checksum
     const uint32_t adler32Expected = convertEndian(readBits(in, sp, 32u));
     // integirty check: compute ADLER-32 checksum

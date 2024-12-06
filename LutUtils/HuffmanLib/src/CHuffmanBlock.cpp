@@ -109,7 +109,7 @@ CHuffmanBlock::~CHuffmanBlock()
         m_iBlockDecoder = nullptr;
     }
 
-    m_isFinal = m_isValid = false;
+    m_isFinal = m_isValid = m_Integrity = false;
     m_Sp.reset();
     m_BlockData.clear();
 
@@ -121,9 +121,12 @@ CHuffmanBlock::~CHuffmanBlock()
 
 std::vector<uint8_t> CHuffmanBlock::DecodeBlock(void)
 {
-    bool integrity = false;
+    bool decodeIntegirty = false;
     std::vector<uint8_t> decodedData;
     if (true == m_isValid)
-        integrity = m_iBlockDecoder->decode (m_BlockData, decodedData, m_Sp);
+    {
+        decodeIntegirty = m_iBlockDecoder->decode(m_BlockData, decodedData, m_Sp);
+        m_Integrity = decodeIntegirty;
+    }
     return decodedData;
 }

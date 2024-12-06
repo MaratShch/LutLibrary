@@ -305,23 +305,29 @@ private:
                 dbgHistogram[entry]++;
 
 #endif
-            // resize LUT buffer
-            m_lutBody3D = std::move(LutElement::lutTable3D<T>(m_lutSize, LutElement::lutTable2D<T>(m_lutSize, LutElement::lutTable1D<T>(m_lutSize, LutElement::lutTableRaw<T>(3)))));
+            const bool integrityStatus = deflateBlock.blockIntegrityStatus();
+            if (true == integrityStatus)
+            {
+                bRet = true;
+#if 0
+                // resize LUT buffer
+                m_lutBody3D = std::move(LutElement::lutTable3D<T>(m_lutSize, LutElement::lutTable2D<T>(m_lutSize, LutElement::lutTable1D<T>(m_lutSize, LutElement::lutTableRaw<T>(3)))));
 
-            // fil LUT data
-            uint32_t b, g, r, dec = 0u;
-            for (b = 0u; b < m_lutSize; b++)
-                for (g = 0u; g < m_lutSize; g++)
-                    for (r = 0u; r < m_lutSize; r++)
-                    {
-                        m_lutBody3D[r][g][b] = { 
-                            static_cast<float>(decodedData.at(dec + 0u)),
-                            static_cast<float>(decodedData.at(dec + 1u)),
-                            static_cast<float>(decodedData.at(dec + 2u))
-                        };
-                        dec += 3u;
-                    }
-
+                // fil LUT data
+                uint32_t b, g, r, dec = 0u;
+                for (b = 0u; b < m_lutSize; b++)
+                    for (g = 0u; g < m_lutSize; g++)
+                        for (r = 0u; r < m_lutSize; r++)
+                        {
+                            m_lutBody3D[r][g][b] = {
+                                static_cast<float>(decodedData.at(dec + 0u)),
+                                static_cast<float>(decodedData.at(dec + 1u)),
+                                static_cast<float>(decodedData.at(dec + 2u))
+                            };
+                            dec += 3u;
+                        }
+#endif
+            }
 		}
 		return bRet;
 	}
