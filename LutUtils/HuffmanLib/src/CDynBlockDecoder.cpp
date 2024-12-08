@@ -18,6 +18,8 @@ CDynBlockDecoder::~CDynBlockDecoder(void)
     deleteTree<uint32_t>(m_cl4cl_root);
     m_cl4cl_root = nullptr;
 
+    m_cl4cl.clear();
+
     m_HCLEN = m_HDIST = m_HLIT = 0u;
     return;
 }
@@ -92,6 +94,8 @@ void CDynBlockDecoder::build_distance_tree (const std::vector<uint8_t>& in, CStr
 // Parse Huffman stream, get HLIT, HDIST and HCLEN values, build Cl4Cl tree
 void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointer& sp)
 {
+    m_cl4cl.clear();
+
     // read Literal Lengths Codes (stream pointer incremented internally) 
     m_HLIT = get_HLIT(in, sp);
     // read Distance Codes (stream pointer incremented internally)
@@ -103,16 +107,13 @@ void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
     for (uint32_t i = 0u; i < m_HCLEN; i++)
         cl4cl[i] = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values
  
-    // generate Huffman Code Lengths for Code Legths codes
-    std::vector<std::pair</* code */ uint32_t, /* length */ uint32_t>> huffmanCodes = generate_huffman_codes(cl4cl, m_HCLEN);
-
-    // re-order Cl4Cl alphabet
-    std::vector<uint32_t> vecCodeLengths(cl4cl_dictionary_idx.size(), 0u);
-    for (size_t i = 0ull; i < huffmanCodes.size(); i++)
-        vecCodeLengths[cl4cl_dictionary_idx[i]] = huffmanCodes.at(i).second;
+    // Order Code Lengths for Code Lengths alphabet
+    m_cl4cl.resize(cl4cl_dictionary_idx.size(), 0);
+    for (uint32_t i = 0u; i < m_HCLEN; i++)
+        m_cl4cl[cl4cl_dictionary_idx[i]] = cl4cl[i];
 
     // build Cl4Cl Huffman Tree
-    m_cl4cl_root = buildHuffmanTreeFromLengths (vecCodeLengths);
+    m_cl4cl_root = buildHuffmanTreeFromLengths(m_cl4cl);
 
     // build Code Lengts and Literal Tree
     build_code_lenghts_tree(in, sp);

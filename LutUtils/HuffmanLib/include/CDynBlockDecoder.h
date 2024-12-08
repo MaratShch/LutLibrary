@@ -24,6 +24,8 @@ namespace HuffmanUtils
            uint32_t m_HLIT  = 0u;
            uint32_t m_HDIST = 0u;
  
+           std::vector<uint32_t> m_cl4cl;
+
            std::shared_ptr<Node<uint32_t>> m_cl4cl_root = nullptr;    // code lenghts for code lengths tree
            std::shared_ptr<Node<uint32_t>> m_literal_root = nullptr;  // Huffman Literal tree
            std::shared_ptr<Node<uint32_t>> m_distance_root = nullptr; // Huffman Disatnce tree
