@@ -149,32 +149,30 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
             (
                 const std::vector<uint8_t>& in,
                 CStreamPointer& sp,
-                const uint32_t& distanceCode  
-            )
+                const uint32_t distanceCode  
+            ) -> std::pair<int32_t, int32_t>
             {
                 // Get Length information
-                const uint32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
-                const uint32_t extraBitsInLen = cLengthGetExtra (LengtCodeArrayIdx);
-                const uint32_t baseLength = cLengthGetBaseLen (LengtCodeArrayIdx);
-                const uint32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0u);
+                const int32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
+                const int32_t extraBitsInLen = cLengthGetExtra (LengtCodeArrayIdx);
+                const int32_t baseLength = cLengthGetBaseLen (LengtCodeArrayIdx);
+                const int32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0u);
 
                 // Read distance code
                 const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
-                const uint32_t DistanceCodeArrayIdx = hTreeLeaf->symbol - cDistanceCodesMin;
-                const uint32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
-                const uint32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
-                const uint32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? readBits(in, sp, extraBitsInDist) : 0u);
-
+                const int32_t DistanceCodeArrayIdx = static_cast<int32_t>(hTreeLeaf->symbol) - cDistanceCodesMin;
+                const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
+                const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
+                const int32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? readBits(in, sp, extraBitsInDist) : 0u);
                 return std::make_pair(finalLength, finalDistance);
             };
 
-            const std::pair<uint32_t, uint32_t> pair_distance = process_distance_sequence (in, sp, symbol);
+            const std::pair<int32_t, int32_t> pair_distance = process_distance_sequence (in, sp, symbol);
             auto const& size = pair_distance.first;
             auto const& distance = pair_distance.second;
             auto const& outVectorSize = out.size();
             auto const pre = outVectorSize - distance;
-
-            for (uint32_t i = 0; i < size; i++)
+            for (int32_t i = 0; i < size; i++)
                 out.push_back(out[pre + i]);
  
         }
