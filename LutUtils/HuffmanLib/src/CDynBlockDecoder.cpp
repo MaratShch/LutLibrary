@@ -3,6 +3,7 @@
 #include "CHuffmanStream.h"
 #include "CHuffmanTree.h"
 #include <cassert>
+#include <iomanip>	// for formatted output
 
 using namespace HuffmanUtils;
 
@@ -105,15 +106,15 @@ void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
 
     std::vector<uint32_t> cl4cl(m_HCLEN, 0u); // prepare storage for read from Huffman stream Code Lengths for Code Lengths alphabet
     for (uint32_t i = 0u; i < m_HCLEN; i++)
-        cl4cl[i] = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values
- 
+        cl4cl[i] = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values 
+
     // Order Code Lengths for Code Lengths alphabet
     m_cl4cl.resize(cl4cl_dictionary_idx.size(), 0);
     for (uint32_t i = 0u; i < m_HCLEN; i++)
         m_cl4cl[cl4cl_dictionary_idx[i]] = cl4cl[i];
 
     // build Cl4Cl Huffman Tree
-    m_cl4cl_root = buildHuffmanTreeFromLengths(m_cl4cl);
+    m_cl4cl_root = buildHuffmanTreeFromLengths (m_cl4cl);
 
     // build Code Lengts and Literal Tree
     build_code_lenghts_tree(in, sp);
@@ -161,7 +162,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
 
                 // Read distance code
                 const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
-                const int32_t DistanceCodeArrayIdx = static_cast<int32_t>(hTreeLeaf->symbol) - cDistanceCodesMin;
+                const int32_t DistanceCodeArrayIdx = hTreeLeaf->symbol - cDistanceCodesMin;
                 const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
                 const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
                 const int32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? readBits(in, sp, extraBitsInDist) : 0u);
@@ -171,8 +172,11 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
             const std::pair<int32_t, int32_t> pair_distance = process_distance_sequence (in, sp, symbol);
             auto const& size = pair_distance.first;
             auto const& distance = pair_distance.second;
-            auto const& outVectorSize = out.size();
+            const int32_t outVectorSize = static_cast<int32_t>(out.size());
             auto const pre = outVectorSize - distance;
+
+            assert(pre >= 0);
+
             for (int32_t i = 0; i < size; i++)
                 out.push_back(out[pre + i]);
  

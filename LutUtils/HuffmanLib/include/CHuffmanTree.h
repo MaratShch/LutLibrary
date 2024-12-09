@@ -5,6 +5,7 @@
 #include <vector>
 #include <bitset>
 #include <iostream>
+#include <cmath>
 
 namespace HuffmanUtils
 {
@@ -15,80 +16,73 @@ namespace HuffmanUtils
     {
         T symbol;   // Literal/Distance can be any integer type (int, char, etc.)
         T code;   	// Huffman code
-        T code_size;// Huffman code size
         std::shared_ptr<Node> left;
         std::shared_ptr<Node> right;
 
-        Node() : symbol(T()), code(T()), code_size(T()), left(nullptr), right(nullptr) {}
+        Node() : symbol(T()), code(T()), left(nullptr), right(nullptr) {}
     };
 
     using Node32 = Node<int32_t>;
     using Node32u = Node<uint32_t>;
 
-
-    // Function to build a Huffman tree from code lengths (templated)
-    template<typename T>
+    template <typename T>
     std::shared_ptr<Node<T>> buildHuffmanTreeFromLengths (const std::vector<T>& codeLengths)
     {
         std::shared_ptr<Node<T>> root = std::make_shared<Node<T>>();
 
-        // Lambda for inserting a symbol into the Huffman tree
-        auto insertCode = [&root](const std::string& code, T symbol) {
-            std::shared_ptr<Node<T>> current = root;
-            uint32_t val = 0x0u;
+        T nextCode = 0; // Tracks the next code to assign
+        constexpr uint32_t maxLength = 15u; // Maximum code length (per Deflate spec)
 
-            for (char bit : code) {
-                val = (val << 1) | (bit - '0'); // Shift and set the bit
-                if (bit == '0') {
-                    if (!current->left) current->left = std::make_shared<Node<T>>();
-                    current = current->left;
-                }
-                else { // bit == '1'
-                    if (!current->right) current->right = std::make_shared<Node<T>>();
-                    current = current->right;
-                }
-            }
-
-            current->symbol = symbol;
-            current->code = val;
-        };
-
-        // Generate the binary Huffman codes for each symbol using the code lengths
-        std::vector<std::string> codes(codeLengths.size());
-        T nextCode{ 0 };
-
-        // Build the code for each length in ascending order
-        for (int32_t codeLength = 1; codeLength <= 15; ++codeLength)
+        // Build the Huffman tree
+        for (uint32_t codeLength = 1u; codeLength <= maxLength; ++codeLength)
         {
             for (T symbol = 0; symbol < static_cast<T>(codeLengths.size()); ++symbol)
             {
                 if (codeLengths[symbol] == codeLength)
                 {
-                    // Convert nextCode to a binary string with codeLength bits
-                    std::string binaryCode = std::bitset<16>(nextCode).to_string().substr(16 - codeLength);
-                    codes[symbol] = binaryCode;
-                    insertCode(binaryCode, symbol); // Call the lambda
+                    uint32_t code = nextCode;
+
+                    // Insert the code into the Huffman tree
+                    auto current = root;
+                    for (int bitIndex = codeLength - 1; bitIndex >= 0; --bitIndex)
+                    {
+                        // Extract the current bit (MSB first)
+                        bool bit = (code >> bitIndex) & 1;
+
+                        if (bit)
+                        {
+                            // Create a right child if it doesn't exist
+                            if (!current->right) current->right = std::make_shared<Node<T>>();
+                            current = current->right;
+                        }
+                        else
+                        {
+                            // Create a left child if it doesn't exist
+                            if (!current->left) current->left = std::make_shared<Node<T>>();
+                            current = current->left;
+                        }
+                    }
+
+                    // Assign the symbol to the leaf node
+                    current->symbol = symbol;
+                    current->code = code; // Optional for debugging
                     ++nextCode;
                 }
             }
-            nextCode <<= 1; // Increment to the next code of the current length
+
+            // Prepare the next code by shifting to the next length
+            nextCode <<= 1;
         }
 
         return root;
     }
 
 
-
     template<typename T>
     void printHuffmanTree (const std::shared_ptr<Node<T>>& node, const std::string& prefix = "")
     {
         if (!node->left && !node->right)
-        {
-            if (node->symbol <= 255 && node->symbol >= 33)
-               std::cout << "Symbol: \'" << static_cast<char>(node->symbol) << "\' ASCII value = " << node->symbol << ", Code: " << prefix << std::endl;
-            else
-               std::cout << "Symbol: " << node->symbol << ", Code: " << prefix << std::endl;
-        }
+            std::cout << "Symbol: " << node->symbol << ", Code: " << prefix << std::endl;
         else
         {
             if (node->left)

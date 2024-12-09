@@ -18,96 +18,96 @@ namespace HuffmanUtils
         16u, 17u, 18u, 0u, 8u, 7u, 9u, 6u, 10u, 5u, 11u, 4u, 12u, 3u, 13u, 2u, 14u, 1u, 15u
     };
 
-    using DistanceTable = std::tuple<uint32_t /* code */, uint32_t /* extra bits */, uint32_t /* base length */>;
+    using DistanceTable = std::tuple<int32_t /* code */, int32_t /* extra bits */, int32_t /* base length */>;
 
     constexpr std::array<DistanceTable, 29> cLengthCodes = 
     {{    // rfc1951
-	  { 257u, 0u, 3u  },
-	  { 258u, 0u, 4u  },
-	  { 259u, 0u, 5u  },
-	  { 260u, 0u, 6u  },
-	  { 261u, 0u, 7u  },
-	  { 262u, 0u, 8u  },
-	  { 263u, 0u, 9u  },
-	  { 264u, 0u, 10u },
-	  { 265u, 1u, 11u },
-	  { 266u, 1u, 13u },
-	  { 267u, 1u, 15u },
-	  { 268u, 1u, 17u },
-	  { 269u, 2u, 19u },
-	  { 270u, 2u, 23u },
-	  { 271u, 2u, 27u },
-	  { 272u, 3u, 31u },
-	  { 273u, 3u, 35u },
-	  { 274u, 3u, 43u },
-	  { 275u, 3u, 51u },
-	  { 276u, 3u, 59u },
-	  { 277u, 4u, 67u },
-	  { 278u, 4u, 83u },
-	  { 279u, 4u, 99u },
-	  { 280u, 4u, 115u},
-	  { 281u, 5u, 131u},
-	  { 282u, 5u, 163u},
-	  { 283u, 5u, 195u},
-	  { 284u, 5u, 227u},
-	  { 285u, 0u, 258u}   
+	  { 257, 0, 3  },
+	  { 258, 0, 4  },
+	  { 259, 0, 5  },
+	  { 260, 0, 6  },
+	  { 261, 0, 7  },
+	  { 262, 0, 8  },
+	  { 263, 0, 9  },
+	  { 264, 0, 10 },
+	  { 265, 1, 11 },
+	  { 266, 1, 13 },
+	  { 267, 1, 15 },
+	  { 268, 1, 17 },
+	  { 269, 2, 19 },
+	  { 270, 2, 23 },
+	  { 271, 2, 27 },
+	  { 272, 3, 31 },
+	  { 273, 3, 35 },
+	  { 274, 3, 43 },
+	  { 275, 3, 51 },
+	  { 276, 3, 59 },
+	  { 277, 4, 67 },
+	  { 278, 4, 83 },
+	  { 279, 4, 99 },
+	  { 280, 4, 115},
+	  { 281, 5, 131},
+	  { 282, 5, 163},
+	  { 283, 5, 195},
+	  { 284, 5, 227},
+	  { 285, 0, 258}   
     }};
-    constexpr uint32_t cLengthGetCode    (const uint32_t& idx) {return std::get<0>(cLengthCodes[idx]);}
-    constexpr uint32_t cLengthGetExtra   (const uint32_t& idx) {return std::get<1>(cLengthCodes[idx]);}
-    constexpr uint32_t cLengthGetBaseLen (const uint32_t& idx) {return std::get<2>(cLengthCodes[idx]);}
+    constexpr int32_t cLengthGetCode    (const int32_t& idx) {return std::get<0>(cLengthCodes[idx]);}
+    constexpr int32_t cLengthGetExtra   (const int32_t& idx) {return std::get<1>(cLengthCodes[idx]);}
+    constexpr int32_t cLengthGetBaseLen (const int32_t& idx) {return std::get<2>(cLengthCodes[idx]);}
 
     constexpr size_t   cLengthCodesSize = cLengthCodes.size();
-    constexpr uint32_t cLengthCodesMin  = cLengthGetCode(0u);
-    constexpr uint32_t cLengthCodesMax  = cLengthGetCode(28u);
+    constexpr int32_t cLengthCodesMin  = cLengthGetCode(0);
+    constexpr int32_t cLengthCodesMax  = cLengthGetCode(28);
 
 
     constexpr std::array<DistanceTable, 30> cDistanceCodes = 
     {{    // rfc1951
-	  { 0u,  0u,  1u    },
-	  { 1u,  0u,  2u    },
-	  { 2u,  0u,  3u    },
-	  { 3u,  0u,  4u    },
-	  { 4u,  1u,  5u    },
-	  { 5u,  1u,  7u    },
-	  { 6u,  2u,  9u    },
-	  { 7u,  2u,  13u   },
-	  { 8u,  3u,  17u   },
-	  { 9u,  3u,  25u   },
-	  { 10u, 4u,  33u   },
-	  { 11u, 4u,  49u   },
-	  { 12u, 5u,  65u   },
-	  { 13u, 5u,  97u   },
-	  { 14u, 6u,  129u  },
-	  { 15u, 6u,  193u  },
-	  { 16u, 7u,  257u  },
-	  { 17u, 7u,  385u  },
-	  { 18u, 8u,  513u  },
-	  { 19u, 8u,  769u  },
-	  { 20u, 9u,  1025u },
-	  { 21u, 9u,  1537u },
-	  { 22u, 10u, 2049u },
-	  { 23u, 10u, 3073u },
-	  { 24u, 11u, 4097u },
-	  { 25u, 11u, 6145u },
-	  { 26u, 12u, 8193u },
-	  { 27u, 12u, 12289u},
-	  { 28u, 13u, 16385u},
-	  { 29u, 13u, 24577u}     
+	  { 0,  0,  1    },
+	  { 1,  0,  2    },
+	  { 2,  0,  3    },
+	  { 3,  0,  4    },
+	  { 4,  1,  5    },
+	  { 5,  1,  7    },
+	  { 6,  2,  9    },
+	  { 7,  2,  13   },
+	  { 8,  3,  17   },
+	  { 9,  3,  25   },
+	  { 10, 4,  33   },
+	  { 11, 4,  49   },
+	  { 12, 5,  65   },
+	  { 13, 5,  97   },
+	  { 14, 6,  129  },
+	  { 15, 6,  193  },
+	  { 16, 7,  257  },
+	  { 17, 7,  385  },
+	  { 18, 8,  513  },
+	  { 19, 8,  769  },
+	  { 20, 9,  1025 },
+	  { 21, 9,  1537 },
+	  { 22, 10, 2049 },
+	  { 23, 10, 3073 },
+	  { 24, 11, 4097 },
+	  { 25, 11, 6145 },
+	  { 26, 12, 8193 },
+	  { 27, 12, 12289},
+	  { 28, 13, 16385},
+	  { 29, 13, 24577}     
     }};
 
-    constexpr uint32_t cDistanceGetCode    (const uint32_t& idx) {return std::get<0>(cDistanceCodes[idx]);}
-    constexpr uint32_t cDistanceGetExtra   (const uint32_t& idx) {return std::get<1>(cDistanceCodes[idx]);}
-    constexpr uint32_t cDistanceGetBaseLen (const uint32_t& idx) {return std::get<2>(cDistanceCodes[idx]);}
+    constexpr int32_t cDistanceGetCode    (const int32_t& idx) {return std::get<0>(cDistanceCodes[idx]);}
+    constexpr int32_t cDistanceGetExtra   (const int32_t& idx) {return std::get<1>(cDistanceCodes[idx]);}
+    constexpr int32_t cDistanceGetBaseLen (const int32_t& idx) {return std::get<2>(cDistanceCodes[idx]);}
 
-    constexpr size_t   cDistanceCodesSize = cDistanceCodes.size();
-    constexpr uint32_t cDistanceCodesMin  = cDistanceGetCode(0);
+    constexpr size_t  cDistanceCodesSize = cDistanceCodes.size();
+    constexpr int32_t cDistanceCodesMin  = cDistanceGetCode(0);
 
     
     constexpr std::array<uint16_t, 144> HuffmanStaticCodes8
     {   // alphabet range: 0x00 - 0x8F
 	    0b00110000, 0b00110001, 0b00110010, 0b00110011, 
-        0b00110100, 0b00110101, 0b00110110, 0b00110111,
-        0b00111000, 0b00111001, 0b00111010, 0b00111011,
+            0b00110100, 0b00110101, 0b00110110, 0b00110111,
+            0b00111000, 0b00111001, 0b00111010, 0b00111011,
 	    0b00111100, 0b00111101, 0b00111110, 0b00111111,
 	    0b01000000, 0b01000001, 0b01000010, 0b01000011,
 	    0b01000100, 0b01000101, 0b01000110, 0b01000111,

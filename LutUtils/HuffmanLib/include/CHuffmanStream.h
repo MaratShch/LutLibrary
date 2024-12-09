@@ -10,8 +10,6 @@
 namespace HuffmanUtils
 {
 
-    std::vector<std::pair<uint32_t, uint32_t>> generate_huffman_codes (const std::vector<uint32_t>& code_lengths, int32_t num_symbols);
-
     // Read bit from specific position pointed by Stream Pointer.
     // Pay attention! This function isn't modify Stream Pointer after read.
     inline uint32_t readBit (const std::vector<uint8_t>& stream, const CStreamPointer& streamOffset) 
@@ -50,7 +48,7 @@ namespace HuffmanUtils
         uint32_t position = 0u;
 
         do {
-            const uint32_t huffmanBit = readBit(stream, streamOffset);;
+            const uint32_t huffmanBit = readBit(stream, streamOffset);
             (huffmanCode <<= position) |= huffmanBit;
             streamOffset++, position++;
             huffmanNode = ((0u == huffmanBit) ? huffmanNode->left : huffmanNode->right);
@@ -99,7 +97,8 @@ namespace HuffmanUtils
         constexpr uint32_t MOD_ADLER = 65521u;
         const size_t length = data.size();
 
-        for (const auto& element : data) {
+        for (const auto& element : data)
+        {
             A = (A + element) % MOD_ADLER;
             B = (B + A) % MOD_ADLER;
         }
