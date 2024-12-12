@@ -2,6 +2,7 @@
 #include "CHuffmanStream.h"
 #include "CStatBlockDecoder.h"
 #include "CDynBlockDecoder.h"
+#include "CDecoderConstants.h"
 
 
 using namespace HuffmanUtils;
@@ -46,7 +47,7 @@ void CHuffmanBlock::parse_block_header (CStreamPointer& sp) noexcept
 
     if (0u == checkRes /* check bit correct */ && 0x08u == CM /* DEFLATE compression detected */)
     {
-        m_WindowSize = static_cast<uint32_t>(std::pow(2.0, (static_cast<double>(CINFO) + 8.0)));
+        m_WindowSize = 1u << (CINFO + 8);
 
         m_FCHECK = m_FLG & 0x1Fu;	        // Check bits for CMF and FLG
         m_FDICT  = (m_FLG >> 5) & 0x01u;    // Preset Dictionary
@@ -57,7 +58,7 @@ void CHuffmanBlock::parse_block_header (CStreamPointer& sp) noexcept
         m_BTYPE   = static_cast<uint8_t>(0x3u & (huffmanBlockHeader >> 1));
 
         IBlockDecoder* iBlockDecoder = create_decoder(m_BTYPE);
-        if (nullptr != iBlockDecoder)
+        if (max_WindowSize == m_WindowSize && nullptr != iBlockDecoder)
         {
             m_iBlockDecoder = iBlockDecoder;
             m_isValid = (0u == m_FDICT ? true : false); // custom DICTIONARY is not supported yet

@@ -34,9 +34,9 @@ namespace HuffmanUtils
            uint32_t get_HCLEN(const std::vector<uint8_t>& in, CStreamPointer& sp);
            uint32_t get_HDIST(const std::vector<uint8_t>& in, CStreamPointer& sp);
 
-           void pre_decode (const std::vector<uint8_t>& in, CStreamPointer& sp); // initialize Dynamic Huffman Decoder infrastruture
-           void build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp); // build Literal Tree
-           void build_distance_tree(const std::vector<uint8_t>& in, CStreamPointer& sp); // build Distance Tree
+           bool pre_decode (const std::vector<uint8_t>& in, CStreamPointer& sp); // initialize Dynamic Huffman Decoder infrastruture
+           bool build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp); // build Literal Tree
+           bool build_distance_tree(const std::vector<uint8_t>& in, CStreamPointer& sp); // build Distance Tree
 
            std::shared_ptr<Node<uint32_t>> build_huffman_tree (const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize);
 

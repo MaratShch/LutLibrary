@@ -11,8 +11,17 @@ namespace HuffmanUtils
 {
     constexpr uint32_t EndOfBlock = 256u;
 
+    constexpr uint32_t min_HLIT = 257u;
+    constexpr uint32_t max_HLIT = 286u;
+    constexpr uint32_t min_HDIST = 1u;
+    constexpr uint32_t max_HDIST = 30u;
+    constexpr uint32_t min_HCLEN = 4u;
+    constexpr uint32_t max_HCLEN = 19u;
+
+    constexpr uint32_t max_WindowSize = 32768u;
+
     // Alpahabet for build Code Lenghts For Code Lengths Tree
-    constexpr std::array<uint32_t, 19> cl4cl_dictionary_idx =
+    constexpr std::array<uint32_t, max_HCLEN> cl4cl_dictionary_idx =
     {
         // https://datatracker.ietf.org/doc/html/rfc1951
         16u, 17u, 18u, 0u, 8u, 7u, 9u, 6u, 10u, 5u, 11u, 4u, 12u, 3u, 13u, 2u, 14u, 1u, 15u
@@ -56,7 +65,7 @@ namespace HuffmanUtils
     constexpr int32_t cLengthGetExtra   (const int32_t& idx) {return std::get<1>(cLengthCodes[idx]);}
     constexpr int32_t cLengthGetBaseLen (const int32_t& idx) {return std::get<2>(cLengthCodes[idx]);}
 
-    constexpr size_t   cLengthCodesSize = cLengthCodes.size();
+    constexpr size_t  cLengthCodesSize = cLengthCodes.size();
     constexpr int32_t cLengthCodesMin  = cLengthGetCode(0);
     constexpr int32_t cLengthCodesMax  = cLengthGetCode(28);
 

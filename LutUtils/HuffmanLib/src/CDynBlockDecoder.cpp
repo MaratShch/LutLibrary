@@ -4,6 +4,9 @@
 #include "CHuffmanTree.h"
 #include <cassert>
 #include <iomanip>	// for formatted output
+#include <stdexcept>    // for std::runtime_error
+#include <sstream>
+#include <string>
 
 using namespace HuffmanUtils;
 
@@ -25,11 +28,10 @@ CDynBlockDecoder::~CDynBlockDecoder(void)
     return;
 }
 
-
 std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize)
 {
     std::vector<uint32_t> tmpVector(treeSize, 0);
-    uint32_t lastCode = 0u;
+    uint32_t lastCode = 0xFFFFFFFFu;
 
     for (uint32_t i = 0u; i < treeSize; /* i incremented inside of loop */)
     {
@@ -40,6 +42,11 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
         {
             case 16: // repeat code
             {
+                if (0xFFFFFFFFu == lastCode)
+                {
+                    // last code non exist
+                    return nullptr;
+                }
                 constexpr uint32_t extraBits = 2u;
                 const uint32_t repeatCount = 3u + readBits(in, sp, extraBits);
                 std::fill(tmpVector.begin() + i, tmpVector.begin() + i + repeatCount - 1u, lastCode);
@@ -77,36 +84,51 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
 
 
 // Build Literal tree based on the Cl4Cl4
-void CDynBlockDecoder::build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
+bool CDynBlockDecoder::build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
 {
     m_literal_root = build_huffman_tree (in, sp, m_HLIT);
-    return;
+    return (nullptr != m_literal_root ? true : false);
 }
 
 
 // Build Distance tree based on the Cl4Cl4
-void CDynBlockDecoder::build_distance_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
+bool CDynBlockDecoder::build_distance_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
 {
     m_distance_root = build_huffman_tree (in, sp, m_HDIST);
-    return;
+    return (nullptr != m_distance_root ? true : false);
 }
 
 
 // Parse Huffman stream, get HLIT, HDIST and HCLEN values, build Cl4Cl tree
-void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointer& sp)
+bool CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointer& sp)
 {
     m_cl4cl.clear();
 
     // read Literal Lengths Codes (stream pointer incremented internally) 
     m_HLIT = get_HLIT(in, sp);
+    if (m_HLIT < min_HLIT || m_HLIT > max_HLIT)
+        return false;
+
     // read Distance Codes (stream pointer incremented internally)
     m_HDIST = get_HDIST(in, sp);
+    if (m_HDIST < min_HDIST || m_HDIST > max_HDIST)
+        return false;
+
     // read Codel Lengths forCode Lengths (stream pointer incremented internally)
     m_HCLEN = get_HCLEN(in, sp);
+    if (m_HCLEN < min_HCLEN || m_HCLEN > max_HCLEN)
+        return false;
 
+    uint32_t cl4cl_sum = 0u;
     std::vector<uint32_t> cl4cl(m_HCLEN, 0u); // prepare storage for read from Huffman stream Code Lengths for Code Lengths alphabet
     for (uint32_t i = 0u; i < m_HCLEN; i++)
-        cl4cl[i] = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values 
+    {   // read Cl4Cl lengths in order defined into rfc1951 standard
+        cl4cl[i] = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values
+        cl4cl_sum += cl4cl[i];
+    }
+    // validate cl4cl
+    if (0u == cl4cl_sum)
+        return false; // all zero codes - at least one code should not be equal to zero.
 
     // Order Code Lengths for Code Lengths alphabet
     m_cl4cl.resize(cl4cl_dictionary_idx.size(), 0);
@@ -117,13 +139,27 @@ void CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
     m_cl4cl_root = buildHuffmanTreeFromLengths (m_cl4cl);
 
     // build Code Lengts and Literal Tree
-    build_code_lenghts_tree(in, sp);
+    const bool literalValid = build_code_lenghts_tree(in, sp);
 
     // build Disatnce Codes Tree
-    build_distance_tree(in, sp);
+    const bool distanceValid = build_distance_tree(in, sp);
 
-    return;
+    return (literalValid && distanceValid);
 }
+
+#ifdef _DEBUG
+void dbg_print_on_crash (const std::vector<uint8_t>& out)
+{
+   std::cout << "Print output stream before crash:" << std::endl;
+   for (const auto& outElem : out)
+     std::cout << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(outElem) << " ";
+   std::cout << std::endl;
+   return;
+}
+     
+#else
+inline void dbg_print_on_crash (const std::vector<uint8_t>& out) {return;}
+#endif
 
 
 bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
@@ -134,76 +170,99 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
     // cleanup output vector
     out.clear();
 
+#ifdef _DEBUG
+    const CStreamPointer dbgSpCopy(sp);
+#endif
+
     // Initialize and Build all Huffman Dynamic Decoder Infrastructures (Cl4Cl, Huffman trees, etc...)
-    pre_decode(in, sp);
-
-    uint32_t symbol = 0u;
-
-    do {
-        const std::shared_ptr<Node<uint32_t>> hLiteraLeaf = readHuffmanBits<uint32_t>(in, sp, m_literal_root);
-        symbol = hLiteraLeaf->symbol;
-
-        if (symbol <= 255u)
-            out.push_back(static_cast<uint8_t>(hLiteraLeaf->symbol));
-        else if (symbol >= cLengthCodesMin && symbol <= cLengthCodesMax)
-        {
-            auto process_distance_sequence = [this]
-            (
-                const std::vector<uint8_t>& in,
-                CStreamPointer& sp,
-                const uint32_t distanceCode  
-            ) -> std::pair<int32_t, int32_t>
-            {
-                // Get Length information
-                const int32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
-                const int32_t extraBitsInLen = cLengthGetExtra (LengtCodeArrayIdx);
-                const int32_t baseLength = cLengthGetBaseLen (LengtCodeArrayIdx);
-                const int32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0u);
-
-                // Read distance code
-                const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
-                const int32_t DistanceCodeArrayIdx = hTreeLeaf->symbol - cDistanceCodesMin;
-                const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
-                const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
-                const int32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? readBits(in, sp, extraBitsInDist) : 0u);
-                return std::make_pair(finalLength, finalDistance);
-            };
-
-            const std::pair<int32_t, int32_t> pair_distance = process_distance_sequence (in, sp, symbol);
-            auto const& size = pair_distance.first;
-            auto const& distance = pair_distance.second;
-            const int32_t outVectorSize = static_cast<int32_t>(out.size());
-            auto const pre = outVectorSize - distance;
-
-            assert(pre >= 0);
-
-            for (int32_t i = 0; i < size; i++)
-                out.push_back(out[pre + i]);
- 
-        }
-
-    } while (symbol != EndOfBlock);
-
-    auto convertEndian = [](uint32_t value) -> uint32_t
+    if (true == pre_decode(in, sp))
     {
-        return ((value >> 24) & 0x000000FF) | // Move byte 3 to byte 0
-               ((value >> 8 ) & 0x0000FF00) | // Move byte 2 to byte 1
-               ((value << 8 ) & 0x00FF0000) | // Move byte 1 to byte 2
-               ((value << 24) & 0xFF000000);  // Move byte 0 to byte 3
-    };
+        uint32_t symbol = 0u;
 
-    sp.align2byte(); // Skip any remaining padding bits until the byte boundary is reached
+        do {
+            const std::shared_ptr<Node<uint32_t>> hLiteraLeaf = readHuffmanBits<uint32_t>(in, sp, m_literal_root);
+            symbol = hLiteraLeaf->symbol;
 
-    const auto streamTail = in.size() - sp2byte(sp);
-    if (5ull == streamTail) // remove zero padding bit
-        sp.to_next_byte();
+            if (symbol <= 255u)
+                out.push_back(static_cast<uint8_t>(hLiteraLeaf->symbol));
+            else if (symbol >= cLengthCodesMin && symbol <= cLengthCodesMax)
+            {
+                auto process_distance_sequence = [this]
+                (
+                    const std::vector<uint8_t>& in,
+                    CStreamPointer& sp,
+                    const uint32_t distanceCode
+                    ) -> std::pair<int32_t, int32_t>
+                {
+                    // Get Length information
+                    const int32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
+                    const int32_t extraBitsInLen = cLengthGetExtra(LengtCodeArrayIdx);
+                    const int32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
+                    const int32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0u);
 
-    // integirty check: read ADLER-32 checksum
-    const uint32_t adler32Expected = convertEndian(readBits(in, sp, 32u));
-    // integirty check: compute ADLER-32 checksum
-    const uint32_t adler32Computed = computeAdler32(out);
-    // validate checksums
-    m_decoderIntegrityStatus = (adler32Expected == adler32Computed);
+                    // Read distance code
+                    const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
+                    const int32_t DistanceCodeArrayIdx = hTreeLeaf->symbol - cDistanceCodesMin;
+                    const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
+                    const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
+                    const int32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? readBits(in, sp, extraBitsInDist) : 0u);
+
+                    return std::make_pair(finalLength, finalDistance);
+                };
+
+                const std::pair<int32_t, int32_t> pair_distance = process_distance_sequence(in, sp, symbol);
+                auto const& size = pair_distance.first;
+                auto const& distance = pair_distance.second;
+                const int32_t outVectorSize = static_cast<int32_t>(out.size());
+
+                if (outVectorSize < distance)
+                {
+                    dbg_print_on_crash(out);
+
+                    std::ostringstream ex;
+                    ex << "Distance exceeds output buffer size: negative offset computed. Distance = " << distance << " out size = " << outVectorSize <<
+#ifdef _DEBUG
+                        " SP before = " << dbgSpCopy << " SP after = " << sp; // 83.7 -> 86.2
+#else
+                        " SP = " << sp;
+#endif
+                    const std::string ex_as_string(ex.str());
+
+                    throw std::runtime_error(ex_as_string);
+                    return false;
+                }
+                else
+                {
+                    auto const pre = outVectorSize - distance;
+                    for (int32_t i = 0; i < size; i++)
+                        out.push_back(out[pre + i]);
+                }
+
+            }
+
+        } while (symbol != EndOfBlock);
+
+        auto convertEndian = [](uint32_t value) -> uint32_t
+        {
+            return ((value >> 24) & 0x000000FF) | // Move byte 3 to byte 0
+                ((value >> 8) & 0x0000FF00) | // Move byte 2 to byte 1
+                ((value << 8) & 0x00FF0000) | // Move byte 1 to byte 2
+                ((value << 24) & 0xFF000000);  // Move byte 0 to byte 3
+        };
+
+        sp.align2byte(); // Skip any remaining padding bits until the byte boundary is reached
+
+        const auto streamTail = in.size() - sp2byte(sp);
+        if (5ull == streamTail) // remove zero padding bit
+            sp.to_next_byte();
+
+        // integirty check: read ADLER-32 checksum
+        const uint32_t adler32Expected = convertEndian(readBits(in, sp, 32u));
+        // integirty check: compute ADLER-32 checksum
+        const uint32_t adler32Computed = computeAdler32(out);
+        // validate checksums
+        m_decoderIntegrityStatus = (adler32Expected == adler32Computed);
+    }
 
   return m_decoderIntegrityStatus;
 }

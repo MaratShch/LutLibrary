@@ -99,6 +99,34 @@ namespace HuffmanUtils
     }
 
 
+    template<typename T>
+    bool printHuffmanLeaf (const std::shared_ptr<Node<T>>& node, T targetSymbol, const std::string& prefix = "") 
+    {
+	if (!node) 
+	    return false; // Base case: Empty node.
+
+	    // Check if it's a leaf node and the symbol matches.
+	    if (!node->left && !node->right) 
+	    {
+		if (node->symbol == targetSymbol) 
+		{
+		    std::cout << "Found Symbol: " << node->symbol << ", Code: " << prefix << std::endl;
+		    return true;
+		}
+		return false; // Leaf node but symbol does not match.
+	    }
+
+	    // Recursively search the left subtree with added "0" to the prefix.
+	    if (node->left && printHuffmanLeaf(node->left, targetSymbol, prefix + "0")) 
+		return true;
+
+	    // Recursively search the right subtree with added "1" to the prefix.
+	    if (node->right && printHuffmanLeaf(node->right, targetSymbol, prefix + "1")) 
+		return true;
+
+        return false; // Symbol not found in this subtree.
+    }
+
     // Recursive cleanup function
     template <typename T>
     void deleteTree (std::shared_ptr<Node<T>>& node)
