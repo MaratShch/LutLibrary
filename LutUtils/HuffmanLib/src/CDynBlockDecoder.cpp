@@ -140,11 +140,21 @@ bool CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
 
     // build Code Lengts and Literal Tree
     const bool literalValid = build_code_lenghts_tree(in, sp);
+#ifdef _DEBUG
+    const bool McMillanLiteral = validateKraftMcMillan (m_literal_root);
+#else
+    constexpr bool McMillanLiteral = true;
+#endif
 
     // build Disatnce Codes Tree
     const bool distanceValid = build_distance_tree(in, sp);
+#ifdef _DEBUG
+    const bool McMillanDistance = validateKraftMcMillan (m_distance_root);
+#else
+    constexpr bool McMillanDistance = true;
+#endif
 
-    return (literalValid && distanceValid);
+    return (literalValid && McMillanLiteral && distanceValid && McMillanDistance);
 }
 
 #ifdef _DEBUG

@@ -165,6 +165,44 @@ namespace HuffmanUtils
         return computeTreeSize(root->left) + computeTreeSize(root->right);
     }
 
+
+    // Function to traverse the tree and collect code lengths
+    template <typename T>
+    void collectCodeLengths (const std::shared_ptr<Node<T>>& node, std::vector<T>& codeLengths, T depth = static_cast<T>(0))
+    {
+        if (!node) return;
+
+        // Leaf node condition
+        if (!node->left && !node->right) {
+            codeLengths.push_back(depth);
+            return;
+        }
+
+        // Traverse left and right subtrees
+        collectCodeLengths(node->left,  codeLengths, depth + static_cast<T>(1));
+        collectCodeLengths(node->right, codeLengths, depth + static_cast<T>(1));
+    }
+
+    // Function to validate Huffman tree using Kraft-McMillan inequality
+    template <typename T>
+    bool validateKraftMcMillan (const std::shared_ptr<Node<T>>& root)
+    {
+        std::vector<T> codeLengths{};
+
+        // Collect code lengths from the tree
+        collectCodeLengths (root, codeLengths);
+
+        // Apply Kraft-McMillan inequality
+        double sum = 0.0;
+        for (auto const& length : codeLengths)
+            sum += std::pow(2.0, -(static_cast<int>(length)));
+
+        // Check if the inequality holds [Allow for a small epsilon in floating-point comparison]
+        constexpr double epsilon = 1e-6;
+        return (sum <= 1.0 + epsilon);
+    }
+
+
 };
 
 
