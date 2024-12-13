@@ -5,7 +5,7 @@ const std::string dbgLutsFolder = { HALD_LUT_FOLDER };
 
 TEST(ParseNeutral, Parse_Neutral_HCLUT)
 {
-    const std::string lutName{ dbgLutsFolder + "/AnalogFX-Sepia-Color.png" };
+    const std::string lutName{ dbgLutsFolder + "/neutral_hald_512.png" };
     CHaldLut<float> lutFileF32;
     auto const result = lutFileF32.LoadFile(lutName);
     auto const lutSize = lutFileF32.getLutSize();
@@ -83,6 +83,16 @@ TEST(ParseHald, Parse_IdentifyLevel16_HCLUT)
 	auto const lutSize = lutFileF32.getLutSize();
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
+
+TEST(AnalogFX, Parse_AnalogFX_Sepia_Color_HCLUT)
+{
+    const std::string lutName{ dbgLutsFolder + "/AnalogFX-Sepia-Color.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
 
 int main (int argc, char** argv)
 {

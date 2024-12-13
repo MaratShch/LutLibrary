@@ -69,9 +69,13 @@ public:
 				std::unordered_map<std::string, std::vector<uint8_t>> chunkMap = std::move(readPngChunk(lutFile, sections_IDAT));
 				mHaldChunkOrig.insert(chunkMap.begin(), chunkMap.end());
 
-                auto idat = chunkMap.find({"IDAT0"});
-                sections_IDAT += (idat != chunkMap.end() ? 1u : 0u);
-
+                // add logic for handle multiple IDAT sections in one PNG
+                const std::string idatName = (0u == sections_IDAT ? "IDAT" : "IDAT" + std::to_string(sections_IDAT));
+                auto idat = mHaldChunkOrig.find(idatName);
+                auto it = chunkMap.find({ idatName });
+                if (it != chunkMap.end())
+                    sections_IDAT++;
+ 
 				auto it1 = chunkMap.find({"IEND"});
 				auto it2 = chunkMap.find({"NONE"});
 				if (it1 != chunkMap.end() || it2 != chunkMap.end())
@@ -233,12 +237,27 @@ private:
 
     bool merge_IDAT_Sections (void)
     {
-        std::unordered_map<std::string, std::vector<uint8_t>> merged_IDAT;
-        const std::string idatNAME = "IDAT";
-        merged_IDAT[idatNAME] = {};
+        uint32_t idx = 1u;
+        bool bContinue = true;
 
+        while (bContinue)
+        {
+            const std::string numberedKey = "IDAT" + std::to_string(idx);
+            auto it = mHaldChunkOrig.find(numberedKey);
+            if (it != mHaldChunkOrig.end()) // Check if the numbered key exists in the map
+            {
+                mHaldChunkOrig["IDAT"].insert(mHaldChunkOrig["IDAT"].end(), it->second.begin(), it->second.end());
+                // Remove the numbered key from the map
+                mHaldChunkOrig.erase(it);
+                // increment key nameaddendum
+                idx++;
+            }
+            else
+                bContinue = false;
+        } // while (bContinue)
         return true;
     }
+
 
 	std::unordered_map<std::string, std::vector<uint8_t>> readPngChunk (std::ifstream& lutFile, const uint32_t& idat_enum = 0u)
 	{
@@ -273,7 +292,7 @@ private:
 					/* If the CRC32 is valid, create and return a map to the caller with keys and data, 
 					   where the chunk name is used as the string value for the key */
 					std::string chunkName = encodeChunkName(endian_convert(*reinterpret_cast<uint32_t*>(&data[0])));
-                    if ("IDAT" == chunkName)
+                    if ("IDAT" == chunkName && 0u != idat_enum)
                         chunkName += std::to_string(idat_enum);
 
 					std::unordered_map<std::string, std::vector<uint8_t>> dict;
