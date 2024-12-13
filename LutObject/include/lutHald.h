@@ -61,11 +61,17 @@ public:
 		bool isPng = verifyPngFileSignature(readPngSignature(lutFile));
 		if (true == isPng)
 		{
+            uint32_t sections_IDAT = 0u;
 			bool continueRead = true;
 			do
 			{
-				std::unordered_map<std::string, std::vector<uint8_t>> chunkMap = std::move(readPngChunk(lutFile));
+                // if we have number of IDAT sections - let's rename it to IDAT0, IDAT1, etc... 
+				std::unordered_map<std::string, std::vector<uint8_t>> chunkMap = std::move(readPngChunk(lutFile, sections_IDAT));
 				mHaldChunkOrig.insert(chunkMap.begin(), chunkMap.end());
+
+                auto idat = chunkMap.find({"IDAT0"});
+                sections_IDAT += (idat != chunkMap.end() ? 1u : 0u);
+
 				auto it1 = chunkMap.find({"IEND"});
 				auto it2 = chunkMap.find({"NONE"});
 				if (it1 != chunkMap.end() || it2 != chunkMap.end())
@@ -218,7 +224,7 @@ private:
 		return "NONE"; /* just for avoid compilation warning */
 	}
 
-	std::unordered_map<std::string, std::vector<uint8_t>> readPngChunk (std::ifstream& lutFile)
+	std::unordered_map<std::string, std::vector<uint8_t>> readPngChunk (std::ifstream& lutFile, const uint32_t& idat_enum = 0u)
 	{
 		int32_t chunkSize = -1;
 		std::unordered_map<std::string, std::vector<uint8_t>> invalid_dict;
@@ -251,6 +257,9 @@ private:
 					/* If the CRC32 is valid, create and return a map to the caller with keys and data, 
 					   where the chunk name is used as the string value for the key */
 					std::string chunkName = encodeChunkName(endian_convert(*reinterpret_cast<uint32_t*>(&data[0])));
+                    if ("IDAT" == chunkName)
+                        chunkName += std::to_string(idat_enum);
+
 					std::unordered_map<std::string, std::vector<uint8_t>> dict;
 					dict[chunkName] = std::move(data);
 					return dict;
@@ -293,7 +302,7 @@ private:
 		const size_t idatSize = ihdrData.size();
 		if (0u != idatSize)
 		{
-#if defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT)
+#if defined(_DEBUG)// && defined(_DEBUG_SAVE_IDAT)
 			this->idat_save_dbg(ihdrData);
 #endif /* defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT) */
 
@@ -325,10 +334,10 @@ private:
                     for (g = 0u; g < m_lutSize; g++)
                         for (r = 0u; r < m_lutSize; r++)
                         {
-                            m_lutBody3D[r][g][b] = { // normalize ?!? LUT values
-                                static_cast<float>(vecRGB.at(dec + 0u)) / 255.f,
-                                static_cast<float>(vecRGB.at(dec + 1u)) / 255.f,
-                                static_cast<float>(vecRGB.at(dec + 2u)) / 255.f
+                            m_lutBody3D[r][g][b] = { 
+                                static_cast<float>(vecRGB.at(dec + 0u)),
+                                static_cast<float>(vecRGB.at(dec + 1u)),
+                                static_cast<float>(vecRGB.at(dec + 2u))
                             };
                             dec += 3u;
                         }

@@ -5,7 +5,7 @@ const std::string dbgLutsFolder = { HALD_LUT_FOLDER };
 
 TEST(ParseNeutral, Parse_Neutral_HCLUT)
 {
-    const std::string lutName{ dbgLutsFolder + "/neutral_hald_512.png" };
+    const std::string lutName{ dbgLutsFolder + "/AnalogFX-Sepia-Color.png" };
     CHaldLut<float> lutFileF32;
     auto const result = lutFileF32.LoadFile(lutName);
     auto const lutSize = lutFileF32.getLutSize();

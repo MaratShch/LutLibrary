@@ -1,37 +1,56 @@
-from PIL import Image
+import png  # Install using 'pip install pypng'
 
 def save_png_as_txt(input_png_file, output_txt_file):
     """
-    Reads a PNG file, extracts RGB pixel data, and saves it to a TXT file.
+    Reads a PNG file, extracts RGB pixel data (supports 8 and 16 bits per channel),
+    and saves it to a TXT file. Correctly handles true bit depth detection.
     
     Args:
         input_png_file (str): Path to the input PNG file.
         output_txt_file (str): Path to the output TXT file.
     """
     try:
-        # Open the PNG file
-        with Image.open(input_png_file) as img:
-            # Check interlace status
-            interlaced = img.info.get("interlace", 0)  # Default to 0 (non-interlaced)
-            print(f"Interlaced: {'Yes' if interlaced else 'No'}")
+        # Read PNG file metadata
+        reader = png.Reader(input_png_file)
+        png_info = reader.read()
+        
+        # Extract image properties
+        width, height = png_info[0], png_info[1]
+        bit_depth = png_info[3]["bitdepth"]  # Actual bit depth per channel
+        color_type = png_info[3]["planes"]  # Number of color channels
+        interlaced = png_info[3].get("interlace", 0)  # 0 = non-interlaced
+        
+        # Calculate bits per pixel
+        bits_per_pixel = bit_depth * color_type
+        
+        # Print image properties
+        print(f"Image resolution: {width}x{height}")
+        print(f"Interlaced: {'Yes' if interlaced else 'No'}")
+        print(f"Bits per pixel: {bits_per_pixel}")
+        
+        # Open output TXT file
+        with open(output_txt_file, "w") as txt_file:
+            # Iterate over pixel rows
+            for row in png_info[2]:
+                # Split pixel data into channels (depends on color type)
+                for i in range(0, len(row), color_type):
+                    if bit_depth > 8:
+                        # Handle 16 bits per channel
+                        r, g, b = row[i], row[i + 1], row[i + 2]
+                        txt_file.write(f"0x{r:04X} 0x{g:04X} 0x{b:04X}\n")
+                    else:
+                        # Handle 8 bits per channel
+                        r, g, b = row[i], row[i + 1], row[i + 2]
+                        txt_file.write(f"0x{r:02X} 0x{g:02X} 0x{b:02X}\n")
 
-            # Ensure the image is in RGB mode
-            img = img.convert("RGB")
-            width, height = img.size
-            pixels = img.load()
-
-        # Open the output TXT file
-        with open(output_txt_file, 'w') as txt_file:
-            for y in range(height):
-                for x in range(width):
-                    r, g, b = pixels[x, y]
-                    # Write each pixel's RGB values as 0x-prefixed hexadecimal
-                    txt_file.write(f"0x{r:02X} 0x{g:02X} 0x{b:02X}\n")
-
-        print(f"RGB data saved successfully to {output_txt_file}")
+        print(f"Pixel data saved successfully to {output_txt_file}")
 
     except Exception as e:
         print(f"Error processing the file: {e}")
+
+# Example usage
+# save_png_as_txt("input.png", "output.txt")
+
 
 # Example usage
 input_png = "contrast.HCLUT.png"
