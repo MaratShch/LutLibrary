@@ -82,8 +82,10 @@ public:
 					continueRead = false;
 			} while (true == continueRead);
 
-            bool idatValid = (sections_IDAT > 0u ? true : false);
-            if (sections_IDAT > 1u) // we need merge all IDATx sections into one IDAT before start decoding
+            m_IdatNumber = sections_IDAT;
+
+            bool idatValid = (m_IdatNumber > 0u ? true : false);
+            if (m_IdatNumber > 1u) // we need merge all IDATx sections with IDAT before start decoding
                 idatValid = merge_IDAT_Sections();
 
             if (true == idatValid)
@@ -161,6 +163,7 @@ private:
 	uint32_t m_bitDepth;
     uint32_t m_Channels;
 	uint32_t m_CompressionMethod;
+    uint32_t m_IdatNumber;
 	bool m_3d_lut = true;
 
 	void _cleanup (void)
@@ -172,6 +175,7 @@ private:
         m_sizeX = m_sizeY = 0u;
         m_Channels = 0u;
 		m_bitDepth = 0u;
+        m_IdatNumber = 0u;
 		m_3d_lut = true;
 		return;
 	}
@@ -383,6 +387,11 @@ private:
                 bRet = true;
             } // if (true == integrityStatus)
 		} // if (0u != idatSize)
+
+#ifndef _DEBUG
+        // here we may remove all PNG sections from object for reduce memory consumption
+        mHaldChunkOrig.clear();
+#endif
 		return bRet;
 	}
 
