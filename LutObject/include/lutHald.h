@@ -78,11 +78,18 @@ public:
 					continueRead = false;
 			} while (true == continueRead);
 
-			if (true == parseIHDR (mHaldChunkOrig[{"IHDR"}]))
-			{
-				if (true == decodeIDAT (mHaldChunkOrig[{"IDAT"}]))
-					m_error = LutErrorCode::LutState::OK;
-			}
+            bool idatValid = (sections_IDAT > 0u ? true : false);
+            if (sections_IDAT > 1u) // we need merge all IDATx sections into one IDAT before start decoding
+                idatValid = merge_IDAT_Sections();
+
+            if (true == idatValid)
+            {
+                if (true == parseIHDR(mHaldChunkOrig[{"IHDR"}]))
+                {
+                    if (true == decodeIDAT(mHaldChunkOrig[{"IDAT"}]))
+                        m_error = LutErrorCode::LutState::OK;
+                }
+            }
 		}
 		else
 			m_error = LutErrorCode::LutState::ReadError;
@@ -223,6 +230,15 @@ private:
 		}
 		return "NONE"; /* just for avoid compilation warning */
 	}
+
+    bool merge_IDAT_Sections (void)
+    {
+        std::unordered_map<std::string, std::vector<uint8_t>> merged_IDAT;
+        const std::string idatNAME = "IDAT";
+        merged_IDAT[idatNAME] = {};
+
+        return true;
+    }
 
 	std::unordered_map<std::string, std::vector<uint8_t>> readPngChunk (std::ifstream& lutFile, const uint32_t& idat_enum = 0u)
 	{
