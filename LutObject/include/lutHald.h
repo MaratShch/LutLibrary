@@ -363,7 +363,7 @@ private:
                 // resize LUT buffer
                 m_lutBody3D = std::move(LutElement::lutTable3D<T>(m_lutSize, LutElement::lutTable2D<T>(m_lutSize, LutElement::lutTable1D<T>(m_lutSize, LutElement::lutTableRaw<T>(3)))));
 
-                // fil LUT data
+                // fill LUT data
                 uint32_t b, g, r, dec = 0u;
                 for (b = 0u; b < m_lutSize; b++)
                     for (g = 0u; g < m_lutSize; g++)
