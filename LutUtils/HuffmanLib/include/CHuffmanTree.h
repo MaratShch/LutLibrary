@@ -25,6 +25,29 @@ namespace HuffmanUtils
     using Node32 = Node<int32_t>;
     using Node32u = Node<uint32_t>;
 
+    // Function to add a code to the Huffman tree
+    template <typename T>
+    void addCodeToTree(std::shared_ptr<Node<T>>& root, T code, int32_t length, T symbol)
+    {
+        auto current = root;
+        for (int32_t i = length - 1; i >= 0; --i)
+        {
+            const T bit = static_cast<T>((code >> i) & 1);
+            if (bit == 0)
+            {
+                if (!current->left) current->left = std::make_shared<Node<T>>(-1); // -1 for intermediate nodes
+                current = current->left;
+            }
+            else
+            {
+                if (!current->right) current->right = std::make_shared<Node<T>>(-1);
+                current = current->right;
+            }
+        }
+        current->symbol = symbol; // Assign the symbol at the leaf node
+        return;
+    }
+
     template <typename T>
     std::shared_ptr<Node<T>> buildHuffmanTreeFromLengths (const std::vector<T>& codeLengths)
     {
