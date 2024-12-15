@@ -13,8 +13,8 @@ template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::
 class CLut3DL
 {
 public:	
-	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
-	LutErrorCode::LutState getLastError(void) { return m_error; }
+    LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
+    LutErrorCode::LutState getLastError(void) { return m_error; }
 
     LutErrorCode::LutState LoadFile(std::ifstream& lutFile)
     {
@@ -53,6 +53,12 @@ private:
 	LutElement::lutSize        m_lutSize;
 	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
 
+        void _cleanup (void)
+        {
+           m_lutSize = 0;  
+           m_error = LutErrorCode::LutState::NotInitialized;
+           return;
+        }
 };
 
 
