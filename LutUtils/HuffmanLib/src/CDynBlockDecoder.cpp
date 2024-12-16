@@ -31,7 +31,8 @@ CDynBlockDecoder::~CDynBlockDecoder(void)
 std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize)
 {
     std::vector<uint32_t> tmpVector(treeSize, 0);
-    uint32_t lastCode = 0xFFFFFFFFu;
+    constexpr uint32_t lastCodeBad = 0xFFFFFFFFu;
+    uint32_t lastCode = lastCodeBad;
 
     for (uint32_t i = 0u; i < treeSize; /* i incremented inside of loop */)
     {
@@ -42,14 +43,11 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
         {
             case 16: // repeat code
             {
-                if (0xFFFFFFFFu == lastCode)
-                {
-                    // last code non exist
-                    return nullptr;
-                }
+                if (lastCodeBad == lastCode)
+                     return nullptr; // last code non exist
                 constexpr uint32_t extraBits = 2u;
                 const uint32_t repeatCount = 3u + readBits(in, sp, extraBits);
-                std::fill(tmpVector.begin() + i, tmpVector.begin() + i + repeatCount - 1u, lastCode);
+                std::fill(tmpVector.begin() + i, tmpVector.begin() + i + repeatCount, lastCode);
                 i += repeatCount;
             }
             break;
@@ -58,7 +56,7 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
             {
                 constexpr uint32_t extraBits = 3u;
                 const uint32_t zeroCount = 3u + readBits(in, sp, extraBits);
-                std::fill(tmpVector.begin() + i, tmpVector.begin() + i + zeroCount - 1u, 0u);
+                std::fill(tmpVector.begin() + i, tmpVector.begin() + i + zeroCount, 0u);
                 i += zeroCount;
             }
             break;
@@ -67,20 +65,27 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
             {
                 constexpr uint32_t extraBits = 7u;
                 const uint32_t zeroCount = 11u + readBits(in, sp, extraBits);
-                std::fill(tmpVector.begin() + i, tmpVector.begin() + i + zeroCount - 1u, 0u);
+                std::fill(tmpVector.begin() + i, tmpVector.begin() + i + zeroCount, 0u);
                 i += zeroCount;
             }
             break;
 
             default: // rest of literal and distance codes
+            {
+                if (i >= tmpVector.size())
+                     return nullptr; // Prevent overflow
+
                 tmpVector[i] = lastCode = hTreeLeaf->symbol;
                 i++;
+            } 
             break;
+            
         }
     }
 
     return buildHuffmanTreeFromLengths<uint32_t>(tmpVector);
 }
+
 
 
 // Build Literal tree based on the Cl4Cl4
