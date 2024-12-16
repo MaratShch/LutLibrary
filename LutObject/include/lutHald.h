@@ -241,6 +241,7 @@ private:
 
     bool merge_IDAT_Sections (void)
     {
+        constexpr uint32_t dataOffset = 4u; // because every section contains first 4 bytes with section name - we need avoid this bytes on merge.
         uint32_t idx = 1u;
         bool bContinue = true;
 
@@ -250,7 +251,7 @@ private:
             auto it = mHaldChunkOrig.find(numberedKey);
             if (it != mHaldChunkOrig.end()) // Check if the numbered key exists in the map
             {
-                mHaldChunkOrig["IDAT"].insert(mHaldChunkOrig["IDAT"].end(), it->second.begin(), it->second.end());
+                mHaldChunkOrig["IDAT"].insert(mHaldChunkOrig["IDAT"].end(), it->second.begin() + dataOffset, it->second.end());
                 // Remove the numbered key from the map
                 mHaldChunkOrig.erase(it);
                 // increment key nameaddendum
