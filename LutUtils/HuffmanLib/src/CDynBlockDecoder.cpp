@@ -38,7 +38,9 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
     {
         // read Huffman Codes from stream with parallel traversing of the Cl4Cl tree
         const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t>(in, sp, m_cl4cl_root);
-
+        if (nullptr == hTreeLeaf)
+            return nullptr; // Handle error in Huffman decoding
+   
         switch (hTreeLeaf->symbol)
         {
             case 16: // repeat code
