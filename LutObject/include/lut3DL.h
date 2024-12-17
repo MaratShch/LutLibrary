@@ -34,7 +34,7 @@ public:
         return err;
     }
 
-    LutErrorCode::LutState LoadFile(const char* lutFileName)
+    LutErrorCode::LutState LoadFile (const char* lutFileName)
     {
         return (nullptr != lutFileName && '\0' != lutFileName[0]) ? LoadFile(string_view{ lutFileName }) : LutErrorCode::LutState::GenericError;
     }

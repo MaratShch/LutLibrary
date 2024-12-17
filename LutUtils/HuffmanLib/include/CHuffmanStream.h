@@ -38,23 +38,28 @@ namespace HuffmanUtils
     template <typename T>
     inline const std::shared_ptr<Node<T>> readHuffmanBits
     (
-        const std::vector<uint8_t>& stream,     // input Huffman Stream 
-        CStreamPointer& streamOffset,           // stream pointer (bits offset), value incremented internally 
-        const std::shared_ptr<Node<T>>& node    // Huffman Tree for traversing and stop read when code will be find
+        const std::vector<uint8_t>& stream,  // Input Huffman Stream 
+        CStreamPointer& streamOffset,        // Stream pointer (bits offset), incremented internally
+        const std::shared_ptr<Node<T>>& node // Root of the Huffman Tree for traversal
     )
     {
-        std::shared_ptr<Node<T>> huffmanNode = node;
+        auto huffmanNode{ node };
         uint32_t huffmanCode = 0u;
-        uint32_t position = 0u;
 
-        do {
-            const uint32_t huffmanBit = readBit(stream, streamOffset);
-            (huffmanCode <<= position) |= huffmanBit;
-            streamOffset++, position++;
-            huffmanNode = ((0u == huffmanBit) ? huffmanNode->left : huffmanNode->right);
-        } while (nullptr != huffmanNode->left || nullptr != huffmanNode->right);
+        // Traverse the Huffman Tree until a leaf node is found
+        while (nullptr != huffmanNode && (huffmanNode->left || huffmanNode->right))
+        {
+            const uint32_t huffmanBit = readBit(stream, streamOffset); // Read one bit
+            huffmanCode = (huffmanCode << 1) | huffmanBit;             // Append bit to Huffman code
+            streamOffset++;                                            // Forward stream pointer to the next bit
+            huffmanNode = (huffmanBit == 0u) ? huffmanNode->left : huffmanNode->right; // Move to the next node based on the bit value
+        }
 
-        return huffmanNode;
+        // Ensure we reached a valid leaf node
+        if (nullptr == huffmanNode)
+            throw std::runtime_error("Huffman decoding error: Reached a null node.");
+
+        return huffmanNode; // Return the decoded leaf node
     }
 
 
