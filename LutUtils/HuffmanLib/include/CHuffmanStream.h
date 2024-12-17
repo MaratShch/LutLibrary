@@ -49,7 +49,7 @@ namespace HuffmanUtils
         while (nullptr != huffmanNode && (huffmanNode->left || huffmanNode->right))
         {
             const uint32_t huffmanBit = readBit(stream, streamOffset); // Read one bit
-            streamOffset++;                                             // Forward stream pointer to the next bit
+            streamOffset++;                                            // Forward stream pointer to the next bit
             huffmanNode = (huffmanBit == 0u) ? huffmanNode->left : huffmanNode->right; // Move to the next node based on the bit value
         }
 
