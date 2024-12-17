@@ -44,24 +44,21 @@ namespace HuffmanUtils
     )
     {
         auto huffmanNode{ node };
-        uint32_t huffmanCode = 0u;
 
         // Traverse the Huffman Tree until a leaf node is found
         while (nullptr != huffmanNode && (huffmanNode->left || huffmanNode->right))
         {
             const uint32_t huffmanBit = readBit(stream, streamOffset); // Read one bit
-            huffmanCode = (huffmanCode << 1) | huffmanBit;             // Append bit to Huffman code
-            streamOffset++;                                            // Forward stream pointer to the next bit
+            streamOffset++;                                             // Forward stream pointer to the next bit
             huffmanNode = (huffmanBit == 0u) ? huffmanNode->left : huffmanNode->right; // Move to the next node based on the bit value
         }
 
         // Ensure we reached a valid leaf node
         if (nullptr == huffmanNode)
-            throw std::runtime_error("Huffman decoding error: Reached a null node.");
+            throw std::runtime_error("Huffman decoding error: Reached a nullptr node.");
 
         return huffmanNode; // Return the decoded leaf node
     }
-
 
     inline uint32_t readStaticHuffmanBits
     (
