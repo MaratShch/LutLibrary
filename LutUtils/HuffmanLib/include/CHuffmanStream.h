@@ -35,7 +35,7 @@ namespace HuffmanUtils
     }
 
     // Read Huffman Codes from Huffman stream. Stream pointer will be automatically incremented
-    template <typename T>
+    template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     inline const std::shared_ptr<Node<T>> readHuffmanBits
     (
         const std::vector<uint8_t>& stream,  // Input Huffman Stream 
@@ -97,7 +97,6 @@ namespace HuffmanUtils
         uint32_t A = 1u; // A starts with 1
         uint32_t B = 0u; // B starts with 0
         constexpr uint32_t MOD_ADLER = 65521u;
-        const size_t length = data.size();
 
         for (const auto& element : data)
         {
