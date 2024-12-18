@@ -6,6 +6,7 @@
 #include <bitset>
 #include <iostream>
 #include <cmath>
+#include <map>
 
 namespace HuffmanUtils
 {
@@ -14,12 +15,12 @@ namespace HuffmanUtils
     template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     struct Node
     {
-        T symbol;   // Literal/Distance can be any integer type (int, char, etc.)
-        T code;   	// Huffman code
-        std::shared_ptr<Node> left;
-        std::shared_ptr<Node> right;
+        T symbol = static_cast<T>(-1);  // Sentinel value for uninitialized
+        T code = static_cast<T>(0);     // Optional: debugging or additional info
+        std::shared_ptr<Node<T>> left = nullptr;
+        std::shared_ptr<Node<T>> right = nullptr;
 
-        Node() : symbol(T()), code(T()), left(nullptr), right(nullptr) {}
+        bool isLeaf() const {return left == nullptr && right == nullptr;}
     };
 
     using Node32 = Node<int32_t>;
@@ -48,52 +49,64 @@ namespace HuffmanUtils
         return;
     }
 
-    template <typename T>
-    std::shared_ptr<Node<T>> buildHuffmanTreeFromLengths (const std::vector<T>& codeLengths)
-    {
-        std::shared_ptr<Node<T>> root = std::make_shared<Node<T>>();
 
-        T nextCode = 0; // Tracks the next code to assign
-        constexpr uint32_t maxLength = 15u; // Maximum code length (per Deflate spec)
+    template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
+    std::shared_ptr<Node<T>> buildHuffmanTreeFromLengths (const std::vector<T>& codeLengths, uint32_t maxLength = 15u)
+    {
+        if (codeLengths.empty())
+            throw std::invalid_argument("Input codeLengths vector is empty.");
+
+        auto root = std::make_shared<Node<T>>();
+        T nextCode{ 0 };
+
+        // Preprocess code lengths into buckets
+        std::map<uint32_t, std::vector<T>> lengthBuckets;
+        for (T symbol = 0; symbol < static_cast<T>(codeLengths.size()); ++symbol)
+        {
+            if (codeLengths[symbol] > 0)
+            {
+                if (codeLengths[symbol] > static_cast<decltype(codeLengths[symbol])>(maxLength))
+                    throw std::invalid_argument("Code length exceeds maximum allowed length.");
+
+                lengthBuckets[codeLengths[symbol]].push_back(symbol);
+            }
+        }
 
         // Build the Huffman tree
         for (uint32_t codeLength = 1u; codeLength <= maxLength; ++codeLength)
         {
-            for (T symbol = 0; symbol < static_cast<T>(codeLengths.size()); ++symbol)
+            for (T symbol : lengthBuckets[codeLength])
             {
-                if (codeLengths[symbol] == codeLength)
+                T code{ nextCode };
+
+                // Insert the code into the Huffman tree
+                auto current{ root };
+                for (int32_t bitIndex = static_cast<int32_t>(codeLength) - 1; bitIndex >= 0; --bitIndex)
                 {
-                    uint32_t code = nextCode;
-
-                    // Insert the code into the Huffman tree
-                    auto current = root;
-                    for (int bitIndex = codeLength - 1; bitIndex >= 0; --bitIndex)
+                    bool bit = (code >> bitIndex) & 0x1;
+                    if (bit)
                     {
-                        // Extract the current bit (MSB first)
-                        bool bit = (code >> bitIndex) & 1;
-
-                        if (bit)
-                        {
-                            // Create a right child if it doesn't exist
-                            if (!current->right) current->right = std::make_shared<Node<T>>();
-                            current = current->right;
-                        }
-                        else
-                        {
-                            // Create a left child if it doesn't exist
-                            if (!current->left) current->left = std::make_shared<Node<T>>();
-                            current = current->left;
-                        }
+                        if (!current->right) current->right = std::make_shared<Node<T>>();
+                        current = current->right;
                     }
-
-                    // Assign the symbol to the leaf node
-                    current->symbol = symbol;
-                    current->code = code; // Optional for debugging
-                    ++nextCode;
+                    else
+                    {
+                        if (!current->left) current->left = std::make_shared<Node<T>>();
+                        current = current->left;
+                    }
                 }
+
+                // Validate and assign the symbol
+                if (current->isLeaf() && current->symbol != static_cast<T>(-1))
+                    throw std::runtime_error("Huffman tree conflict: Node already contains a symbol.");
+
+                current->symbol = symbol;
+#ifdef _DEBUG
+                current->code = code;
+#endif
+                ++nextCode;
             }
 
-            // Prepare the next code by shifting to the next length
             nextCode <<= 1;
         }
 
@@ -101,7 +114,8 @@ namespace HuffmanUtils
     }
 
 
-    template<typename T>
+
+    template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     void printHuffmanTree (const std::shared_ptr<Node<T>>& node, const std::string& prefix = "")
     {
         if (!node->left && !node->right)
@@ -122,8 +136,8 @@ namespace HuffmanUtils
     }
 
 
-    template<typename T>
-    bool printHuffmanLeaf (const std::shared_ptr<Node<T>>& node, T targetSymbol, const std::string& prefix = "") 
+    template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
+    bool printHuffmanLeaf (const std::shared_ptr<Node<T>>& node, T targetSymbol, const std::string& prefix = "")
     {
 	if (!node) 
 	    return false; // Base case: Empty node.
@@ -151,7 +165,7 @@ namespace HuffmanUtils
     }
 
     // Recursive cleanup function
-    template <typename T>
+    template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     void deleteTree (std::shared_ptr<Node<T>>& node)
     {
         if (!node) return;
@@ -170,7 +184,7 @@ namespace HuffmanUtils
 
 
     // Function to compute the size (number of leaves) in the tree
-    template <typename T>
+    template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     size_t computeTreeSize (const std::shared_ptr<Node<T>>& root)
     {
         if (!root)
@@ -190,7 +204,7 @@ namespace HuffmanUtils
 
 
     // Function to traverse the tree and collect code lengths
-    template <typename T>
+    template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     void collectCodeLengths (const std::shared_ptr<Node<T>>& node, std::vector<T>& codeLengths, T depth = static_cast<T>(0))
     {
         if (!node) return;
@@ -207,7 +221,7 @@ namespace HuffmanUtils
     }
 
     // Function to validate Huffman tree using Kraft-McMillan inequality
-    template <typename T>
+    template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     bool validateKraftMcMillan (const std::shared_ptr<Node<T>>& root)
     {
         std::vector<T> codeLengths{};
@@ -226,7 +240,7 @@ namespace HuffmanUtils
     }
 
 
-};
+}; //namespace HuffmanUtils
 
 
 #endif // __C_HUFFMAN_TREE_OBJECT__
