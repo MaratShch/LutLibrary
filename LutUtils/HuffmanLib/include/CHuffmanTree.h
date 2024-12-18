@@ -20,7 +20,7 @@ namespace HuffmanUtils
         std::shared_ptr<Node<T>> left = nullptr;
         std::shared_ptr<Node<T>> right = nullptr;
 
-        bool isLeaf() const {return left == nullptr && right == nullptr;}
+        bool isLeaf (void) const noexcept {return left == nullptr && right == nullptr;}
     };
 
     using Node32 = Node<int32_t>;
@@ -30,7 +30,7 @@ namespace HuffmanUtils
     template <typename T>
     void addCodeToTree(std::shared_ptr<Node<T>>& root, T code, int32_t length, T symbol)
     {
-        auto current = root;
+        auto current{ root };
         for (int32_t i = length - 1; i >= 0; --i)
         {
             const T bit = static_cast<T>((code >> i) & 1);
@@ -139,27 +139,27 @@ namespace HuffmanUtils
     template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     bool printHuffmanLeaf (const std::shared_ptr<Node<T>>& node, T targetSymbol, const std::string& prefix = "")
     {
-	if (!node) 
-	    return false; // Base case: Empty node.
+	    if (nullptr == node) 
+	        return false; // Base case: Empty node.
 
 	    // Check if it's a leaf node and the symbol matches.
 	    if (!node->left && !node->right) 
 	    {
-		if (node->symbol == targetSymbol) 
-		{
-		    std::cout << "Found Symbol: " << node->symbol << ", Code: " << prefix << std::endl;
-		    return true;
-		}
-		return false; // Leaf node but symbol does not match.
+		    if (node->symbol == targetSymbol) 
+		    {
+		        std::cout << "Found Symbol: " << node->symbol << ", Code: " << prefix << std::endl;
+		        return true;
+		    }
+		    return false; // Leaf node but symbol does not match.
 	    }
 
 	    // Recursively search the left subtree with added "0" to the prefix.
 	    if (node->left && printHuffmanLeaf(node->left, targetSymbol, prefix + "0")) 
-		return true;
+		    return true;
 
 	    // Recursively search the right subtree with added "1" to the prefix.
 	    if (node->right && printHuffmanLeaf(node->right, targetSymbol, prefix + "1")) 
-		return true;
+		    return true;
 
         return false; // Symbol not found in this subtree.
     }
@@ -168,7 +168,7 @@ namespace HuffmanUtils
     template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     void deleteTree (std::shared_ptr<Node<T>>& node)
     {
-        if (!node) return;
+        if (nullptr == node) return;
 
         // Post-order traversal: clean left, right, then the current node
         deleteTree<T>(node->left);
@@ -207,7 +207,7 @@ namespace HuffmanUtils
     template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     void collectCodeLengths (const std::shared_ptr<Node<T>>& node, std::vector<T>& codeLengths, T depth = static_cast<T>(0))
     {
-        if (!node) return;
+        if (nullptr == node) return;
 
         // Leaf node condition
         if (!node->left && !node->right) {
