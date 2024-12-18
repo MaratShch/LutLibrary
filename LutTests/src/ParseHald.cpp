@@ -93,6 +93,14 @@ TEST(AnalogFX, Parse_AnalogFX_Sepia_Color_HCLUT)
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
+TEST(ZilverFX, Parse_ZilverFX_Vintage_HCLUT)
+{
+    const std::string lutName{ dbgLutsFolder + "/ZilverFX-Vintage-B&W.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
 
 int main (int argc, char** argv)
 {
