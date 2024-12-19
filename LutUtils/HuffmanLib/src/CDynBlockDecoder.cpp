@@ -30,7 +30,7 @@ CDynBlockDecoder::~CDynBlockDecoder(void)
 
 std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize)
 {
-    std::vector<uint32_t> tmpVector(treeSize, 0);
+    std::vector<uint32_t> tmpVector(treeSize, static_cast<uint32_t>(-1));
     constexpr uint32_t lastCodeBad = 0xFFFFFFFFu;
     uint32_t lastCode = lastCodeBad;
 
@@ -207,37 +207,37 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
     if (true == pre_decode(in, sp))
     {
 	    auto process_distance_sequence = [this]
-            (
-               const std::vector<uint8_t>& in,
-               CStreamPointer& sp,
-               uint32_t distanceCode
-            ) -> const std::pair<int32_t, int32_t>
+        (
+           const std::vector<uint8_t>& in,
+           CStreamPointer& sp,
+           uint32_t distanceCode
+        ) -> const std::pair<int32_t, int32_t>
 	    {
-                // Get Length information
+            // Get Length information
 	        const int32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
-		const int32_t extraBitsInLen = cLengthGetExtra(LengtCodeArrayIdx);
-		const int32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
-                const int32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0);
+		    const int32_t extraBitsInLen = cLengthGetExtra(LengtCodeArrayIdx);
+		    const int32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
+            const int32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0);
 
-		if (finalLength > std::numeric_limits<uint32_t>::max() - (extraBitsInLen > 0u ? finalLength : 0u))
-		   throw std::runtime_error("Potential overflow of size.");
+		    if (finalLength > std::numeric_limits<uint32_t>::max() - (extraBitsInLen > 0u ? finalLength : 0u))
+		        throw std::runtime_error("Potential overflow of size.");
 
-		// Read distance code
-		const std::shared_ptr<Node<uint32_t>> hDistanceLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
-		if (hDistanceLeaf->symbol != static_cast<uint32_t>(-1)) // assume sentinel value (-1) is never a valid symbol in Huffman code.
-		{
-		    const int32_t DistanceCodeArrayIdx = hDistanceLeaf->symbol - cDistanceCodesMin;
-		    const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
-		    const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
-                    const int32_t extraBitsValue = readBits(in, sp, extraBitsInDist);
+		    // Read distance code
+		    const std::shared_ptr<Node<uint32_t>> hDistanceLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
+		    if (hDistanceLeaf->symbol != static_cast<uint32_t>(-1)) // assume sentinel value (-1) is never a valid symbol in Huffman code.
+		    {
+		        const int32_t DistanceCodeArrayIdx = hDistanceLeaf->symbol - cDistanceCodesMin;
+		        const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
+		        const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
+                        const int32_t extraBitsValue = readBits(in, sp, extraBitsInDist);
 		    
-                    if (baseDistance > std::numeric_limits<uint32_t>::max() - (extraBitsInDist > 0u ? extraBitsValue : 0u))
-		       throw std::runtime_error("Potential overflow of distance.");
+                        if (baseDistance > std::numeric_limits<uint32_t>::max() - (extraBitsInDist > 0u ? extraBitsValue : 0u))
+		           throw std::runtime_error("Potential overflow of distance.");
 
-		    const int32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? extraBitsValue : 0);
-		    return std::make_pair(finalLength, finalDistance);
-		}
-		return std::make_pair(0, 0);
+		        const int32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? extraBitsValue : 0);
+		        return std::make_pair(finalLength, finalDistance);
+		    }
+		    return std::make_pair(0, 0);
 	    };
 
     uint32_t symbol = 0u;
