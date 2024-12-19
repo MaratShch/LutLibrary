@@ -31,7 +31,7 @@ namespace HuffmanUtils
         for (uint32_t i = 0; i < bitsRead; i++)
         {
             value |= ((readBit(stream, streamOffset)) << i);
-            streamOffset++;
+            ++streamOffset;
         }
         return value;
     }
@@ -51,7 +51,7 @@ namespace HuffmanUtils
         while (nullptr != huffmanNode && false == huffmanNode->isLeaf())
         {
             const uint32_t huffmanBit = readBit(stream, streamOffset); // Read one bit
-            streamOffset++;                                            // Forward stream pointer to the next bit
+            ++streamOffset;                                            // Forward stream pointer to the next bit
             huffmanNode = (huffmanBit == 0u) ? huffmanNode->left : huffmanNode->right; // Move to the next node based on the bit value
         }
 
@@ -76,7 +76,7 @@ namespace HuffmanUtils
             const uint32_t huffmanBit = readBit(stream, streamOffset);
             (huffmanCode <<= shft) |= huffmanBit;
             shft = 1u;
-            streamOffset++;
+            ++streamOffset;
         }
         return huffmanCode;
     }
@@ -89,7 +89,7 @@ namespace HuffmanUtils
     )
     {
         const uint32_t huffmanCode = (code << 1) | readBit(stream, streamOffset);
-        streamOffset++;
+        ++streamOffset;
         return huffmanCode;
     }
 
