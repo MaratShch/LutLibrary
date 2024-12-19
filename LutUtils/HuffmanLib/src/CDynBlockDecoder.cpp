@@ -46,9 +46,14 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
             case 16: // repeat code
             {
                 if (lastCodeBad == lastCode)
-                     return nullptr; // last code non exist
+                     throw std::runtime_error("Last code does not exists.");
                 constexpr uint32_t extraBits = 2u;
-                const uint32_t repeatCount = 3u + readBits(in, sp, extraBits);
+                const uint32_t repeatCountBits = readBits(in, sp, extraBits);
+                const uint32_t repeatCount = 3u + repeatCountBits;
+
+                if (i > tmpVector.size() - repeatCount)
+                    throw std::runtime_error("Output vector overflow during handling symbol 16.");
+
                 std::fill(tmpVector.begin() + i, tmpVector.begin() + i + repeatCount, lastCode);
                 i += repeatCount;
             }
@@ -57,7 +62,12 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
             case 17: // zero code
             {
                 constexpr uint32_t extraBits = 3u;
-                const uint32_t zeroCount = 3u + readBits(in, sp, extraBits);
+                const uint32_t zeroCountBits = readBits(in, sp, extraBits);
+                const uint32_t zeroCount = 3u + zeroCountBits;
+
+                if (i > tmpVector.size() - zeroCount)
+                    throw std::runtime_error("Output vector overflow during handling symbol 17.");
+
                 std::fill(tmpVector.begin() + i, tmpVector.begin() + i + zeroCount, 0u);
                 i += zeroCount;
             }
@@ -66,7 +76,12 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
             case 18: // zero code
             {
                 constexpr uint32_t extraBits = 7u;
-                const uint32_t zeroCount = 11u + readBits(in, sp, extraBits);
+                const uint32_t zeroCountBits = readBits(in, sp, extraBits);
+                const uint32_t zeroCount = 11u + zeroCountBits;
+
+                if (i > tmpVector.size() - zeroCount)
+                    throw std::runtime_error("Output vector overflow during handling symbol 18.");
+
                 std::fill(tmpVector.begin() + i, tmpVector.begin() + i + zeroCount, 0u);
                 i += zeroCount;
             }
@@ -75,7 +90,7 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
             default: // rest of literal and distance codes
             {
                 if (i >= tmpVector.size())
-                     return nullptr; // Prevent overflow
+                     throw std::runtime_error("Output vector overflow in default handler.");
 
                 tmpVector[i] = lastCode = hTreeLeaf->symbol;
                 i++;
@@ -94,7 +109,7 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
 bool CDynBlockDecoder::build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
 {
     m_literal_root = build_huffman_tree (in, sp, m_HLIT);
-    return (nullptr != m_literal_root ? true : false);
+    return true;
 }
 
 
@@ -102,7 +117,7 @@ bool CDynBlockDecoder::build_code_lenghts_tree (const std::vector<uint8_t>& in, 
 bool CDynBlockDecoder::build_distance_tree (const std::vector<uint8_t>& in, CStreamPointer& sp)
 {
     m_distance_root = build_huffman_tree (in, sp, m_HDIST);
-    return (nullptr != m_distance_root ? true : false);
+    return true;
 }
 
 
@@ -163,6 +178,7 @@ bool CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
 
     return (literalValid && McMillanLiteral && distanceValid && McMillanDistance);
 }
+
 
 #ifdef _DEBUG
 void dbg_print_on_crash (const std::vector<uint8_t>& out)

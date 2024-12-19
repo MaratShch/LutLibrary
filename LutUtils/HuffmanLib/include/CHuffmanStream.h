@@ -15,6 +15,8 @@ namespace HuffmanUtils
     inline uint32_t readBit (const std::vector<uint8_t>& stream, const CStreamPointer& streamOffset) 
     {
 #ifdef _DEBUG
+        if (sp2byte(streamOffset) > stream.size())
+           throw std::runtime_error("Stream offset out of range (readBit)");
         return (stream.at(streamOffset.byte()) >> streamOffset.bit()) & 0x01u;
 #else
         return (stream[streamOffset.byte()] >> streamOffset.bit()) & 0x01u;
@@ -46,7 +48,7 @@ namespace HuffmanUtils
         auto huffmanNode{ node };
 
         // Traverse the Huffman Tree until a leaf node is found
-        while (nullptr != huffmanNode && (huffmanNode->left || huffmanNode->right))
+        while (nullptr != huffmanNode && false == huffmanNode->isLeaf())
         {
             const uint32_t huffmanBit = readBit(stream, streamOffset); // Read one bit
             streamOffset++;                                            // Forward stream pointer to the next bit
