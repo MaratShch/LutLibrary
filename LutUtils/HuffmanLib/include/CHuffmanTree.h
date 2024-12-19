@@ -219,8 +219,8 @@ namespace HuffmanUtils
         }
 
         // Traverse left and right subtrees
-        collectCodeLengths(node->left,  codeLengths, depth + static_cast<T>(1));
-        collectCodeLengths(node->right, codeLengths, depth + static_cast<T>(1));
+        collectCodeLengths<T>(node->left,  codeLengths, depth + static_cast<T>(1));
+        collectCodeLengths<T>(node->right, codeLengths, depth + static_cast<T>(1));
     
         return;
     }
@@ -232,7 +232,7 @@ namespace HuffmanUtils
         std::vector<T> codeLengths{};
 
         // Collect code lengths from the tree
-        collectCodeLengths (root, codeLengths);
+        collectCodeLengths<T> (root, codeLengths);
 
         // Apply Kraft-McMillan inequality
         double sum = 0.0;
