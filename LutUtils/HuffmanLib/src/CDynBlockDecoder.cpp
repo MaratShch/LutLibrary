@@ -187,89 +187,102 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
     // cleanup output vector
     out.clear();
 
-#ifdef _DEBUG
-    const CStreamPointer dbgSpCopy(sp);
-#endif
-
     // Initialize and Build all Huffman Dynamic Decoder Infrastructures (Cl4Cl, Huffman trees, etc...)
     if (true == pre_decode(in, sp))
     {
-        uint32_t symbol = 0u;
+	    auto process_distance_sequence = [this]
+            (
+               const std::vector<uint8_t>& in,
+               CStreamPointer& sp,
+               uint32_t distanceCode
+            ) -> const std::pair<int32_t, int32_t>
+	    {
+                // Get Length information
+	        const int32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
+		const int32_t extraBitsInLen = cLengthGetExtra(LengtCodeArrayIdx);
+		const int32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
+                const int32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0);
 
-        do {
+		if (finalLength > std::numeric_limits<uint32_t>::max() - (extraBitsInLen > 0u ? finalLength : 0u))
+		   throw std::runtime_error("Potential overflow of size.");
+
+		// Read distance code
+		const std::shared_ptr<Node<uint32_t>> hDistanceLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
+		if (hDistanceLeaf->symbol != static_cast<uint32_t>(-1)) // assume sentinel value (-1) is never a valid symbol in Huffman code.
+		{
+		    const int32_t DistanceCodeArrayIdx = hDistanceLeaf->symbol - cDistanceCodesMin;
+		    const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
+		    const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
+                    const int32_t extraBitsValue = readBits(in, sp, extraBitsInDist);
+		    
+                    if (baseDistance > std::numeric_limits<uint32_t>::max() - (extraBitsInDist > 0u ? extraBitsValue : 0u))
+		       throw std::runtime_error("Potential overflow of distance.");
+
+		    const int32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? extraBitsValue : 0);
+		    return std::make_pair(finalLength, finalDistance);
+		}
+		return std::make_pair(0, 0);
+	    };
+
+    uint32_t symbol = 0u;
+
+    do {
             const std::shared_ptr<Node<uint32_t>> hLiteraLeaf = readHuffmanBits<uint32_t>(in, sp, m_literal_root);
             symbol = hLiteraLeaf->symbol;
 
+            if ((symbol < 0) || (symbol > cLengthCodesMax))
+               throw std::runtime_error("Invalid symbol received:" + std::to_string(symbol) + ".");
+
             if (symbol <= 255u)
-                out.push_back(static_cast<uint8_t>(hLiteraLeaf->symbol));
+                out.push_back(static_cast<uint8_t>(symbol));
             else if (symbol >= cLengthCodesMin && symbol <= cLengthCodesMax)
             {
-                auto process_distance_sequence = [this]
-                (
-                    const std::vector<uint8_t>& in,
-                    CStreamPointer& sp,
-                    const uint32_t distanceCode
-                    ) -> std::pair<int32_t, int32_t>
-                {
-                    // Get Length information
-                    const int32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
-                    const int32_t extraBitsInLen = cLengthGetExtra(LengtCodeArrayIdx);
-                    const int32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
-                    const int32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0u);
-
-                    // Read distance code
-                    const std::shared_ptr<Node<uint32_t>> hTreeLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
-                    const int32_t DistanceCodeArrayIdx = hTreeLeaf->symbol - cDistanceCodesMin;
-                    const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
-                    const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
-                    const int32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? readBits(in, sp, extraBitsInDist) : 0u);
-
-                    return std::make_pair(finalLength, finalDistance);
-                };
-
                 const std::pair<int32_t, int32_t> pair_distance = process_distance_sequence(in, sp, symbol);
                 auto const& size = pair_distance.first;
                 auto const& distance = pair_distance.second;
-                const int32_t outVectorSize = static_cast<int32_t>(out.size());
 
-                if (outVectorSize < distance)
+                if (0 == distance || 0 == size) // nothing to copy
+                    continue;
+
+                const int32_t outVectorSize = static_cast<int32_t>(out.size());
+                constexpr int32_t maxWinSize = static_cast<int32_t>(max_WindowSize);
+                if (outVectorSize < distance || distance > maxWinSize)
                 {
                     dbg_print_on_crash(out);
-
                     std::ostringstream ex;
-                    ex << "Distance exceeds output buffer size: negative offset computed. Distance = " << distance << " out size = " << outVectorSize <<
-#ifdef _DEBUG
-                        " SP before = " << dbgSpCopy << " SP after = " << sp; // 83.7 -> 86.2
-#else
-                        " SP = " << sp;
-#endif
-                    const std::string ex_as_string(ex.str());
+                    ex << "Distance exceeds output buffer or max allowed window size " << maxWinSize << " bytes. Distance = " << distance << " bytes. Out size = " << outVectorSize << " bytes. SP = " << sp;
 
+                    const std::string ex_as_string(ex.str());
                     throw std::runtime_error(ex_as_string);
                     return false;
                 }
-                else
+
+                auto const pre = outVectorSize - distance;
+
+                // Preallocate space for the output vector
+                 out.reserve(out.size() + size);
+                    
+                // Perform the copy operation
+                for (int32_t i = 0; i < size; i++)
                 {
-                    auto const pre = outVectorSize - distance;
-                    for (int32_t i = 0; i < size; i++)
-                        out.push_back(out[pre + i]);
+                    // Circular buffer behavior for overlapping copies
+                    out.push_back(out[pre + i % distance]);
                 }
-
             }
-
         } while (symbol != EndOfBlock);
 
         auto convertEndian = [](uint32_t value) -> uint32_t
         {
             return ((value >> 24) & 0x000000FF) | // Move byte 3 to byte 0
-                ((value >> 8) & 0x0000FF00) | // Move byte 2 to byte 1
-                ((value << 8) & 0x00FF0000) | // Move byte 1 to byte 2
-                ((value << 24) & 0xFF000000);  // Move byte 0 to byte 3
+                   ((value >> 8)  & 0x0000FF00) | // Move byte 2 to byte 1
+                   ((value << 8)  & 0x00FF0000) | // Move byte 1 to byte 2
+                   ((value << 24) & 0xFF000000);  // Move byte 0 to byte 3
         };
 
         sp.align2byte(); // Skip any remaining padding bits until the byte boundary is reached
 
         const auto streamTail = in.size() - sp2byte(sp);
+        std::cout << "Stream Tail = " << streamTail << " bytes." << std::endl; 
         if (5ull == streamTail) // remove zero padding bit
             sp.to_next_byte();
 
@@ -283,6 +296,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
 
   return m_decoderIntegrityStatus;
 }
+
 
 uint32_t CDynBlockDecoder::get_HLIT (const std::vector<uint8_t>& in, CStreamPointer& sp)
 {
