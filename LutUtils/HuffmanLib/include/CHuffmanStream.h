@@ -81,7 +81,7 @@ namespace HuffmanUtils
         return huffmanCode;
     }
 
-    inline uint32_t readComplementarStaticHuffmanBits
+    inline uint32_t readComplementarStaticHuffmanBits 
     (
         const std::vector<uint8_t>& stream, // input Huffman Stream 
         CStreamPointer& streamOffset,       // stream pointer (bits offset), value incremented internally
@@ -94,7 +94,7 @@ namespace HuffmanUtils
     }
 
 
-    inline uint32_t computeAdler32 (const std::vector<uint8_t> data)
+    inline uint32_t computeAdler32 (const std::vector<uint8_t> data) noexcept
     {
         uint32_t A = 1u; // A starts with 1
         uint32_t B = 0u; // B starts with 0
