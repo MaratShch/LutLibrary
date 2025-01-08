@@ -53,6 +53,6 @@ def save_png_as_txt(input_png_file, output_txt_file):
 
 
 # Example usage
-input_png = "contrast.HCLUT.png"
-output_txt = "decoded_contrast.HCLUT.txt"
+input_png = "neutral_hald_512.png"
+output_txt = "decoded_neutral_hald_512.txt"
 save_png_as_txt(input_png, output_txt)
