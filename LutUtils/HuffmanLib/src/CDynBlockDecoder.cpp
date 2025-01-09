@@ -256,7 +256,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
                 auto const& distance = pair_distance.second;
 
                 if (0 == distance || 0 == size) // nothing to copy
-                    throw std::runtime_error("Distance or size equal to zro. Probably stream corrupted.");
+                    throw std::runtime_error("Distance or size equal to zero. Probably stream corrupted.");
 
                 const int32_t outVectorSize = static_cast<int32_t>(out.size());
                 constexpr int32_t maxWinSize = static_cast<int32_t>(max_WindowSize);
