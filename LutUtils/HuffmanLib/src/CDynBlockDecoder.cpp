@@ -210,16 +210,16 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
         (
            const std::vector<uint8_t>& in,
            CStreamPointer& sp,
-           uint32_t distanceCode
+           const uint32_t& distanceCode
         ) -> const std::pair<int32_t, int32_t>
 	    {
             // Get Length information
 	        const int32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
 		    const int32_t extraBitsInLen = cLengthGetExtra(LengtCodeArrayIdx);
 		    const int32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
-            const int32_t finalLength = baseLength + (extraBitsInLen > 0u ? readBits(in, sp, extraBitsInLen) : 0);
+            const int32_t finalLength = baseLength + (extraBitsInLen > 0 ? readBits(in, sp, extraBitsInLen) : 0);
 
-		    if (finalLength > std::numeric_limits<uint32_t>::max() - (extraBitsInLen > 0u ? finalLength : 0u))
+		    if (finalLength > std::numeric_limits<uint32_t>::max() - (extraBitsInLen > 0 ? finalLength : 0u))
 		        throw std::runtime_error("Potential overflow of size.");
 
 		    // Read distance code
@@ -229,12 +229,8 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
 		        const int32_t DistanceCodeArrayIdx = hDistanceLeaf->symbol - cDistanceCodesMin;
 		        const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
 		        const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
-                        const int32_t extraBitsValue = readBits(in, sp, extraBitsInDist);
+                const int32_t finalDistance = baseDistance + (extraBitsInDist > 0 ? readBits(in, sp, extraBitsInDist) : 0);
 		    
-                        if (baseDistance > std::numeric_limits<uint32_t>::max() - (extraBitsInDist > 0u ? extraBitsValue : 0u))
-		           throw std::runtime_error("Potential overflow of distance.");
-
-		        const int32_t finalDistance = baseDistance + (extraBitsInDist > 0u ? extraBitsValue : 0);
 		        return std::make_pair(finalLength, finalDistance);
 		    }
 		    return std::make_pair(0, 0);
@@ -243,6 +239,8 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
     uint32_t symbol = 0u;
 
     do {
+            const CStreamPointer dbgSp{ sp };
+
             const std::shared_ptr<Node<uint32_t>> hLiteraLeaf = readHuffmanBits<uint32_t>(in, sp, m_literal_root);
             symbol = hLiteraLeaf->symbol;
 
@@ -258,7 +256,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
                 auto const& distance = pair_distance.second;
 
                 if (0 == distance || 0 == size) // nothing to copy
-                    continue;
+                    throw std::runtime_error("Distance or size equal to zro. Probably stream corrupted.");
 
                 const int32_t outVectorSize = static_cast<int32_t>(out.size());
                 constexpr int32_t maxWinSize = static_cast<int32_t>(max_WindowSize);
@@ -266,7 +264,8 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
                 {
                     dbg_print_on_crash(out);
                     std::ostringstream ex;
-                    ex << "Distance exceeds output buffer or max allowed window size " << maxWinSize << " bytes. Distance = " << distance << " bytes. Out size = " << outVectorSize << " bytes. SP = " << sp;
+                    ex << "Distance exceeds output buffer or max allowed window size " << maxWinSize << " bytes. Huffman Code = " << symbol 
+                        << ". Distance = " << distance << " bytes. Out size = " << outVectorSize << " bytes. SP(before) = " << dbgSp << " SP(after) = " << sp;
 
                     const std::string ex_as_string(ex.str());
                     throw std::runtime_error(ex_as_string);

@@ -53,12 +53,12 @@ private:
 	LutElement::lutSize        m_lutSize;
 	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
 
-        void _cleanup (void)
-        {
-           m_lutSize = 0;  
-           m_error = LutErrorCode::LutState::NotInitialized;
-           return;
-        }
+    void _cleanup (void)
+    {
+       m_lutSize = 0;  
+       m_error = LutErrorCode::LutState::NotInitialized;
+       return;
+    }
 };
 
 

@@ -254,7 +254,7 @@ private:
                 mHaldChunkOrig["IDAT"].insert(mHaldChunkOrig["IDAT"].end(), it->second.begin() + dataOffset, it->second.end());
                 // Remove the numbered key from the map
                 mHaldChunkOrig.erase(it);
-                // increment key nameaddendum
+                // increment key name addendum
                 idx++;
             }
             else
