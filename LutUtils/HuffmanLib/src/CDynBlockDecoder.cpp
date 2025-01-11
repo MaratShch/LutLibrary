@@ -244,8 +244,8 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
             const std::shared_ptr<Node<uint32_t>> hLiteraLeaf = readHuffmanBits<uint32_t>(in, sp, m_literal_root);
             symbol = hLiteraLeaf->symbol;
 
-            if ((symbol < 0) || (symbol > cLengthCodesMax))
-               throw std::runtime_error("Invalid symbol received:" + std::to_string(symbol) + ".");
+            if (symbol > static_cast<uint32_t>(cLengthCodesMax))
+                throw std::runtime_error("Invalid symbol received:" + std::to_string(symbol) + ".");
 
             if (symbol <= 255u)
                 out.push_back(static_cast<uint8_t>(symbol));
@@ -259,7 +259,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
                     throw std::runtime_error("Distance or size equal to zero. Probably stream corrupted.");
 
                 const int32_t outVectorSize = static_cast<int32_t>(out.size());
-                constexpr int32_t maxWinSize = static_cast<int32_t>(max_WindowSize);
+                constexpr int32_t maxWinSize{ static_cast<int32_t>(max_WindowSize) };
                 if (outVectorSize < distance || distance > maxWinSize)
                 {
                     dbg_print_on_crash(out);
