@@ -1,4 +1,5 @@
 import png  # Install using 'pip install pypng'
+import os
 
 def save_png_as_txt(input_png_file, output_txt_file):
     """
@@ -52,7 +53,34 @@ def save_png_as_txt(input_png_file, output_txt_file):
 # save_png_as_txt("input.png", "output.txt")
 
 
-# Example usage
-input_png = "neutral_hald_512.png"
-output_txt = "decoded_neutral_hald_512.txt"
-save_png_as_txt(input_png, output_txt)
+def process_png_files(directory_path):
+    """
+    Walks a directory (level 1 only), captures .png files, and calls
+    a function with each file path and output path.
+
+    Args:
+        directory_path (str): The path to the directory to scan.
+    """
+    png_files = []
+    try:
+      for filename in os.listdir(directory_path):
+          if filename.lower().endswith(".png"):
+              file_path = os.path.join(directory_path, filename)
+              png_files.append(file_path)
+    except FileNotFoundError:
+        print(f"Error: Directory not found: {directory_path}")
+        return;
+    
+    for file_path in png_files:
+        output_filename = "decoded_" + os.path.basename(file_path) + ".txt"
+        output_path = os.path.join(directory_path, output_filename)
+        save_png_as_txt(file_path, output_path)
+
+def main():
+    my_dir = current_directory = os.getcwd()
+    process_png_files(my_dir)
+    
+ 
+if __name__ == "__main__":
+    main()
+    
