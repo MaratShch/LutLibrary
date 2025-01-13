@@ -286,6 +286,8 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
             }
         } while (symbol != EndOfBlock);
 
+        std::cout << "DECODE SINGLE BLOCK COMPLETED. SP = " << sp << std::endl;
+
         auto convertEndian = [](uint32_t value) -> uint32_t
         {
             return ((value >> 24) & 0x000000FF) | // Move byte 3 to byte 0
