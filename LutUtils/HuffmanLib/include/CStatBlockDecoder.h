@@ -11,6 +11,8 @@ namespace HuffmanUtils
     {
        public:
            bool decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& inSp);
+           bool decode_blocks (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp);
+
            uint8_t get_decoder_type(void) { return 0x01u; }
 
        private:

@@ -93,3 +93,8 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
     return m_decoderIntegrityStatus;
 }
 
+
+bool CStatBlockDecoder::decode_blocks(const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
+{
+    return true;
+}

@@ -13,7 +13,11 @@ namespace HuffmanUtils
     class IBlockDecoder
     {
        public:
+           virtual bool decode_blocks (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& inSp) = 0;
+
+           [[deprecated("Use newFunction IBlockDecoder::decode_blocks intead.")]]
            virtual bool decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& inSp) = 0;
+
            virtual uint8_t get_decoder_type(void) = 0;
 
     }; // class IBlockDecoder

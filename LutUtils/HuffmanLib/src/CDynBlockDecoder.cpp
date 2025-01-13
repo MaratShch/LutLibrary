@@ -249,7 +249,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
 
             if (symbol <= 255u)
                 out.push_back(static_cast<uint8_t>(symbol));
-            else if (symbol >= cLengthCodesMin && symbol <= cLengthCodesMax)
+            else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax))
             {
                 const std::pair<int32_t, int32_t> pair_distance = process_distance_sequence(in, sp, symbol);
                 auto const& size = pair_distance.first;
@@ -331,3 +331,97 @@ uint32_t CDynBlockDecoder::get_HDIST (const std::vector<uint8_t>& in, CStreamPoi
     return 1u + HDIST;
 }
 
+
+bool CDynBlockDecoder::decode_blocks(const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
+{
+    bool isFinal = false;
+
+    // cleanup output vector
+    out.clear();
+
+    // Initialize and Build all Huffman Dynamic Decoder Infrastructures (Cl4Cl, Huffman trees, etc...)
+    if (true == pre_decode(in, sp))
+    {
+        auto process_distance_sequence = [this]
+        (
+            const std::vector<uint8_t>& in,
+            CStreamPointer& sp,
+            const uint32_t& distanceCode
+        ) -> const std::pair<int32_t, int32_t>
+        {
+            // Get Length information
+            const int32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
+            const int32_t extraBitsInLen = cLengthGetExtra(LengtCodeArrayIdx);
+            const int32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
+            const int32_t finalLength = baseLength + (extraBitsInLen > 0 ? readBits(in, sp, extraBitsInLen) : 0);
+
+            if (finalLength > std::numeric_limits<uint32_t>::max() - (extraBitsInLen > 0 ? finalLength : 0u))
+                throw std::runtime_error("Potential overflow of size.");
+
+            // Read distance code
+            const std::shared_ptr<Node<uint32_t>> hDistanceLeaf = readHuffmanBits<uint32_t>(in, sp, m_distance_root);
+            if (hDistanceLeaf->symbol != static_cast<uint32_t>(-1)) // assume sentinel value (-1) is never a valid symbol in Huffman code.
+            {
+                const int32_t DistanceCodeArrayIdx = hDistanceLeaf->symbol - cDistanceCodesMin;
+                const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
+                const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
+                const int32_t finalDistance = baseDistance + (extraBitsInDist > 0 ? readBits(in, sp, extraBitsInDist) : 0);
+
+                return std::make_pair(finalLength, finalDistance);
+            }
+            return std::make_pair(0, 0);
+        };
+
+        uint32_t symbol = 0u;
+
+        do {
+            const CStreamPointer dbgSp{ sp };
+
+            const std::shared_ptr<Node<uint32_t>> hLiteraLeaf = readHuffmanBits<uint32_t>(in, sp, m_literal_root);
+            symbol = hLiteraLeaf->symbol;
+
+            if (symbol > static_cast<uint32_t>(cLengthCodesMax))
+                throw std::runtime_error("Invalid symbol received:" + std::to_string(symbol) + ".");
+
+            if (symbol <= 255u)
+                out.push_back(static_cast<uint8_t>(symbol));
+            else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax))
+            {
+                const std::pair<int32_t, int32_t> pair_distance = process_distance_sequence(in, sp, symbol);
+                auto const& size = pair_distance.first;
+                auto const& distance = pair_distance.second;
+
+                if (0 == distance || 0 == size) // nothing to copy
+                    throw std::runtime_error("Distance or size equal to zero. Probably stream corrupted.");
+
+                const int32_t outVectorSize = static_cast<int32_t>(out.size());
+                constexpr int32_t maxWinSize{ static_cast<int32_t>(max_WindowSize) };
+                if (outVectorSize < distance || distance > maxWinSize)
+                {
+                    dbg_print_on_crash(out);
+                    std::ostringstream ex;
+                    ex << "Distance exceeds output buffer or max allowed window size " << maxWinSize << " bytes. Huffman Code = " << hLiteraLeaf->symbol
+                        << ". Distance = " << distance << " bytes. Out size = " << outVectorSize << " bytes. SP(before) = " << dbgSp << " SP(after) = " << sp;
+
+                    const std::string ex_as_string(ex.str());
+                    throw std::runtime_error(ex_as_string);
+                    return false;
+                }
+
+                auto const pre = outVectorSize - distance;
+
+                // Preallocate space for the output vector
+                out.reserve(out.size() + size);
+
+                // Perform the copy operation
+                for (int32_t i = 0; i < size; i++)
+                {
+                    // Circular buffer behavior for overlapping copies
+                    out.push_back(out[pre + i % distance]);
+                }
+            }
+        } while (symbol != EndOfBlock);
+    }
+
+    return isFinal;
+}
