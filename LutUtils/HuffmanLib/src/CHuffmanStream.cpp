@@ -82,7 +82,6 @@ OutStreamT CHuffmanStream::Decode (void)
         }
         else
         {
-            std::cout << "Decoded data size equal to zero" << std::endl;
             finalBlock = true;
         }
 
