@@ -15,27 +15,20 @@ namespace HuffmanUtils
         public:
             virtual ~CHuffmanBlock();
 
-            CHuffmanBlock (const uint8_t* pData, size_t inDataSize, CStreamPointer sp = 0ll);
-            CHuffmanBlock (const std::vector<uint8_t>& pData,  CStreamPointer sp = 0ll);
-            CHuffmanBlock (const std::vector<uint8_t>&& pData, CStreamPointer sp = 0ll);
-
-            template <size_t N>
-            CHuffmanBlock(const std::array<uint8_t, N>& pData, CStreamPointer sp = 0ll);
-
-            std::vector<uint8_t> DecodeBlock (void);
+            CHuffmanBlock (std::vector<uint8_t>& vData, CStreamPointer& sp);
+            std::vector<uint8_t> Decode (void);
             CStreamPointer GetStreamPointer(void) noexcept { return m_Sp; }
-            bool isBlockValid(void) noexcept { return m_isValid; }
-            bool blockIntegrityStatus(void) noexcept { return m_Integrity; }
-
+            
+            bool isFinal (void) noexcept {return m_isFinal;}
+ 
         private:
             IBlockDecoder* m_iBlockDecoder = nullptr;
             CStreamPointer m_Sp = 0ll;
-            std::vector<uint8_t> m_BlockData;
+            std::vector<uint8_t>& m_Data;
 
             bool m_isValid = false;
             bool m_isFinal = false;
-            bool m_Integrity = false;
-
+ 
             uint8_t m_CMF = 0u;
             uint8_t m_FLG = 0u;
             uint8_t m_FCHECK = 0u;
@@ -44,6 +37,7 @@ namespace HuffmanUtils
             uint8_t m_BTYPE = 0u;
             uint32_t m_WindowSize = 0u;
 
+            void print_block_properties (void) noexcept;   
             void parse_block_header (CStreamPointer& sp) noexcept;
             IBlockDecoder* create_decoder (const uint32_t& BTYPE);
 

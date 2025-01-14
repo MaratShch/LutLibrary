@@ -1,15 +1,20 @@
 #include "CStatBlockDecoder.h"
 #include "CDecoderConstants.h"
-#include "CHuffmanStream.h"
+#include "CHuffmanIo.h"
 
 using namespace HuffmanUtils;
 
+CStatBlockDecoder::~CStatBlockDecoder(void)
+{
+   // nothing TODO
+   return;
+}
 
 void CStatBlockDecoder::createCodesTable (void)
 {
     uint32_t i = 0u;
 
-    // Literal/Length Codes (0–287)
+    // Literal/Length Codes (0...287)
     for (i = 0u;   i <= 143u; ++i) m_Table[i] = 0b00110000 + i;            // Literal/Length codes 0-143:   8-bit codes.
     for (i = 144u; i <= 255u; ++i) m_Table[i] = 0b110010000 + (i - 144u);  // Literal/Length codes 144-255: 9-bit codes.
     for (i = 256u; i <= 279u; ++i) m_Table[i] = i - 256u;                  // Literal/Length codes 256-279: 7-bit codes.
@@ -93,8 +98,3 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
     return m_decoderIntegrityStatus;
 }
 
-
-bool CStatBlockDecoder::decode_blocks(const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
-{
-    return true;
-}

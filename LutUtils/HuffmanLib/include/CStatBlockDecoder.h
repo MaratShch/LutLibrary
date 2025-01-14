@@ -10,11 +10,11 @@ namespace HuffmanUtils
     class CStatBlockDecoder : public IBlockDecoder
     {
        public:
+           virtual ~CStatBlockDecoder();
+
            bool decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& inSp);
-           bool decode_blocks (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp);
-
            uint8_t get_decoder_type(void) { return 0x01u; }
-
+           
        private:
            std::unordered_map<int32_t,  uint32_t> m_Table;
            std::unordered_map<uint32_t, int32_t>  m_reverseTable;

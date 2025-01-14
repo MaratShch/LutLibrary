@@ -105,9 +105,8 @@ namespace HuffmanUtils
                        throw std::runtime_error("Huffman tree conflict: Node already contains a symbol.");
 
                     current->symbol = symbol;
-#ifdef _DEBUG
                     current->code = static_cast<T>(code);
-#endif
+
                     ++nextCode;
 
                     if (nextCode > std::numeric_limits<uint32_t>::max() >> 1)
@@ -133,40 +132,41 @@ namespace HuffmanUtils
         else
         {
             if (node->left)
-                printHuffmanTree(node->left, prefix + "0");
+                printHuffmanTree<T>(node->left, prefix + "0");
             if (node->right)
-                printHuffmanTree(node->right, prefix + "1");
+                printHuffmanTree<T>(node->right, prefix + "1");
         }
         return;
     }
 
     template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
-    bool printHuffmanLeaf (const std::shared_ptr<Node<T>>& node, T targetSymbol, const std::string& prefix = "")
+    std::shared_ptr<Node<T>>  printHuffmanLeaf(const std::shared_ptr<Node<T>>& node, T targetSymbol, const std::string& prefix = "")
     {
-	if (nullptr == node) 
-	    return false; // Base case: Empty node.
+        if (nullptr == node)
+            return nullptr; // Base case: Empty node.
 
-	    // Check if it's a leaf node and the symbol matches.
-	    if (!node->left && !node->right) 
-	    {
-		if (node->symbol == targetSymbol) 
-		{
-		    std::cout << "Found Symbol: " << node->symbol << ", Code: " << prefix << std::endl;
-		    return true;
-		}
-		return false; // Leaf node but symbol does not match.
-	    }
+        // Check if it's a leaf node and the symbol matches.
+        if (node->isLeaf())
+        {
+            if (node->symbol == targetSymbol)
+            {
+                std::cout << "Found Symbol: " << node->symbol << ", Code: " << node->code << ", Prefix: " << prefix << std::endl;
+                return node;
+            }
+           return nullptr; // Leaf node but symbol does not match.
+         }
 
-	    // Recursively search the left subtree with added "0" to the prefix.
-	    if (node->left && printHuffmanLeaf(node->left, targetSymbol, prefix + "0")) 
-		return true;
+        // Recursively search the left subtree with added "0" to the prefix.
+        auto found =  node->left ? printHuffmanLeaf<T>(node->left, targetSymbol, prefix + "0") : nullptr;
+        if(found) return found;
 
-	    // Recursively search the right subtree with added "1" to the prefix.
-	    if (node->right && printHuffmanLeaf(node->right, targetSymbol, prefix + "1")) 
-		return true;
+        // Recursively search the right subtree with added "1" to the prefix.
+        found = node->right ? printHuffmanLeaf<T>(node->right, targetSymbol, prefix + "1") : nullptr;
+        if(found) return found;
 
-        return false; // Symbol not found in this subtree.
+        return nullptr; // Symbol not found in this subtree.
     }
+
 
     // Recursive cleanup function
     template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>

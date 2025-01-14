@@ -18,7 +18,7 @@
 #ifdef _DEBUG
  #include <iomanip>
 #endif
-#include "CHuffmanBlock.h"
+#include "CHuffmanStream.h"
 
 namespace PNG
 {
@@ -239,30 +239,30 @@ private:
 		return "NONE"; /* just for avoid compilation warning */
 	}
 
-    bool merge_IDAT_Sections (void)
+    bool merge_IDAT_Sections()
     {
-        constexpr uint32_t dataOffset = 4u; // because every section contains first 4 bytes with section name - we need avoid this bytes on merge.
+        constexpr size_t sectionNameSize = sizeof(PNG::Chunk('I','D','A','T'));
         uint32_t idx = 1u;
         bool bContinue = true;
 
         while (bContinue)
         {
             const std::string numberedKey = "IDAT" + std::to_string(idx);
-            auto it = mHaldChunkOrig.find(numberedKey);
-            if (it != mHaldChunkOrig.end()) // Check if the numbered key exists in the map
+            const auto& it = mHaldChunkOrig.find(numberedKey);
+            if (it != mHaldChunkOrig.end())
             {
-                mHaldChunkOrig["IDAT"].insert(mHaldChunkOrig["IDAT"].end(), it->second.begin() + dataOffset, it->second.end());
-                // Remove the numbered key from the map
+                if (it->second.size() > sectionNameSize)
+                {
+                    mHaldChunkOrig["IDAT"].insert(mHaldChunkOrig["IDAT"].end(), it->second.begin() + sectionNameSize, it->second.end());
+                }
                 mHaldChunkOrig.erase(it);
-                // increment key name addendum
                 idx++;
             }
             else
                 bContinue = false;
-        } // while (bContinue)
+        }
         return true;
     }
-
 
 	std::unordered_map<std::string, std::vector<uint8_t>> readPngChunk (std::ifstream& lutFile, const uint32_t& idat_enum = 0u)
 	{
@@ -347,10 +347,10 @@ private:
 #endif /* defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT) */
 
             HuffmanUtils::CStreamPointer sp(HuffmanUtils::byte2sp(4)); // forward stream pointer on 4 bytes for avoid IDAT header name
-            HuffmanUtils::CHuffmanBlock deflateBlock (std::move(ihdrData), sp);
-            std::vector<uint8_t> decodedData = deflateBlock.DecodeBlock();
+            HuffmanUtils::CHuffmanStream deflateStream (std::move(ihdrData), sp);
+            std::vector<uint8_t> decodedData = deflateStream.Decode();
 
-            const bool integrityStatus = deflateBlock.blockIntegrityStatus();
+            const bool integrityStatus = deflateStream.StreamIntegrityStatus();
             if (true == integrityStatus)
             {
                 // apply reverse filter for Huffman decoded data
