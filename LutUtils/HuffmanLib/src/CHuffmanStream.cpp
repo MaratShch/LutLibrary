@@ -60,19 +60,22 @@ OutStreamT Encode (void)
 OutStreamT CHuffmanStream::Decode (void)
 {
     OutStreamT decodedData{};
+    CStreamPointer lastBlockValidSp = 0ll;
+
     bool finalBlock = false;
-    bool isErr = false;
- 
+   
     do {
         m_blockCnt++;
         CHuffmanBlock hBlock (m_StreamData, m_Sp);
-        OutStreamT dataChunk = hBlock.Decode();
-   
-        m_Sp = hBlock.GetStreamPointer();
         finalBlock = hBlock.isFinal();
+
+        OutStreamT dataChunk = hBlock.Decode();
+        m_Sp = hBlock.GetStreamPointer();
 
         if (0 != dataChunk.size())
         {
+            lastBlockValidSp = m_Sp;
+
             // resize target vector and copy decoded data chunk into targe vector
             decodedData.resize(decodedData.size() + dataChunk.size());
             std::copy(dataChunk.begin(), dataChunk.end(), decodedData.end() - dataChunk.size());
@@ -80,13 +83,12 @@ OutStreamT CHuffmanStream::Decode (void)
         else
         {
             std::cout << "Decoded data size equal to zero" << std::endl;
-            isErr = true;
+            finalBlock = true;
         }
 
-    } while (false == finalBlock && isErr == false);
+    } while (false == finalBlock);
 
-    CStreamPointer adlerSp{ m_Sp };
-    adlerSp.align2byte();
+    CStreamPointer adlerSp{ byte2sp(m_StreamData.size() - 4ll) };
 
     auto convertEndian = [&](const uint32_t value) -> uint32_t
     {

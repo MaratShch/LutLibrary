@@ -51,7 +51,7 @@ void CHuffmanBlock::print_block_properties(void) noexcept
     return;
 }
 
-void CHuffmanBlock::parse_block_header (CStreamPointer& sp) noexcept
+bool CHuffmanBlock::parse_block_header (CStreamPointer& sp) noexcept
 {
     m_Sp = sp;
     // read compression method/flags code [8 bits]
@@ -68,13 +68,13 @@ void CHuffmanBlock::parse_block_header (CStreamPointer& sp) noexcept
     {
         m_WindowSize = 1u << (CINFO + 8);
 
-        m_FCHECK = m_FLG & 0x1Fu;	    // Check bits for CMF and FLG
-        m_FDICT  = (m_FLG >> 5) & 0x01u;    // Preset Dictionary
+        m_FCHECK = m_FLG & 0x1Fu;	        // Check bits for CMF and FLG
+        m_FDICT = (m_FLG >> 5) & 0x01u;    // Preset Dictionary
         m_FLEVEL = (m_FLG >> 6) & 0x03u;    // Compression Level
 
         const uint32_t huffmanBlockHeader = readBits(m_Data, m_Sp, 3u);
         m_isFinal = static_cast<bool>(0x01u & huffmanBlockHeader);
-        m_BTYPE   = static_cast<uint8_t>(0x3u & (huffmanBlockHeader >> 1));
+        m_BTYPE = static_cast<uint8_t>(0x3u & (huffmanBlockHeader >> 1));
 
         IBlockDecoder* iBlockDecoder = create_decoder(m_BTYPE);
         if (max_WindowSize == m_WindowSize && nullptr != iBlockDecoder)
@@ -83,8 +83,11 @@ void CHuffmanBlock::parse_block_header (CStreamPointer& sp) noexcept
             m_isValid = (0u == m_FDICT ? true : false); // custom DICTIONARY is not supported yet
         }
     }
+    else
+        m_isValid = false;
 
-    return;
+
+    return m_isValid;
 }
 
 

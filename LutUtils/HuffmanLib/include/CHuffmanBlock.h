@@ -38,7 +38,7 @@ namespace HuffmanUtils
             uint32_t m_WindowSize = 0u;
 
             void print_block_properties (void) noexcept;   
-            void parse_block_header (CStreamPointer& sp) noexcept;
+            bool parse_block_header (CStreamPointer& sp) noexcept;
             IBlockDecoder* create_decoder (const uint32_t& BTYPE);
 
     }; // class CHuffmanBlock

@@ -342,7 +342,7 @@ private:
 		const size_t idatSize = ihdrData.size();
 		if (0u != idatSize)
 		{
-#if defined(_DEBUG)// && defined(_DEBUG_SAVE_IDAT)
+#if defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT)
 			this->idat_save_dbg(ihdrData);
 #endif /* defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT) */
 
