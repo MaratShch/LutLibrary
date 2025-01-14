@@ -1,6 +1,7 @@
 #include "CHuffmanStream.h"
 #include "CHuffmanBlock.h"
-
+#include "CHuffmanIo.h"
+#include "CHuffmanStreamPointer.h"
 
 using namespace HuffmanUtils;
 
@@ -83,6 +84,23 @@ OutStreamT CHuffmanStream::Decode (void)
         }
 
     } while (false == finalBlock && isErr == false);
+
+    CStreamPointer adlerSp{ m_Sp };
+    adlerSp.align2byte();
+
+    auto convertEndian = [&](const uint32_t value) -> uint32_t
+    {
+        return ((value >> 24) & 0x000000FFu) | // Move byte 3 to byte 0
+               ((value >> 8)  & 0x0000FF00u) | // Move byte 2 to byte 1
+               ((value << 8)  & 0x00FF0000u) | // Move byte 1 to byte 2
+               ((value << 24) & 0xFF000000u);  // Move byte 0 to byte 3
+    };
+
+    uint32_t adler_provided = convertEndian(readBits(m_StreamData, adlerSp, 32));
+    // check stream integrity
+    uint32_t adler_expected = computeAdler32(decodedData);
+
+    m_Integrity = (adler_provided == adler_expected);
 
 
     return decodedData;
