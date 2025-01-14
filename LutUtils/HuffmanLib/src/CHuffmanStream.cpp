@@ -87,7 +87,7 @@ OutStreamT CHuffmanStream::Decode (void)
 
     } while (false == finalBlock);
 
-    CStreamPointer adlerSp{ byte2sp(m_StreamData.size() - 4ll) };
+    CStreamPointer adlerSp{ byte2sp(static_cast<uint32_t>(m_StreamData.size() - 4ll)) };
 
     auto convertEndian = [&](const uint32_t value) -> uint32_t
     {
