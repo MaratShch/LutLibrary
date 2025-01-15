@@ -607,11 +607,11 @@ private:
 
     void line_reconstruct16
     (
-        const std::vector<uint8_t>& in, // Decoded data (8-bit)
-        std::vector<uint16_t>& out,     // Reconstructed data (16-bit)
-        int32_t lineInSize,             // Input line size (8-bit, with filter type)
-        int32_t lineOutSize,            // Output line size (16-bit data)
-        int32_t lineIdx                 // Line index (0-based)
+        const std::vector<uint8_t>& in,
+        std::vector<uint16_t>& out,
+        int32_t lineInSize,  // input line size  (RGB data + 1 byte)
+        int32_t lineOutSize, // output line size (RGB data)  
+        int32_t lineIdx     // line index (zero enumerated)
     )
     {
         // Lambda expression for SUB filter
@@ -632,7 +632,7 @@ private:
             return static_cast<uint16_t>((filtered + ((left + above) >> 1)) & 0xFFFF);
         };
 
-        // Lambda expression for PAETH filter
+        // Lambda expression for PAETH filter 
         auto paeth_filter = [](int filtered, int left, int above, int upper_left) -> uint16_t
         {
             int p = left + above - upper_left;
@@ -649,60 +649,75 @@ private:
         const auto& filterType = in[inLineStart - 1];
 
         const int32_t prevLine = lineIdx - 1;
+        const int32_t prevLineInStart = prevLine * lineInSize + 1;
         const int32_t prevLineOutStart = prevLine * lineOutSize;
 
-        int32_t i, cIdx, lIdx, uIdx, ulIdx;
+        int32_t i, o, cIdx, lIdx, uIdx, ulIdx;
         int lR, lG, lB;
         int uR, uG, uB;
         int ulR, ulG, ulB;
 
+        // Prepare output buffer
+        out.resize(out.size() + lineOutSize / 2);
+
         switch (filterType)
         {
             case 0u: // NONE-filter
-                for (i = 0u; i < lineOutSize; i += 2)
+                for (i = o = 0u; i < lineOutSize; i += 2, o++)
                 {
-                    out.push_back((static_cast<uint16_t>(in[inLineStart + i]) << 8) | static_cast<uint16_t>(in[inLineStart + i + 1]));
+                    cIdx = inLineStart + i;
+                    const int filtered = ((static_cast<int>(in[cIdx + 0]) << 8) | static_cast<int>(in[cIdx + 1]));
+                    out[outLineStart / 2 + i / 2] = static_cast<uint16_t>(filtered);
                 }
-            break;
+                break;
 
             case 1u: // SUB-filter
                 for (i = 0; i < lineOutSize; i += 6)
                 {
-                    cIdx = inLineStart + i; // Current Index
+                    cIdx = inLineStart + i;     // Current Index
                     lIdx = outLineStart + i - 6; // LEFT index
 
                     if (i >= 6)
-                    { // we have LEFT pixels
-                        lR = out[lIdx + 0];
-                        lG = out[lIdx + 1];
-                        lB = out[lIdx + 2];
+                    {  // we have LEFT pixels
+                        lR = static_cast<int>(out[outLineStart / 2 + (i - 6) / 2 + 0]);
+                        lG = static_cast<int>(out[outLineStart / 2 + (i - 6) / 2 + 1]);
+                        lB = static_cast<int>(out[outLineStart / 2 + (i - 6) / 2 + 2]);
                     }
                     else // no LEFT pixels
                         lR = lG = lB = 0;
 
-                    out.push_back(sub_filter(((static_cast<int>(in[cIdx + 0]) << 8) | static_cast<int>(in[cIdx + 1])), lR)); // R
-                    out.push_back(sub_filter(((static_cast<int>(in[cIdx + 2]) << 8) | static_cast<int>(in[cIdx + 3])), lG)); // G
-                    out.push_back(sub_filter(((static_cast<int>(in[cIdx + 4]) << 8) | static_cast<int>(in[cIdx + 5])), lB)); // B
+                    const int filteredR = ((static_cast<int>(in[cIdx + 0]) << 8) | static_cast<int>(in[cIdx + 1]));
+                    const int filteredG = ((static_cast<int>(in[cIdx + 2]) << 8) | static_cast<int>(in[cIdx + 3]));
+                    const int filteredB = ((static_cast<int>(in[cIdx + 4]) << 8) | static_cast<int>(in[cIdx + 5]));
+
+
+                    out[outLineStart / 2 + i / 2 + 0] = sub_filter(filteredR, lR);
+                    out[outLineStart / 2 + i / 2 + 1] = sub_filter(filteredG, lG);
+                    out[outLineStart / 2 + i / 2 + 2] = sub_filter(filteredB, lB);
                 }
             break;
 
-           case 2u: // UP-filter
+            case 2u: // UP-filter
                 for (i = 0; i < lineOutSize; i += 6)
                 {
                     cIdx = inLineStart + i;     // Current Index
                     uIdx = prevLineOutStart + i; // UP index
                     if (lineIdx >= 1)
                     { // we have UP line
-                        uR = out[uIdx + 0];
-                        uG = out[uIdx + 1];
-                        uB = out[uIdx + 2];
+                        uR = static_cast<int>(out[uIdx / 2 + 0]);
+                        uG = static_cast<int>(out[uIdx / 2 + 1]);
+                        uB = static_cast<int>(out[uIdx / 2 + 2]);
                     }
                     else // no UP line
                         uR = uG = uB = 0;
 
-                    out.push_back(up_filter(((static_cast<int>(in[cIdx + 0]) << 8) | static_cast<int>(in[cIdx + 1])), uR)); // R
-                    out.push_back(up_filter(((static_cast<int>(in[cIdx + 2]) << 8) | static_cast<int>(in[cIdx + 3])), uG));   // G
-                    out.push_back(up_filter(((static_cast<int>(in[cIdx + 4]) << 8) | static_cast<int>(in[cIdx + 5])), uB));  // B
+                    const int filteredR = ((static_cast<int>(in[cIdx + 0]) << 8) | static_cast<int>(in[cIdx + 1]));
+                    const int filteredG = ((static_cast<int>(in[cIdx + 2]) << 8) | static_cast<int>(in[cIdx + 3]));
+                    const int filteredB = ((static_cast<int>(in[cIdx + 4]) << 8) | static_cast<int>(in[cIdx + 5]));
+
+                    out[outLineStart / 2 + i / 2 + 0] = up_filter(filteredR, uR);
+                    out[outLineStart / 2 + i / 2 + 1] = up_filter(filteredG, uG);
+                    out[outLineStart / 2 + i / 2 + 2] = up_filter(filteredB, uB);
                 }
             break;
 
@@ -715,46 +730,50 @@ private:
 
                     if (lineIdx >= 1)
                     { // we have UP line
-                        uR = out[uIdx + 0];
-                        uG = out[uIdx + 1];
-                        uB = out[uIdx + 2];
+                        uR = static_cast<int>(out[uIdx / 2 + 0]);
+                        uG = static_cast<int>(out[uIdx / 2 + 1]);
+                        uB = static_cast<int>(out[uIdx / 2 + 2]);
                     }
                     else // no UP line
                         uR = uG = uB = 0;
 
                     if (i >= 6)
                     {  // we have LEFT pixels
-                        lR = out[lIdx + 0];
-                        lG = out[lIdx + 1];
-                        lB = out[lIdx + 2];
+                        lR = static_cast<int>(out[outLineStart / 2 + (i - 6) / 2 + 0]);
+                        lG = static_cast<int>(out[outLineStart / 2 + (i - 6) / 2 + 1]);
+                        lB = static_cast<int>(out[outLineStart / 2 + (i - 6) / 2 + 2]);
                     }
                     else // no LEFT pixels
                         lR = lG = lB = 0;
 
-                    out.push_back(average_filter(((static_cast<int>(in[cIdx + 0]) << 8) | static_cast<int>(in[cIdx + 1])), lR, uR)); // R
-                    out.push_back(average_filter(((static_cast<int>(in[cIdx + 2]) << 8) | static_cast<int>(in[cIdx + 3])), lG, uG)); // G
-                    out.push_back(average_filter(((static_cast<int>(in[cIdx + 4]) << 8) | static_cast<int>(in[cIdx + 5])), lB, uB)); // B
+                    const int filteredR = ((static_cast<int>(in[cIdx + 0]) << 8) | static_cast<int>(in[cIdx + 1]));
+                    const int filteredG = ((static_cast<int>(in[cIdx + 2]) << 8) | static_cast<int>(in[cIdx + 3]));
+                    const int filteredB = ((static_cast<int>(in[cIdx + 4]) << 8) | static_cast<int>(in[cIdx + 5]));
+
+                    out[outLineStart / 2 + i / 2 + 0] = average_filter(filteredR, lR, uR);
+                    out[outLineStart / 2 + i / 2 + 1] = average_filter(filteredG, lG, uG);
+                    out[outLineStart / 2 + i / 2 + 2] = average_filter(filteredB, lB, uB);
                 }
             break;
 
             case 4u: // PAETH-filter
                 for (i = 0; i < lineOutSize; i += 6)
                 {
-                    cIdx = inLineStart + i;      // Current Index
+                    cIdx = inLineStart + i;     // Current Index
                     lIdx = outLineStart + i - 6; // LEFT index
                     uIdx = prevLineOutStart + i; // UP index
-                    ulIdx = uIdx - 6;            // UP LEFT index
+                    ulIdx = uIdx - 6;             // UP LEFT index
 
                     if (lineIdx >= 1)
                     {  // we have UP line
-                        uR = out[uIdx + 0];
-                        uG = out[uIdx + 1];
-                        uB = out[uIdx + 2];
+                        uR = static_cast<int>(out[uIdx / 2 + 0]);
+                        uG = static_cast<int>(out[uIdx / 2 + 1]);
+                        uB = static_cast<int>(out[uIdx / 2 + 2]);
                         if (i >= 6)
                         {  // we have UP LEFT pixels
-                            ulR = out[ulIdx + 0];
-                            ulG = out[ulIdx + 1];
-                            ulB = out[ulIdx + 2];
+                            ulR = static_cast<int>(out[ulIdx / 2 + 0]);
+                            ulG = static_cast<int>(out[ulIdx / 2 + 1]);
+                            ulB = static_cast<int>(out[ulIdx / 2 + 2]);
                         }
                         else // no UP LEFT pixels
                             ulR = ulG = ulB = 0;
@@ -764,16 +783,20 @@ private:
 
                     if (i >= 6)
                     {  // we have LEFT pixels
-                        lR = out[lIdx + 0];
-                        lG = out[lIdx + 1];
-                        lB = out[lIdx + 2];
+                        lR = static_cast<int>(out[lIdx / 2 + 0]);
+                        lG = static_cast<int>(out[lIdx / 2 + 1]);
+                        lB = static_cast<int>(out[lIdx / 2 + 2]);
                     }
                     else // no LEFT pixels
                         lR = lG = lB = 0;
 
-                    out.push_back(paeth_filter(((static_cast<int>(in[cIdx + 0]) << 8) | static_cast<int>(in[cIdx + 1])), lR, uR, ulR)); // R
-                    out.push_back(paeth_filter(((static_cast<int>(in[cIdx + 2]) << 8) | static_cast<int>(in[cIdx + 3])), lG, uG, ulG)); // G
-                    out.push_back(paeth_filter(((static_cast<int>(in[cIdx + 4]) << 8) | static_cast<int>(in[cIdx + 5])), lB, uB, ulB)); // B
+                    const int filteredR = ((static_cast<int>(in[cIdx + 0]) << 8) | static_cast<int>(in[cIdx + 1]));
+                    const int filteredG = ((static_cast<int>(in[cIdx + 2]) << 8) | static_cast<int>(in[cIdx + 3]));
+                    const int filteredB = ((static_cast<int>(in[cIdx + 4]) << 8) | static_cast<int>(in[cIdx + 5]));
+
+                    out[outLineStart / 2 + i / 2 + 0] = paeth_filter(filteredR, lR, uR, ulR);
+                    out[outLineStart / 2 + i / 2 + 1] = paeth_filter(filteredG, lG, uG, ulG);
+                    out[outLineStart / 2 + i / 2 + 2] = paeth_filter(filteredB, lB, uB, ulB);
                 }
             break;
 
@@ -784,7 +807,6 @@ private:
         }
         return;
     }
-
 
     const std::vector<uint8_t> data_reconstruct8
     (
@@ -815,7 +837,7 @@ private:
         const uint32_t inLineSize = outlineSize + 1u; /* add 1 byte for remove from processing filter type */
 
         for (uint32_t j = 0u; j < sizeY; j++)
-            line_reconstruct16 (in, out, inLineSize, outlineSize, j);
+            line_reconstruct16(in, out, inLineSize, outlineSize, j);
 
         return out;
     }
