@@ -87,8 +87,6 @@ OutStreamT CHuffmanStream::Decode (void)
 
     } while (false == finalBlock);
 
-    CStreamPointer adlerSp{ byte2sp(static_cast<uint32_t>(m_StreamData.size() - 4ll)) };
-
     auto convertEndian = [&](const uint32_t value) -> uint32_t
     {
         return ((value >> 24) & 0x000000FFu) | // Move byte 3 to byte 0
@@ -97,12 +95,12 @@ OutStreamT CHuffmanStream::Decode (void)
                ((value << 24) & 0xFF000000u);  // Move byte 0 to byte 3
     };
 
+    CStreamPointer adlerSp{ byte2sp(static_cast<uint32_t>(m_StreamData.size() - 4ull)) };
     uint32_t adler_provided = convertEndian(readBits(m_StreamData, adlerSp, 32));
     // check stream integrity
     uint32_t adler_expected = computeAdler32(decodedData);
 
     m_Integrity = (adler_provided == adler_expected);
-
 
     return decodedData;
 }
