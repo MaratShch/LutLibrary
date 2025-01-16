@@ -353,39 +353,53 @@ private:
             const bool integrityStatus = deflateStream.StreamIntegrityStatus();
             if (true == integrityStatus)
             {
+                size_t decodedDataSize = 0ll;
+                const size_t expectedDataSize = m_lutSize * m_lutSize * m_lutSize * 3ull;
+
                 // apply reverse filter for Huffman decoded data
                 std::vector<uint8_t>  vecRGB8{};
                 std::vector<uint16_t> vecRGB16{};
 
                 if (8u == m_bitDepth)
-                    vecRGB8 = data_reconstruct8 (decodedData, m_sizeX, m_sizeY);
+                {
+                    vecRGB8 = data_reconstruct8(decodedData, m_sizeX, m_sizeY);
+                    decodedDataSize = vecRGB8.size();
+                }
                 else
-                    vecRGB16 = data_reconstruct16 (decodedData, m_sizeX, m_sizeY);
+                {
+                    vecRGB16 = data_reconstruct16(decodedData, m_sizeX, m_sizeY);
+                    decodedDataSize = vecRGB16.size();
+                }
 
-                // resize LUT buffer
-                m_lutBody3D = std::move(LutElement::lutTable3D<T>(m_lutSize, LutElement::lutTable2D<T>(m_lutSize, LutElement::lutTable1D<T>(m_lutSize, LutElement::lutTableRaw<T>(3)))));
+                if (decodedDataSize >= expectedDataSize)
+                {
+                    // resize LUT buffer
+                    m_lutBody3D = std::move(LutElement::lutTable3D<T>(m_lutSize, LutElement::lutTable2D<T>(m_lutSize, LutElement::lutTable1D<T>(m_lutSize, LutElement::lutTableRaw<T>(3)))));
 
-                // fill LUT data
-                uint32_t b, g, r, dec = 0u;
-                for (b = 0u; b < m_lutSize; b++)
-                    for (g = 0u; g < m_lutSize; g++)
-                        for (r = 0u; r < m_lutSize; r++)
-                        {
-                            if (8u == m_bitDepth)
-                                m_lutBody3D[r][g][b] = {
-                                    static_cast<float>(vecRGB8.at(dec + 0u)),
-                                    static_cast<float>(vecRGB8.at(dec + 1u)),
-                                    static_cast<float>(vecRGB8.at(dec + 2u))
-                            };
-                            else
-                                m_lutBody3D[r][g][b] = {
-                                    static_cast<float>(vecRGB16.at(dec + 0u)),
-                                    static_cast<float>(vecRGB16.at(dec + 1u)),
-                                    static_cast<float>(vecRGB16.at(dec + 2u))
-                            };
-                            dec += 3u;
-                        }
-                bRet = true;
+                    // fill LUT data
+                    uint32_t b, g, r, dec = 0u;
+                    for (b = 0u; b < m_lutSize; b++)
+                        for (g = 0u; g < m_lutSize; g++)
+                            for (r = 0u; r < m_lutSize; r++)
+                            {
+                                if (8u == m_bitDepth)
+                                    m_lutBody3D[r][g][b] = {
+                                        static_cast<float>(vecRGB8.at(dec + 0u)),
+                                        static_cast<float>(vecRGB8.at(dec + 1u)),
+                                        static_cast<float>(vecRGB8.at(dec + 2u))
+                                };
+                                else
+                                    m_lutBody3D[r][g][b] = {
+                                        static_cast<float>(vecRGB16.at(dec + 0u)),
+                                        static_cast<float>(vecRGB16.at(dec + 1u)),
+                                        static_cast<float>(vecRGB16.at(dec + 2u))
+                                };
+                                dec += 3u;
+                            }
+                    bRet = true;
+                } // if (decodedDataSize >= expectedDataSize)
+                else
+                    bRet = false;
             } // if (true == integrityStatus)
 		} // if (0u != idatSize)
 
