@@ -14,9 +14,40 @@ namespace HuffmanUtils
         FILTER_SUB,
         FILTER_UP,
         FILTER_AVERAGE,
-        FILTER_PAETH
-    } ;
+        FILTER_PAETH,
+        FILTER_INVALID
+    };
 
+    inline const eFILTER_T detect_filter (const uint8_t& fIdx)
+    {
+        eFILTER_T filterT = FILTER_INVALID;
+          // Use switch or if-else to check possible values and convert data correctly
+        switch (fIdx)
+        {
+            case 0:
+                filterT = eFILTER_T::FILTER_NONE;
+            break;
+            case 1:
+                filterT = eFILTER_T::FILTER_SUB;
+            break;
+            case 2:
+                filterT = eFILTER_T::FILTER_UP;
+            break;
+            case 3:
+                filterT = eFILTER_T::FILTER_AVERAGE;
+            break;
+            case 4:
+                filterT = eFILTER_T::FILTER_PAETH;
+            break;
+            default:
+                // Handle error case: invalid filter value
+                std::cerr << "Error: Invalid filter value: " << static_cast<int>(filterValue) << std::endl;
+            break;    
+        }
+        return (filterT);
+    }
+
+    
     template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
     bool filter_line_reconstruct
     (
@@ -32,11 +63,10 @@ namespace HuffmanUtils
         const int32_t inChannelIncrement = channels * in_out_factor;
         const int32_t lineIn  = inLineBytesSize  * lineIdx;
         const int32_t lineOut = outLineSize * lineIdx;
-        const eFILTER_T& filterT = static_cast<const eFILTER_T>(decoded[lineIn]);
 
         int32_t i, j, o;
 
-        switch (filterT)
+        switch (detect_filter(decoded[lineIn]))
         {
             case eFILTER_T::FILTER_NONE:
             {
