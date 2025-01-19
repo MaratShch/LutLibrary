@@ -353,6 +353,10 @@ private:
             const bool integrityStatus = deflateStream.StreamIntegrityStatus();
             if (true == integrityStatus)
             {
+                // remove/cleanup all PNG chunks for decrease memory usage
+                mHaldChunkOrig.clear();
+                //
+
                 size_t decodedDataSize = 0ll;
                 const size_t expectedDataSize = m_lutSize * m_lutSize * m_lutSize * 3ull;
 
@@ -397,6 +401,7 @@ private:
                                 dec += 3u;
                             }
                     bRet = true;
+
                 } // if (decodedDataSize >= expectedDataSize)
                 else
                     bRet = false;
