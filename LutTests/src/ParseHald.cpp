@@ -111,6 +111,16 @@ TEST(ParseHald, Parse_PolaroidMono_HCLUT)
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
+TEST(ParseHald, Dark_HCLUT)
+{
+    const std::string lutName{ dbgLutsFolder + "/Dark.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+
 TEST(ParseHald, Parse_Neutral_HCLUT)
 {
     const std::string lutName{ dbgLutsFolder + "/neutral_hald_512.png" };
@@ -119,7 +129,6 @@ TEST(ParseHald, Parse_Neutral_HCLUT)
     auto const lutSize = lutFileF32.getLutSize();
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
-
 
 int main (int argc, char** argv)
 {
