@@ -75,7 +75,7 @@ TEST(ParseHald, Parse_IdentifyLevel16_HCLUT)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(AnalogFX, Parse_AnalogFX_Sepia_Color_HCLUT)
+TEST(ParseHald, Parse_AnalogFX_Sepia_Color_HCLUT)
 {
     const std::string lutName{ dbgLutsFolder + "/AnalogFX-Sepia-Color.png" };
     CHaldLut<float> lutFileF32;
@@ -84,7 +84,7 @@ TEST(AnalogFX, Parse_AnalogFX_Sepia_Color_HCLUT)
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(ZilverFX, Parse_ZilverFX_Vintage_HCLUT)
+TEST(ParseHald, Parse_ZilverFX_Vintage_HCLUT)
 {
     const std::string lutName{ dbgLutsFolder + "/ZilverFX-Vintage-B&W.png" };
     CHaldLut<float> lutFileF32;
@@ -93,7 +93,7 @@ TEST(ZilverFX, Parse_ZilverFX_Vintage_HCLUT)
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Kodak_Ektar, Parse_Kodak_Ektar_100_HCLUT)
+TEST(ParseHald, Parse_Kodak_Ektar_100_HCLUT)
 {
     const std::string lutName{ dbgLutsFolder + "/Kodak_Ektar_100.png" };
     CHaldLut<float> lutFileF32;
@@ -102,7 +102,7 @@ TEST(Kodak_Ektar, Parse_Kodak_Ektar_100_HCLUT)
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(Polaroid, Parse_PolaroidMono_HCLUT)
+TEST(ParseHald, Parse_PolaroidMono_HCLUT)
 {
     const std::string lutName{ dbgLutsFolder + "/PolaroidMono.png" };
     CHaldLut<float> lutFileF32;
@@ -111,7 +111,7 @@ TEST(Polaroid, Parse_PolaroidMono_HCLUT)
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-TEST(ParseNeutral, Parse_Neutral_HCLUT)
+TEST(ParseHald, Parse_Neutral_HCLUT)
 {
     const std::string lutName{ dbgLutsFolder + "/neutral_hald_512.png" };
     CHaldLut<float> lutFileF32;
