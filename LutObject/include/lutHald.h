@@ -21,6 +21,8 @@
 #include "CHuffmanStream.h"
 #include "CReversibleFilter.h"
 
+//#define _DEBUG_SAVE_IDAT
+
 namespace PNG
 {
 	constexpr uint8_t DEFLATE = static_cast<uint8_t>(0u);
