@@ -91,10 +91,10 @@ namespace HuffmanUtils
     (
         const std::vector<uint8_t>&  decoded,
               std::vector<uint16_t>& restored,
-        const int32_t& inLineBytesSize,
-        const int32_t& outLineSize,
-        const int32_t& lineIdx,
-        const int32_t& channels
+        const int32_t& inLineBytesSize, // input line size 
+        const int32_t& outLineSize,     // output line size
+        const int32_t& lineIdx,         // line number in zero enumeration mode
+        const int32_t& channels         // number of color channel (1-monochrome, 3-RGB, 4-RGBA)
     ) 
     {
         constexpr int32_t in_out_factor = sizeof(uint16_t) / sizeof(uint8_t);
@@ -148,9 +148,9 @@ namespace HuffmanUtils
                     else
                         lR = lG = lB = static_cast<uint16_t>(0u);
 
-		    restored[idxRecon + 0] = rev_sub_filter(decoded[idxFilt + 0], decoded[idxFilt + 1], lR);
-		    restored[idxRecon + 1] = rev_sub_filter(decoded[idxFilt + 2], decoded[idxFilt + 3], lG);
-		    restored[idxRecon + 2] = rev_sub_filter(decoded[idxFilt + 4], decoded[idxFilt + 5], lB);
+		            restored[idxRecon + 0] = rev_sub_filter(decoded[idxFilt + 0], decoded[idxFilt + 1], lR);
+		            restored[idxRecon + 1] = rev_sub_filter(decoded[idxFilt + 2], decoded[idxFilt + 3], lG);
+		            restored[idxRecon + 2] = rev_sub_filter(decoded[idxFilt + 4], decoded[idxFilt + 5], lB);
                  }
             }
             break;
@@ -197,9 +197,9 @@ namespace HuffmanUtils
                            ulR = ulG = ulB = static_cast<uint16_t>(0u); 
                     }
                     else
-                       lR = lG = lB = static_cast<uint16_t>(0u);
+                        ulR = ulG = ulB = lR = lG = lB = static_cast<uint16_t>(0u);
 
- 		    if (lineUp >= 0)
+ 		            if (lineUp >= 0)
                     { // we have up line
                        uR = restored[idxReconUp + 0]; 
                        uG = restored[idxReconUp + 1]; 
@@ -208,10 +208,10 @@ namespace HuffmanUtils
                     else
                        uR = uG = uB = static_cast<uint16_t>(0u);
  
-		    restored[idxRecon + 0] = rev_paeth_filter(decoded[idxFilt + 0], decoded[idxFilt + 1], lR, uR, ulR);
-		    restored[idxRecon + 1] = rev_paeth_filter(decoded[idxFilt + 2], decoded[idxFilt + 3], lG, uG, ulG);
-		    restored[idxRecon + 2] = rev_paeth_filter(decoded[idxFilt + 4], decoded[idxFilt + 5], lB, uB, ulB);
-                }
+		            restored[idxRecon + 0] = rev_paeth_filter(decoded[idxFilt + 0], decoded[idxFilt + 1], lR, uR, ulR);
+		            restored[idxRecon + 1] = rev_paeth_filter(decoded[idxFilt + 2], decoded[idxFilt + 3], lG, uG, ulG);
+		            restored[idxRecon + 2] = rev_paeth_filter(decoded[idxFilt + 4], decoded[idxFilt + 5], lB, uB, ulB);
+                } // for (i = 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
             }
             break;
 
