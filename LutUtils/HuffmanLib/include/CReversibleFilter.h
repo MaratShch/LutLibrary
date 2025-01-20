@@ -20,7 +20,7 @@ namespace HuffmanUtils
 
     inline const eFILTER_T detect_filter (const uint8_t& fIdx)
     {
-        eFILTER_T filterT = FILTER_INVALID;
+        eFILTER_T filterT = eFILTER_T::FILTER_INVALID;
           // Use switch or if-else to check possible values and convert data correctly
         switch (fIdx)
         {
@@ -41,7 +41,7 @@ namespace HuffmanUtils
             break;
             default:
                 // Handle error case: invalid filter value
-                std::cerr << "Error: Invalid filter value: " << static_cast<int>(filterValue) << std::endl;
+                std::cerr << "Error: Invalid filter value: " << static_cast<int>(fIdx) << std::endl;
             break;    
         }
         return (filterT);
