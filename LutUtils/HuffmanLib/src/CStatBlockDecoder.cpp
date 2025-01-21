@@ -45,9 +45,6 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
 {
     m_decoderIntegrityStatus = false;
 
-    // cleanup output vector
-    out.clear();
-
     // Initialize and Build all Huffman Dynamic Decoder Infrastructures (Cl4Cl, Huffman trees, etc...)
     pre_decode ();
 
