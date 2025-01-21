@@ -40,13 +40,7 @@ IBlockDecoder* CHuffmanBlock::create_decoder (const uint32_t& BTYPE)
 void CHuffmanBlock::print_block_properties(void) noexcept
 {
     std::cout << "BLOCK PROPERTIES:" << std::endl;
-    std::cout << "CMF    = " << static_cast<uint32_t>(m_CMF)    << std::endl;
-    std::cout << "FLG    = " << static_cast<uint32_t>(m_FLG)    << std::endl;
-    std::cout << "FCHECK = " << static_cast<uint32_t>(m_FCHECK) << std::endl;
-    std::cout << "FDICT  = " << static_cast<uint32_t>(m_FDICT)  << std::endl;
-    std::cout << "FLEVEL = " << static_cast<uint32_t>(m_FLEVEL) << std::endl;
     std::cout << "BTYPE  = " << static_cast<uint32_t>(m_BTYPE) << std::endl;
-    std::cout << "WSize  = " << static_cast<uint32_t>(m_WindowSize) << std::endl;
     std::cout << std::endl;
     return;
 }
@@ -54,34 +48,15 @@ void CHuffmanBlock::print_block_properties(void) noexcept
 bool CHuffmanBlock::parse_block_header (CStreamPointer& sp) noexcept
 {
     m_Sp = sp;
-    // read compression method/flags code [8 bits]
-    m_CMF = readBits (m_Data, m_Sp, 8);
-    // read additional flag/check bits [8 bits]
-    m_FLG = readBits (m_Data, m_Sp, 8);
+    const uint32_t huffmanBlockHeader = readBits(m_InData, m_Sp, 3u);
+    m_isFinal = static_cast<bool>(0x01u & huffmanBlockHeader);
+    m_BTYPE   = static_cast<uint8_t>(0x3u & (huffmanBlockHeader >> 1));
 
-    uint32_t checkBit = static_cast<uint32_t>(m_CMF) * 256u + static_cast<uint32_t>(m_FLG);
-    uint32_t checkRes = checkBit % 31u;
-    const uint8_t CM = 0x08U & m_CMF;
-    const uint8_t CINFO = (m_CMF >> 4) & 0x0Fu;
-
-    if (0u == checkRes /* check bit correct */ && 0x08u == CM /* DEFLATE compression detected */)
+    IBlockDecoder* iBlockDecoder = create_decoder(m_BTYPE);
+    if (nullptr != iBlockDecoder)
     {
-        m_WindowSize = 1u << (CINFO + 8);
-
-        m_FCHECK = m_FLG & 0x1Fu;	        // Check bits for CMF and FLG
-        m_FDICT = (m_FLG >> 5) & 0x01u;    // Preset Dictionary
-        m_FLEVEL = (m_FLG >> 6) & 0x03u;    // Compression Level
-
-        const uint32_t huffmanBlockHeader = readBits(m_Data, m_Sp, 3u);
-        m_isFinal = static_cast<bool>(0x01u & huffmanBlockHeader);
-        m_BTYPE = static_cast<uint8_t>(0x3u & (huffmanBlockHeader >> 1));
-
-        IBlockDecoder* iBlockDecoder = create_decoder(m_BTYPE);
-        if (max_WindowSize == m_WindowSize && nullptr != iBlockDecoder)
-        {
-            m_iBlockDecoder = iBlockDecoder;
-            m_isValid = (0u == m_FDICT ? true : false); // custom DICTIONARY is not supported yet
-        }
+        m_iBlockDecoder = iBlockDecoder;
+        m_isValid = true;
     }
     else
         m_isValid = false;
@@ -91,7 +66,7 @@ bool CHuffmanBlock::parse_block_header (CStreamPointer& sp) noexcept
 }
 
 
-CHuffmanBlock::CHuffmanBlock (std::vector<uint8_t>& pData, CStreamPointer& sp) : m_Data(pData)
+CHuffmanBlock::CHuffmanBlock (std::vector<uint8_t>& pData, std::vector<uint8_t>& dData, CStreamPointer& sp) : m_InData(pData), m_OutData(dData)
 {
     parse_block_header(sp);
     return;
@@ -115,19 +90,16 @@ CHuffmanBlock::~CHuffmanBlock()
     m_isFinal = m_isValid = false;
     m_Sp.reset();
 
-    m_CMF = m_FLG = m_FCHECK = m_FDICT = m_FLEVEL = m_BTYPE = 0u;
-    m_WindowSize = 0u;
     return;
 }
 
 
-std::vector<uint8_t> CHuffmanBlock::Decode (void)
+CStreamPointer CHuffmanBlock::Decode (void)
 {
-    std::vector<uint8_t> decodedData{};
     if (true == m_isValid)
     {
-        m_iBlockDecoder->decode(m_Data, decodedData, m_Sp);
+        m_iBlockDecoder->decode(m_InData, m_OutData, m_Sp);
     }
-    return decodedData;
+    return m_Sp;
 }
 

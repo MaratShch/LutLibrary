@@ -27,9 +27,19 @@ namespace HuffmanUtils
 
             OutStreamT Decode (void);
             OutStreamT Encode (void);
-            bool StreamIntegrityStatus(void) noexcept { return m_Integrity; }
+            bool StreamIntegrityStatus(void) const noexcept { return m_Integrity; }
+            const CStreamPointer get_sp (void) const noexcept {return m_Sp;}
 
         private:
+
+            bool read_stream_properties (CStreamPointer sp = 0ll);
+          
+            uint8_t m_CMF = 0u;
+            uint8_t m_FLG = 0u;
+            uint8_t m_FCHECK = 0u;
+            uint8_t m_FDICT = 0u;
+            uint8_t m_FLEVEL = 0u;
+            uint32_t m_WindowSize = 0u;
 
             uint32_t m_blockCnt = 0u;
             bool m_Integrity = false;

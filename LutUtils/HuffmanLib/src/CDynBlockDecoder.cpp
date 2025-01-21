@@ -223,8 +223,6 @@ uint32_t dbgBufCnt = 0u;
 bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
 {
     bool bBlockDecodeResult = false;
-    // cleanup output vector
-    out.clear();
 
     // Initialize and Build all Huffman Dynamic Decoder Infrastructures (Cl4Cl, Huffman trees, etc...)
     if (true == pre_decode(in, sp))

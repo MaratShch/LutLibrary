@@ -15,8 +15,8 @@ namespace HuffmanUtils
         public:
             virtual ~CHuffmanBlock();
 
-            CHuffmanBlock (std::vector<uint8_t>& vData, CStreamPointer& sp);
-            std::vector<uint8_t> Decode (void);
+            CHuffmanBlock (std::vector<uint8_t>& iData /* input */, std::vector<uint8_t>& oData /* output */, CStreamPointer& sp);
+            CStreamPointer Decode (void);
             CStreamPointer GetStreamPointer(void) noexcept { return m_Sp; }
             
             bool isFinal (void) noexcept {return m_isFinal;}
@@ -24,19 +24,14 @@ namespace HuffmanUtils
         private:
             IBlockDecoder* m_iBlockDecoder = nullptr;
             CStreamPointer m_Sp = 0ll;
-            std::vector<uint8_t>& m_Data;
+
+            std::vector<uint8_t>& m_InData;
+            std::vector<uint8_t>& m_OutData;
 
             bool m_isValid = false;
             bool m_isFinal = false;
  
-            uint8_t m_CMF = 0u;
-            uint8_t m_FLG = 0u;
-            uint8_t m_FCHECK = 0u;
-            uint8_t m_FDICT = 0u;
-            uint8_t m_FLEVEL = 0u;
             uint8_t m_BTYPE = 0u;
-            uint32_t m_WindowSize = 0u;
-
             void print_block_properties (void) noexcept;   
             bool parse_block_header (CStreamPointer& sp) noexcept;
             IBlockDecoder* create_decoder (const uint32_t& BTYPE);

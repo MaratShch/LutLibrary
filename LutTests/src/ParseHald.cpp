@@ -120,7 +120,6 @@ TEST(ParseHald, Dark_HCLUT)
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-
 TEST(ParseHald, Parse_Neutral_HCLUT)
 {
     const std::string lutName{ dbgLutsFolder + "/neutral_hald_512.png" };
@@ -133,6 +132,6 @@ TEST(ParseHald, Parse_Neutral_HCLUT)
 int main (int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-	std::cout << "Parse from: " << dbgLutsFolder << std::endl;
-	return RUN_ALL_TESTS();	
+    std::cout << "Parse from: " << dbgLutsFolder << std::endl;
+    return RUN_ALL_TESTS();	
 }

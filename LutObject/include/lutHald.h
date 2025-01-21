@@ -15,13 +15,14 @@
 #include <array>
 #include <cmath>
 #include <memory>
-#ifdef _DEBUG
- #include <iomanip>
-#endif
 #include "CHuffmanStream.h"
 #include "CReversibleFilter.h"
 
 //#define _DEBUG_SAVE_IDAT
+
+#ifdef _DEBUG_SAVE_IDAT
+ #include <iomanip>
+#endif
 
 namespace PNG
 {
@@ -315,7 +316,7 @@ private:
 		return invalid_dict;
 	}
 
-#ifdef _DEBUG
+#ifdef _DEBUG_SAVE_IDAT
 	void idat_save_dbg (const std::vector<uint8_t>& data_vector)
 	{
 		const std::string fullFilePath = m_lutName + ".txt";
@@ -345,9 +346,9 @@ private:
 		const size_t idatSize = ihdrData.size();
 		if (0u != idatSize)
 		{
-#if defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT)
+#ifdef _DEBUG_SAVE_IDAT
 			this->idat_save_dbg(ihdrData);
-#endif /* defined(_DEBUG) && defined(_DEBUG_SAVE_IDAT) */
+#endif /* #ifdef _DEBUG_SAVE_IDAT */
 
             HuffmanUtils::CStreamPointer sp(HuffmanUtils::byte2sp(4)); // forward stream pointer on 4 bytes for avoid IDAT header name
             HuffmanUtils::CHuffmanStream deflateStream (std::move(ihdrData), sp);
