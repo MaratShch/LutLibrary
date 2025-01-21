@@ -111,7 +111,7 @@ OutStreamT CHuffmanStream::Decode (void)
         
         if (decodedSizeCurr > decodedSizePrev)
         {
-            decodedSizeCurr = decodedSizePrev;
+            decodedSizePrev = decodedSizeCurr;
             lastBlockValidSp = m_Sp;
         }
         else
@@ -130,6 +130,10 @@ OutStreamT CHuffmanStream::Decode (void)
     };
 
     CStreamPointer adlerSp{ byte2sp(static_cast<uint32_t>(m_StreamData.size() - 4ull)) };
+#ifdef _DEBUG
+    const CStreamPointer spFraction(adlerSp - m_Sp);
+    const auto spbyte = spFraction.byte();
+#endif
     uint32_t adler_provided = convertEndian(readBits(m_StreamData, adlerSp, 32));
     // check stream integrity
     uint32_t adler_expected = computeAdler32(decodedData);

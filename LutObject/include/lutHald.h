@@ -26,7 +26,7 @@
 
 namespace PNG
 {
-	constexpr uint8_t DEFLATE = static_cast<uint8_t>(0u);
+	constexpr uint8_t DEFLATE   = static_cast<uint8_t>(0u);
 	constexpr uint8_t COLOR_RGB = static_cast<uint8_t>(2u);
 
 	constexpr std::uint32_t Chunk (const char& a, const char& b, const char& c, const char& d) noexcept
@@ -436,15 +436,15 @@ private:
 			auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1))); };
 
 			if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth <= static_cast<uint8_t>(32u) &&
-				PNG::COLOR_RGB == colorType&& PNG::DEFLATE == compressionMethod)
+				PNG::COLOR_RGB == colorType && PNG::DEFLATE == compressionMethod)
 			{
-                            // monochrome LUT not supported yet!!!
+                // monochrome LUT not supported yet!!!
 			    m_CompressionMethod = compressionMethod;
 			    m_bitDepth = static_cast<uint32_t>(bitDepth);
 			    m_lutSize = static_cast<LutElement::lutSize>(std::cbrt(static_cast<float>(width * height)));
-                            m_sizeX = width;
-                            m_sizeY = height;
-                            m_Channels = 3u;
+                m_sizeX = width;
+                m_sizeY = height;
+                m_Channels = 3u;
 			    bRet = true;
 			} /* if (0u != width && width == height && true == isPowerOf2(bitDepth) && bitDepth .... */
 		}
