@@ -111,7 +111,11 @@ namespace HuffmanUtils
     constexpr size_t  cDistanceCodesSize = cDistanceCodes.size();
     constexpr int32_t cDistanceCodesMin  = cDistanceGetCode(0);
 
-    
+    //
+    // STATIC HUFFMAN CODES
+    // All 8 - bit codes start with the prefix 0011.
+    // All 9 - bit codes start with the prefix 110.
+    // All 7 - bit codes start with a prefix 000.
     constexpr std::array<uint16_t, 144> HuffmanStaticCodes8
     {   // alphabet range: 0x00 - 0x8F
         0b00110000, 0b00110001, 0b00110010, 0b00110011, 
