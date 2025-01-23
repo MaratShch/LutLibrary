@@ -15,7 +15,7 @@ namespace HuffmanUtils
     inline uint32_t readBit (const std::vector<uint8_t>& stream, const CStreamPointer& streamOffset) 
     {
 #ifdef _DEBUG
-        if (sp2byte(streamOffset) > stream.size())
+        if (sp2byte(streamOffset) >= stream.size())
            throw std::runtime_error("Stream offset out of range (readBit)");
         return (stream.at(streamOffset.byte()) >> streamOffset.bit()) & 0x01u;
 #else
@@ -69,10 +69,10 @@ namespace HuffmanUtils
     (
         const std::vector<uint8_t>& stream, // input Huffman Stream 
         CStreamPointer& streamOffset,       // stream pointer (bits offset), value incremented internally
-        uint32_t bitsRead                       // size of Huffman static code for read
+        uint32_t bitsRead                   // size of Huffman static code for read
     )
     {
-        if (bitsRead > 32u || bitsRead == 0u)
+        if (bitsRead > 9u || bitsRead == 0u)
             throw std::runtime_error("Number of static bits for read shoud be not equal to zero or no more that 9");
 
         uint32_t huffmanCode = 0u;

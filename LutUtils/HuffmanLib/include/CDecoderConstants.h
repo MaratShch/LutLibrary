@@ -9,7 +9,7 @@
 
 namespace HuffmanUtils
 {
-    constexpr uint32_t InvalidStaticCodeId = 0b100000000u;
+    constexpr uint32_t InvalidStaticCodeId = 300u;
 
     constexpr uint32_t EndOfBlock = 256u;
 
@@ -20,7 +20,7 @@ namespace HuffmanUtils
     constexpr uint32_t min_HCLEN = 4u;
     constexpr uint32_t max_HCLEN = 19u;
 
-    constexpr uint32_t max_WindowSize = 32768u;
+    constexpr uint32_t max_WindowSize = { 32u * 1024u };
 
     // Alpahabet for build Code Lenghts For Code Lengths Tree
     constexpr std::array<uint32_t, max_HCLEN> cl4cl_dictionary_idx =
@@ -188,7 +188,7 @@ namespace HuffmanUtils
 
     constexpr std::array<uint16_t, 32> HuffmanStaticLengths
     {   // Static Huffman Codes for Range 256–287 [ values 0 - 23 and 192 - 199 ]
-        0b0000000, // end of block
+        0b0000000, // end of block - 256
         // 7 bits length [257 - 279 range]
         0b0000001, 0b0000010, 0b0000011, 0b0000100, 
         0b0000101, 0b0000110, 0b0000111, 0b0001000, 

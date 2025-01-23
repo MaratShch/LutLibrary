@@ -302,7 +302,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
                for (int32_t i = 0; i < size; i++)
                {
                    // Circular buffer behavior for overlapping copies
-                   out.push_back(out[pre + i % distance]);
+                   out.push_back(out[pre + i]);
                }
            }
        } while (symbol != EndOfBlock);
