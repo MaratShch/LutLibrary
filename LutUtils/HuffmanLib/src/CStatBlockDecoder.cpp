@@ -41,17 +41,46 @@ void CStatBlockDecoder::pre_decode (void)
 }
 
 
+uint32_t CStatBlockDecoder::read_fixed_huffman_code (const std::vector<uint8_t>& in, CStreamPointer& sp)
+{
+#if 0
+    uint32_t code = 0;
+    code = readBits(stream, sp, 7);
+    
+    auto symbol = table_lookup_7bit(code); // Implement it yourself based on RFC 1951
+    if(symbol != undefined_symbol)
+        return symbol;
+
+    code = readBits(stream, sp, 1); //read 8 bit by adding one bit
+    code = (code << 7) |  (code & 0x7F);
+
+     symbol = table_lookup_8bit(code); // Implement it yourself based on RFC 1951
+    if(symbol != undefined_symbol)
+        return symbol;
+    
+    code = readBits(stream, sp, 1); // read 9 bit by adding another bit
+    code = (code << 8) |  (code & 0xFF);
+
+    symbol = table_lookup_9bit(code); // Implement it yourself based on RFC 1951
+    if(symbol != undefined_symbol)
+        return symbol;
+
+   throw std::runtime_error("Unable to extract symbol from fixed Huffman code stream");
+#endif
+   return 0;
+}
+
+
+
 bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
 {
     // Initialize and Build all Huffman Dynamic Decoder Infrastructures (Cl4Cl, Huffman trees, etc...)
     pre_decode ();
 
     uint32_t symbol = 0u;
-    uint32_t readSize = 8u; // initial read of 8 bits, because steam can't be started from distance code
+    constexpr uint32_t readSize = 8u;
 
     // decoding loop
-    // Currently Length codes in range 257 - 287 isn't processed.
-    // Need to understand how resolve ambiguity on read from stream between these codes and Literal 8/9 bits codes
     do {
         uint32_t hCode = readStaticHuffmanBits (in, sp, readSize);
 
@@ -60,7 +89,7 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
             symbol = it1->second; // Return the symbol associated with the code
         else
         {
-            // complementar bit - make 9 bits code and search again
+            // complementar bit - make 8 bits code and search again
             hCode = readComplementarStaticHuffmanBits (in, sp, hCode);
             auto it2 = m_reverseTable.find(hCode);
             if (it2 != m_reverseTable.end())

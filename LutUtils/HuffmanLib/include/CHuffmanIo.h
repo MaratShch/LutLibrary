@@ -69,17 +69,18 @@ namespace HuffmanUtils
     (
         const std::vector<uint8_t>& stream, // input Huffman Stream 
         CStreamPointer& streamOffset,       // stream pointer (bits offset), value incremented internally
-        uint32_t bits                       // size of Huffman static code for read
+        uint32_t bitsRead                       // size of Huffman static code for read
     )
     {
+        if (bitsRead > 32u || bitsRead == 0u)
+            throw std::runtime_error("Number of static bits for read shoud be not equal to zero or no more that 9");
+
         uint32_t huffmanCode = 0u;
-        uint32_t shft = 0u;
-        for (uint32_t i = 0u; i < bits; i++)
+        for (uint32_t i = 0u; i < bitsRead; i++)
         {
             const uint32_t huffmanBit = readBit(stream, streamOffset);
-            (huffmanCode <<= shft) |= huffmanBit;
-            shft = 1u;
             ++streamOffset;
+            (huffmanCode <<= 1) |= huffmanBit;
         }
         return huffmanCode;
     }

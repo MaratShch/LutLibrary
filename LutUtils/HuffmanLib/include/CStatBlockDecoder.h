@@ -25,6 +25,8 @@ namespace HuffmanUtils
            void createCodesTable   (void);
            void createReverseTable(void);
 
+           uint32_t read_fixed_huffman_code(const std::vector<uint8_t>& in, CStreamPointer& sp);
+
     }; // class CStatBlockDecoder : public IBlockDecoder
 	
 }; // namespace HuffmanUtils
