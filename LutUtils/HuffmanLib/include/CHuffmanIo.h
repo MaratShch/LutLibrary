@@ -78,9 +78,9 @@ namespace HuffmanUtils
         uint32_t huffmanCode = 0u;
         for (uint32_t i = 0u; i < bitsRead; i++)
         {
-            const uint32_t huffmanBit = readBit(stream, streamOffset);
+            huffmanCode <<= 1;
+            huffmanCode |= readBit(stream, streamOffset);
             ++streamOffset;
-            (huffmanCode <<= 1) |= huffmanBit;
         }
         return huffmanCode;
     }
@@ -89,7 +89,7 @@ namespace HuffmanUtils
     (
         const std::vector<uint8_t>& stream, // input Huffman Stream 
         CStreamPointer& streamOffset,       // stream pointer (bits offset), value incremented internally
-        uint32_t code                       // size of Huffman static code for read
+        uint32_t code                       // Huffman code read previously
     )
     {
         const uint32_t huffmanCode = (code << 1) | readBit(stream, streamOffset);

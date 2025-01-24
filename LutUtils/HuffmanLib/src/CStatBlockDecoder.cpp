@@ -14,13 +14,14 @@ CStatBlockDecoder::~CStatBlockDecoder(void)
 
 void CStatBlockDecoder::createCodesTable (void)
 {
+    uint32_t i = 0u;
     // initialize Huffman Static Codes array with invalid code values
     mStaticCodes.fill(InvalidStaticCodeId);
     // fill by Literal/Length Codes (in range from 0...287) 
-    for (uint32_t i = 0u;   i <= 143u; ++i) mStaticCodes[i] = 0b00110000  + i;           // Literal/Length codes 0-143:   8-bit codes.
-    for (uint32_t i = 144u; i <= 255u; ++i) mStaticCodes[i] = 0b110010000 + (i - 144u);  // Literal/Length codes 144-255: 9-bit codes.
-    for (uint32_t i = 256u; i <= 279u; ++i) mStaticCodes[i] = i - 256u;                  // Literal/Length codes 256-279: 7-bit codes.
-    for (uint32_t i = 280u; i <= 287u; ++i) mStaticCodes[i] = 0b11000000  + (i - 280u);  // Literal/Length codes 280-287: 8-bit codes.
+    for (i = 0u;   i <= 143u; ++i) mStaticCodes[i] = 0b00110000  + i;           // Literal/Length codes 0-143:   8-bit codes.
+    for (        ; i <= 255u; ++i) mStaticCodes[i] = 0b110010000 + (i - 144u);  // Literal/Length codes 144-255: 9-bit codes.
+    for (        ; i <= 279u; ++i) mStaticCodes[i] = i - 256u;                  // Literal/Length codes 256-279: 7-bit codes.
+    for (        ; i <= 287u; ++i) mStaticCodes[i] = 0b11000000  + (i - 280u);  // Literal/Length codes 280-287: 8-bit codes.
 
     return;
 }
