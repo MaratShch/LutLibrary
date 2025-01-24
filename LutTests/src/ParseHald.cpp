@@ -66,14 +66,14 @@ TEST(ParseHald, Parse_IdentifyLevel8_HCLUT)
 	EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
-//TEST(ParseHald, Parse_IdentifyLevel16_HCLUT)
-//{
-//    const std::string lutName{ dbgLutsFolder + "/Identity_level_16.HCLUT.png" };
-//    CHaldLut<float> lutFileF32;
-//    auto const result  = lutFileF32.LoadFile(lutName);
-//    auto const lutSize = lutFileF32.getLutSize();
-//    EXPECT_EQ(result, LutErrorCode::LutState::OK);
-//}
+TEST(ParseHald, Parse_IdentifyLevel16_HCLUT)
+{
+    const std::string lutName{ dbgLutsFolder + "/Identity_level_16.HCLUT.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result  = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
 
 TEST(ParseHald, Parse_AnalogFX_Sepia_Color_HCLUT)
 {

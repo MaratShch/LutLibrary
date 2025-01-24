@@ -8,7 +8,6 @@ using namespace HuffmanUtils;
 
 CStatBlockDecoder::~CStatBlockDecoder(void)
 {
-   // nothing TODO
    return;
 }
 
@@ -96,7 +95,7 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
                 throw std::runtime_error("Potential overflow of size.");
 
             // Read distance size
-            const uint32_t distanceSizeCode = readStaticHuffmanBits(in, sp, 5);
+            const uint32_t distanceSizeCode = readBits(in, sp, 5);
             if (distanceSizeCode >= 0u && distanceSizeCode <= 29u) // let's ensure received distance code in range 0...29
             {
                 const int32_t DistanceCodeArrayIdx = distanceSizeCode - cDistanceCodesMin;
@@ -128,7 +127,7 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
                 auto const& distance = pair_distance.second;
 
                 if (0 == distance || 0 == size) // nothing to copy
-                    throw std::runtime_error("Distance or size equal to zero. Probably stream corrupted.");
+                    throw std::runtime_error("Distance or size equal to zero. Probably stream corrupted: distance = " + std::to_string(distance) + " size = " + std::to_string(size) + ".");
 
                 const int32_t outVectorSize = static_cast<int32_t>(out.size());
                 constexpr int32_t maxWinSize{ static_cast<int32_t>(max_WindowSize) };
