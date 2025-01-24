@@ -277,7 +277,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
                auto const& distance = pair_distance.second;
 
                if (0 == distance || 0 == size) // nothing to copy
-                   throw std::runtime_error("Distance or size equal to zero. Probably stream corrupted.");
+                   throw std::runtime_error("DYN: Distance or size equal to zero. Probably stream corrupted: distance = " + std::to_string(distance) + " size = " + std::to_string(size) + ".");
 
                const int32_t outVectorSize = static_cast<int32_t>(out.size());
                constexpr int32_t maxWinSize{ static_cast<int32_t>(max_WindowSize) };
@@ -285,7 +285,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
                {
                    dbg_print_on_crash(out);
                    std::ostringstream ex;
-                   ex << "Distance exceeds output buffer or max allowed window size " << maxWinSize << " bytes. Huffman Code = " << hLiteraLeaf->symbol
+                   ex << "DYN: Distance exceeds output buffer or max allowed window size " << maxWinSize << " bytes. Huffman Code = " << hLiteraLeaf->symbol
                        << ". Distance = " << distance << " bytes. Out size = " << outVectorSize << " bytes. SP(before) = " << dbgSp << " SP(after) = " << sp;
 
                    const std::string ex_as_string(ex.str());
@@ -300,10 +300,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
 
                // Perform the copy operation
                for (int32_t i = 0; i < size; i++)
-               {
-                   // Circular buffer behavior for overlapping copies
                    out.push_back(out[pre + i]);
-               }
            }
        } while (symbol != EndOfBlock);
 
