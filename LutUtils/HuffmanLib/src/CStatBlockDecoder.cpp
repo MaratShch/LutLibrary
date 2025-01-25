@@ -118,7 +118,7 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
             symbol = read_fixed_huffman_code(in, sp);
 
             if (symbol == InvalidStaticCodeId)
-                throw std::runtime_error("Invalid Fixed Huffman Code Detetced");
+                throw std::runtime_error("FIX: Invalid Fixed Huffman Code Detected: " + std::to_string(symbol) + ".");
             else if (symbol <= 255u)
                 out.push_back(static_cast<uint8_t>(symbol));
             else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax))
