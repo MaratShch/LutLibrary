@@ -21,8 +21,8 @@ void CStatBlockDecoder::createCodesTable (void)
     for (i = 0u;   i <= 143u; ++i) mStaticCodes[i] = 0b00110000  + i;           // Literal/Length codes 0-143:   8-bit codes.
     for (        ; i <= 255u; ++i) mStaticCodes[i] = 0b110010000 + (i - 144u);  // Literal/Length codes 144-255: 9-bit codes.
     for (        ; i <= 279u; ++i) mStaticCodes[i] = i - 256u;                  // Literal/Length codes 256-279: 7-bit codes.
-    for (        ; i <= 287u; ++i) mStaticCodes[i] = 0b11000000  + (i - 280u);  // Literal/Length codes 280-287: 8-bit codes.
-
+    for (        ; i <= 285u; ++i) mStaticCodes[i] = 0b11000000  + (i - 280u);  // Literal/Length codes 280-285: 8-bit codes.
+    // Literal/length values 286-287 will never actually occur in the compressed data, but participate in the code construction.
     return;
 }
 
@@ -151,7 +151,7 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
                     out.push_back(out[pre + i]);
 
             } // else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax))
-            else if (symbol == InvalidStaticCodeId || symbol > static_cast<uint32_t>(cLengthCodesMax)) // invalid code riched
+            else if (symbol == InvalidStaticCodeId) // invalid code riched
                 throw std::runtime_error("FIX: Invalid Fixed Huffman Code Detected: " + std::to_string(symbol) + ".");
 
         } while (symbol != EndOfBlock);
