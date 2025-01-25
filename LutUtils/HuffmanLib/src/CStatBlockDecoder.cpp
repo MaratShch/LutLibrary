@@ -117,11 +117,9 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
 
             symbol = read_fixed_huffman_code(in, sp);
 
-            if (symbol == InvalidStaticCodeId)
-                throw std::runtime_error("FIX: Invalid Fixed Huffman Code Detected: " + std::to_string(symbol) + ".");
-            else if (symbol <= 255u)
-                out.push_back(static_cast<uint8_t>(symbol));
-            else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax))
+            if (symbol <= 255u)
+                out.push_back(static_cast<uint8_t>(symbol)); // put literal code 
+            else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax)) // process distance/length codes
             {
                 const std::pair<int32_t, int32_t> pair_distance = process_distance_sequence(in, sp, symbol);
                 auto const& size = pair_distance.first;
@@ -153,6 +151,8 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
                     out.push_back(out[pre + i]);
 
             } // else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax))
+            else if (symbol == InvalidStaticCodeId || symbol > static_cast<uint32_t>(cLengthCodesMax)) // invalid code riched
+                throw std::runtime_error("FIX: Invalid Fixed Huffman Code Detected: " + std::to_string(symbol) + ".");
 
         } while (symbol != EndOfBlock);
     

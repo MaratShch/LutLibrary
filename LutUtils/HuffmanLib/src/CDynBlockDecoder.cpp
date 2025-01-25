@@ -265,9 +265,6 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
            const std::shared_ptr<Node<uint32_t>> hLiteraLeaf = readHuffmanBits<uint32_t>(in, sp, m_literal_root);
            symbol = hLiteraLeaf->symbol;
 
-           if (symbol > static_cast<uint32_t>(cLengthCodesMax))
-               throw std::runtime_error("Invalid symbol received:" + std::to_string(symbol) + ".");
-
            if (symbol <= 255u)
                out.push_back(static_cast<uint8_t>(symbol));
            else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax))
@@ -302,6 +299,9 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
                for (int32_t i = 0; i < size; i++)
                    out.push_back(out[pre + i]);
            }
+           else  if (symbol > static_cast<uint32_t>(cLengthCodesMax))
+               throw std::runtime_error("Invalid symbol received:" + std::to_string(symbol) + ".");
+
        } while (symbol != EndOfBlock);
 
        bBlockDecodeResult = true;
