@@ -17,7 +17,7 @@ message (STATUS "Install BIN folder:        ${CMAKE_INSTALL_BIN_DIRECTORY}")
 message (STATUS "Install TESTS folder:      ${CMAKE_INSTALL_TST_DIRECTORY}")
 message (STATUS "Install TEST LUT's folder: ${CMAKE_INSTALL_LUT_TST_DIRECTORY}")
 
-add_definitions(-D_LARGEFILE64_SOURCE=1)
+add_definitions(-D_LARGEFILE64_SOURCE=1 -D__USE_LARGEFILE64)
 
 add_compile_options(
 	"$<$<CONFIG:DEBUG>:-O0 -mavx2>"		# disable optimization, AVX2 instruction set
