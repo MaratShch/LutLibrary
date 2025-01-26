@@ -21,6 +21,14 @@ namespace HuffmanUtils
             
             bool isFinal (void) noexcept {return m_isFinal;}
  
+            uint32_t GetDecoderType (void)
+            {
+                uint32_t bType = 0xFFu;
+                if (nullptr != m_iBlockDecoder)
+                    bType = m_iBlockDecoder->get_decoder_type();
+                return bType;
+            }
+
         private:
             IBlockDecoder* m_iBlockDecoder = nullptr;
             CStreamPointer m_Sp = 0ll;
