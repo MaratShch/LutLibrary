@@ -21,7 +21,7 @@ void CStatBlockDecoder::createCodesTable (void)
     for (i = 0u;   i <= 143u; ++i) mStaticCodes[i] = 0b00110000  + i;           // Literal/Length codes 0-143:   8-bit codes.
     for (        ; i <= 255u; ++i) mStaticCodes[i] = 0b110010000 + (i - 144u);  // Literal/Length codes 144-255: 9-bit codes.
     for (        ; i <= 279u; ++i) mStaticCodes[i] = i - 256u;                  // Literal/Length codes 256-279: 7-bit codes.
-    for (        ; i <= 285u; ++i) mStaticCodes[i] = 0b11000000  + (i - 280u);  // Literal/Length codes 280-285: 8-bit codes.
+    for (        ; i <= 287u; ++i) mStaticCodes[i] = 0b11000000  + (i - 280u);  // Literal/Length codes 280-285: 8-bit codes.
     // Literal/length values 286-287 will never actually occur in the compressed data, but participate in the code construction.
     return;
 }
@@ -97,7 +97,7 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
 
             // Read distance size
             const uint32_t distanceSizeCode = readBits(in, sp, 5);
-            if (distanceSizeCode >= 0u && distanceSizeCode <= 29u) // let's ensure received distance code in range 0...29
+            if (distanceSizeCode <= 29u) // let's ensure received distance code in range 0...29
             {
                 const int32_t DistanceCodeArrayIdx = distanceSizeCode - cDistanceCodesMin;
                 const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
@@ -126,7 +126,13 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
                 auto const& distance = pair_distance.second;
 
                 if (0 == distance || 0 == size) // nothing to copy
-                    throw std::runtime_error("FIX: Distance or size equal to zero. Probably stream corrupted: distance = " + std::to_string(distance) + " size = " + std::to_string(size) + ".");
+                {
+                    std::ostringstream ex;
+                    ex << "FIX: Distance or size equal to zero. Probably stream corrupted: symbol = " << symbol << " distance = " << distance << " size = " << size << ". SP(before) = " << dbgSp << " SP(after) = " << sp;
+                    const std::string ex_as_string(ex.str());
+                    throw std::runtime_error(ex_as_string);
+                    return false;
+                }
 
                 const int32_t outVectorSize = static_cast<int32_t>(out.size());
                 constexpr int32_t maxWinSize{ static_cast<int32_t>(max_WindowSize) };
@@ -150,8 +156,9 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
                 for (int32_t i = 0; i < size; i++)
                     out.push_back(out[pre + i]);
 
-            } // else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax))
-            else if (symbol == InvalidStaticCodeId) // invalid code riched
+            } // else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax)) 
+
+            else if (InvalidStaticCodeId == symbol || symbol > 285) // invalid code riched
                 throw std::runtime_error("FIX: Invalid Fixed Huffman Code Detected: " + std::to_string(symbol) + ".");
 
         } while (symbol != EndOfBlock);
