@@ -31,7 +31,7 @@ CDynBlockDecoder::~CDynBlockDecoder(void)
 }
 
 
-std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize)
+std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize, uint32_t bound)
 {
     std::vector<uint32_t> tmpVector(treeSize, static_cast<uint32_t>(-1));
     constexpr uint32_t lastCodeBad = 0xFFFFFFFFu;
@@ -106,7 +106,7 @@ std::shared_ptr<Node<uint32_t>> CDynBlockDecoder::build_huffman_tree(const std::
 
     }
 
-    return buildHuffmanTreeFromLengths<uint32_t>(tmpVector);
+    return buildHuffmanTreeFromLengths<uint32_t>(tmpVector, bound);
 }
 
 
@@ -148,13 +148,9 @@ bool CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
         return false;
 
     uint32_t cl4cl_sum = 0u;
-    uint32_t val = 0u;
     m_cl4cl.resize(cl4cl_dictionary_idx.size(), 0);
     for (uint32_t i = 0u; i < m_HCLEN; i++)
-    {
-        m_cl4cl[cl4cl_dictionary_idx[i]] = val = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values
-        cl4cl_sum += val;
-    }
+        cl4cl_sum += (m_cl4cl[cl4cl_dictionary_idx[i]] = readBits(in, sp, 3u)); // read Code Lengths for Code Lengths 3 bits values
 
     // validate cl4cl
    if (0u == cl4cl_sum)

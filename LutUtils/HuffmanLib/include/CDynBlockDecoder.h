@@ -36,7 +36,7 @@ namespace HuffmanUtils
            bool build_code_lenghts_tree (const std::vector<uint8_t>& in, CStreamPointer& sp); // build Literal Tree
            bool build_distance_tree(const std::vector<uint8_t>& in, CStreamPointer& sp); // build Distance Tree
 
-           std::shared_ptr<Node<uint32_t>> build_huffman_tree (const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize);
+           std::shared_ptr<Node<uint32_t>> build_huffman_tree (const std::vector<uint8_t>& in, CStreamPointer& sp, uint32_t treeSize, uint32_t bound = 15);
 
     }; // class CDynBlockDecoder : public IBlockDecoder
 	
