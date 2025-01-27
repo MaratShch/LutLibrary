@@ -147,23 +147,18 @@ bool CDynBlockDecoder::pre_decode (const std::vector<uint8_t>& in, CStreamPointe
     if (m_HCLEN < min_HCLEN || m_HCLEN > max_HCLEN)
         return false;
 
-
     uint32_t cl4cl_sum = 0u;
-    std::vector<uint32_t> cl4cl(m_HCLEN, 0u); // prepare storage for read from Huffman stream Code Lengths for Code Lengths alphabet
+    uint32_t val = 0u;
+    m_cl4cl.resize(cl4cl_dictionary_idx.size(), 0);
     for (uint32_t i = 0u; i < m_HCLEN; i++)
-    {   // read Cl4Cl lengths in order defined into rfc1951 standard
-        cl4cl[i] = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values
-        cl4cl_sum += cl4cl[i];
+    {
+        m_cl4cl[cl4cl_dictionary_idx[i]] = val = readBits(in, sp, 3u); // read Code Lengths for Code Lengths 3 bits values
+        cl4cl_sum += val;
     }
 
     // validate cl4cl
-    if (0u == cl4cl_sum)
+   if (0u == cl4cl_sum)
         return false; // all zero codes - at least one code should not be equal to zero.
-
-    // Order Code Lengths for Code Lengths alphabet
-    m_cl4cl.resize(cl4cl_dictionary_idx.size(), 0);
-    for (uint32_t i = 0u; i < m_HCLEN; i++)
-        m_cl4cl[cl4cl_dictionary_idx[i]] = cl4cl[i];
 
     // build Cl4Cl Huffman Tree
     m_cl4cl_root = buildHuffmanTreeFromLengths (m_cl4cl);
@@ -210,7 +205,7 @@ void dbg_print_on_crash (const std::vector<uint8_t>& out)
 }
      
 #else
-inline void dbg_print_on_crash (const std::vector<uint8_t>& out) {return;}
+inline void dbg_print_on_crash(const std::vector<uint8_t>& out) noexcept { (void)out;  return; }
 #endif
 
 #ifdef _DEBUG
