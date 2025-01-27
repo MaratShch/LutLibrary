@@ -30,20 +30,20 @@ namespace HuffmanUtils
           ~CStreamPointer (void) noexcept = default;
 
        // copy and move operators
-          constexpr CStreamPointer& operator= (const std::pair<const uint32_t, const uint32_t>& other) noexcept
+          CStreamPointer& operator= (const std::pair<const uint32_t, const uint32_t>& other) noexcept
           {
               m_StreamPointer = ((static_cast<const int64_t>(other.first) << 3) | static_cast<const int64_t>(other.second & 0x07u));
               return *this;
           }
 
           template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
-          constexpr CStreamPointer& operator= (const T& other) noexcept
+          CStreamPointer& operator= (const T& other) noexcept
           {
               m_StreamPointer = (other > static_cast<T>(0) ? static_cast<const int64_t>(other) : 0ll);
               return *this;
           }
 
-          constexpr CStreamPointer& operator= (const CStreamPointer& other) noexcept
+          CStreamPointer& operator= (const CStreamPointer& other) noexcept
           {
               if (this == &other)
                  return *this;
