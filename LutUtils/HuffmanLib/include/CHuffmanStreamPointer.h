@@ -17,8 +17,10 @@ namespace HuffmanUtils
 
       // class constructors with parameters	
           constexpr CStreamPointer (const int64_t& _offset) noexcept : m_StreamPointer { _offset > 0ll ? _offset : 0ll } {};
-          constexpr CStreamPointer (const uint32_t& _byte, const uint32_t& _bit) noexcept : m_StreamPointer {(static_cast<int64_t>(_byte) << 3) | static_cast<int64_t>(0x7u & _bit)} {};
-          constexpr CStreamPointer (const std::pair<const uint32_t, const uint32_t>& _pair) noexcept : m_StreamPointer {(static_cast<int64_t>(_pair.first) << 3) | static_cast<int64_t>(0x7u & _pair.second)} {};
+
+          constexpr CStreamPointer (const uint32_t& _byte, const uint32_t& _bit) noexcept : m_StreamPointer {(static_cast<const int64_t>(_byte) << 3) | static_cast<const int64_t>(0x7u & _bit)} {};
+
+          explicit constexpr CStreamPointer (const std::pair<const uint32_t, const uint32_t>& _pair) noexcept : m_StreamPointer {(static_cast<const int64_t>(_pair.first) << 3) | (0x7u & _pair.second)} {};
 
        // copy and move constructors 
           constexpr CStreamPointer (const CStreamPointer& other_sp) noexcept : m_StreamPointer { other_sp.m_StreamPointer } {};
@@ -28,7 +30,27 @@ namespace HuffmanUtils
           ~CStreamPointer (void) noexcept = default;
 
        // copy and move operators
-          CStreamPointer& operator= (const CStreamPointer& other) = default;
+          constexpr CStreamPointer& operator= (const std::pair<const uint32_t, const uint32_t>& other) noexcept
+          {
+              m_StreamPointer = ((static_cast<const int64_t>(other.first) << 3) | static_cast<const int64_t>(other.second & 0x07u));
+              return *this;
+          }
+
+          template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>
+          constexpr CStreamPointer& operator= (const T& other) noexcept
+          {
+              m_StreamPointer = (other > static_cast<T>(0) ? static_cast<const int64_t>(other) : 0ll);
+              return *this;
+          }
+
+          constexpr CStreamPointer& operator= (const CStreamPointer& other) noexcept
+          {
+              if (this == &other)
+                 return *this;
+              m_StreamPointer = other.m_StreamPointer;
+                 return *this;
+          }
+
           CStreamPointer& operator= (CStreamPointer&& other) noexcept {swap(other); return *this;}
 
        // member access API
@@ -77,14 +99,14 @@ namespace HuffmanUtils
           constexpr operator uint64_t() const noexcept {return static_cast<uint64_t>(m_StreamPointer);}
 
        // Prefix increment operator
-	      CStreamPointer operator ++ () noexcept { m_StreamPointer++; return *this;}
+	      CStreamPointer operator ++ () noexcept { ++m_StreamPointer; return *this;}
        // Postfix increment operator
 	      CStreamPointer operator ++ (int) noexcept { CStreamPointer tmp(*this); step_forward(); return tmp;}
 
        // Prefix decrement operator
-          CStreamPointer operator -- () noexcept {step_backward(); return *this;}
+          CStreamPointer operator -- () noexcept {m_StreamPointer > 0ll ? --m_StreamPointer : 0ll; return *this;}
        // Postfix decrement operator
-          CStreamPointer operator -- (int) noexcept {CStreamPointer tmp(*this); step_backward(); return *this;}
+          CStreamPointer operator -- (int) noexcept {CStreamPointer tmp(*this); step_backward(); return tmp;}
 
        // operators +=
           template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>   
@@ -200,9 +222,9 @@ namespace HuffmanUtils
     template <typename T, std::enable_if_t<std::is_integral<T>::value>* = nullptr>   
     constexpr bool operator >=  (const T& l, const CStreamPointer& r) { return static_cast<int64_t>(l) >= r.get(); }
 
-
-    inline CStreamPointer byte2sp (const uint32_t& byte) noexcept{ return CStreamPointer(static_cast<int64_t>(byte) << 3); }
-    inline int64_t sp2byte (const CStreamPointer& sp) noexcept { return sp.byte(); }
+    // conversion API's (not class member)
+    constexpr CStreamPointer byte2sp (const uint32_t& byte) noexcept { return CStreamPointer(byte, 0u); }
+    constexpr int64_t sp2byte (const CStreamPointer& sp) noexcept { return sp.byte(); }
 
 }; // namespace HuffmanUtils
 
