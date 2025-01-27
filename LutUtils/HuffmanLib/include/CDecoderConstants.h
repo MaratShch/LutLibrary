@@ -31,7 +31,7 @@ namespace HuffmanUtils
 
     using DistanceTable = std::tuple<int32_t /* code */, int32_t /* extra bits */, int32_t /* base length */>;
 
-    constexpr std::array<DistanceTable, 29> cLengthCodes = 
+    constexpr std::array<DistanceTable, 31> cLengthCodes = 
     {{    // rfc1951
 	  { 257, 0, 3  },
 	  { 258, 0, 4  },
@@ -61,7 +61,9 @@ namespace HuffmanUtils
 	  { 282, 5, 163},
 	  { 283, 5, 195},
 	  { 284, 5, 227},
-	  { 285, 0, 258}   
+	  { 285, 0, 258},
+          { 286, 0, 0  },
+          { 287, 0, 0  }    
     }};
     constexpr int32_t cLengthGetCode    (const int32_t& idx) {return std::get<0>(cLengthCodes[idx]);}
     constexpr int32_t cLengthGetExtra   (const int32_t& idx) {return std::get<1>(cLengthCodes[idx]);}
@@ -69,10 +71,10 @@ namespace HuffmanUtils
 
     constexpr size_t  cLengthCodesSize = cLengthCodes.size();
     constexpr int32_t cLengthCodesMin  = cLengthGetCode(0);
-    constexpr int32_t cLengthCodesMax  = cLengthGetCode(28);
+    constexpr int32_t cLengthCodesMax  = cLengthGetCode(30);
 
 
-    constexpr std::array<DistanceTable, 30> cDistanceCodes = 
+    constexpr std::array<DistanceTable, 32> cDistanceCodes = 
     {{    // rfc1951
 	  { 0,  0,  1    },
 	  { 1,  0,  2    },
@@ -103,7 +105,9 @@ namespace HuffmanUtils
 	  { 26, 12, 8193 },
 	  { 27, 12, 12289},
 	  { 28, 13, 16385},
-	  { 29, 13, 24577}     
+	  { 29, 13, 24577},
+          { 30, 0,  0    },
+          { 31, 0,  0    }      
     }};
 
     constexpr int32_t cDistanceGetCode    (const int32_t& idx) {return std::get<0>(cDistanceCodes[idx]);}
@@ -112,6 +116,7 @@ namespace HuffmanUtils
 
     constexpr size_t  cDistanceCodesSize = cDistanceCodes.size();
     constexpr int32_t cDistanceCodesMin  = cDistanceGetCode(0);
+    constexpr int32_t cDistanceCodesMax  = cDistanceGetCode(31);
 
     // STATIC HUFFMAN CODES
     constexpr std::array<uint16_t, 144> HuffmanStaticCodes8
