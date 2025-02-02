@@ -1,5 +1,6 @@
 # Configuration file for build LutLibrary for Windows OS (Win64 on i64 platform only supported)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_GENERATOR_PLATFORM x64)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
