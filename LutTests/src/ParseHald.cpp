@@ -68,16 +68,70 @@ TEST(ParseHald, Parse_IdentifyLevel8_HCLUT)
 
 TEST(ParseHald, Parse_IdentifyLevel16_HCLUT)
 {
-	const std::string lutName{ dbgLutsFolder + "/Identity_level_16.HCLUT.png" };
-	CHaldLut<float> lutFileF32;
-	auto const result  = lutFileF32.LoadFile(lutName);
-	auto const lutSize = lutFileF32.getLutSize();
-	EXPECT_EQ(result, LutErrorCode::LutState::OK);
+    const std::string lutName{ dbgLutsFolder + "/Identity_level_16.HCLUT.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result  = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseHald, Parse_AnalogFX_Sepia_Color_HCLUT)
+{
+    const std::string lutName{ dbgLutsFolder + "/AnalogFX-Sepia-Color.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseHald, Parse_ZilverFX_Vintage_HCLUT)
+{
+    const std::string lutName{ dbgLutsFolder + "/ZilverFX-Vintage-B&W.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseHald, Parse_Kodak_Ektar_100_HCLUT)
+{
+    const std::string lutName{ dbgLutsFolder + "/Kodak_Ektar_100.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+//TEST(ParseHald, Parse_PolaroidMono_HCLUT)
+//{
+//    const std::string lutName{ dbgLutsFolder + "/PolaroidMono.png" };
+//    CHaldLut<float> lutFileF32;
+//    auto const result = lutFileF32.LoadFile(lutName);
+//    auto const lutSize = lutFileF32.getLutSize();
+//    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+//}
+
+TEST(ParseHald, Dark_HCLUT)
+{
+    const std::string lutName{ dbgLutsFolder + "/Dark.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseHald, Parse_Neutral_HCLUT)
+{
+    const std::string lutName{ dbgLutsFolder + "/neutral_hald_512.png" };
+    CHaldLut<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
 int main (int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-	std::cout << "Parse from: " << dbgLutsFolder << std::endl;
-	return RUN_ALL_TESTS();	
+    std::cout << "Parse from: " << dbgLutsFolder << std::endl;
+    return RUN_ALL_TESTS();	
 }

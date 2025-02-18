@@ -1,95 +1,173 @@
 #include "CStatBlockDecoder.h"
 #include "CDecoderConstants.h"
-#include "CHuffmanStream.h"
+#include "CHuffmanIo.h"
+#include <sstream>
 
 using namespace HuffmanUtils;
+
+
+CStatBlockDecoder::~CStatBlockDecoder(void)
+{
+   return;
+}
 
 
 void CStatBlockDecoder::createCodesTable (void)
 {
     uint32_t i = 0u;
-
-    // Literal/Length Codes (0–287)
-    for (i = 0u;   i <= 143u; ++i) m_Table[i] = 0b00110000 + i;            // Literal/Length codes 0-143:   8-bit codes.
-    for (i = 144u; i <= 255u; ++i) m_Table[i] = 0b110010000 + (i - 144u);  // Literal/Length codes 144-255: 9-bit codes.
-    for (i = 256u; i <= 279u; ++i) m_Table[i] = i - 256u;                  // Literal/Length codes 256-279: 7-bit codes.
-    for (i = 280u; i <= 287u; ++i) m_Table[i] = 0b11000000 + (i - 280u);   // Literal/Length codes 280-287: 8-bit codes.
-
+    // initialize Huffman Static Codes array with invalid code values
+    mStaticCodes.fill(InvalidStaticCodeId);
+    // fill by Literal/Length Codes (in range from 0...287) 
+    for (i = 0u;   i <= 143u; ++i) mStaticCodes[i] = 0b00110000  + i;           // Literal/Length codes 0-143:   8-bit codes.
+    for (        ; i <= 255u; ++i) mStaticCodes[i] = 0b110010000 + (i - 144u);  // Literal/Length codes 144-255: 9-bit codes.
+    for (        ; i <= 279u; ++i) mStaticCodes[i] = i - 256u;                  // Literal/Length codes 256-279: 7-bit codes.
+    for (        ; i <= 287u; ++i) mStaticCodes[i] = 0b11000000  + (i - 280u);  // Literal/Length codes 280-285: 8-bit codes.
+    // Literal/length values 286-287 will never actually occur in the compressed data, but participate in the code construction.
     return;
 }
 
 void CStatBlockDecoder::createReverseTable (void)
 {
-    for (const auto& pair : m_Table)
-        m_reverseTable[pair.second] = pair.first;
+    // initialize Huffman Static Codes array with invalid code values
+    mCodesLookUp.fill(InvalidStaticCodeId);
+    for (uint32_t i = 0u; i < 512u; i++)
+        mCodesLookUp[mStaticCodes[i]] = i;
 
     return;
 }
 
 
-void CStatBlockDecoder::pre_decode (void)
+bool CStatBlockDecoder::pre_decode (void)
 {
     createCodesTable();
     createReverseTable();
 
-    return;
+    return true;
 }
+
+
+uint32_t CStatBlockDecoder::read_fixed_huffman_code (const std::vector<uint8_t>& in, CStreamPointer& sp)
+{
+    uint32_t symbol = InvalidStaticCodeId;
+    const uint32_t code7 = readStaticHuffmanBits (in, sp, 7);
+    if (InvalidStaticCodeId == (symbol = mCodesLookUp[code7]))
+    {
+        // This code doesn't match 7 bits Static Huffman Codes values.
+        // Let's try to identify this code as 8 bits Static Huffman Code
+        const uint32_t code8 = readComplementarStaticHuffmanBits(in, sp, code7);
+        if (InvalidStaticCodeId == (symbol = mCodesLookUp[code7]))
+        {
+            // Again, this code doen't match 8 bits Static Huffman Codes values.
+            // Last chance to try identify this code as 9 bits Static Huffman Code
+            const uint32_t code9 = readComplementarStaticHuffmanBits(in, sp, code8);
+            symbol = mCodesLookUp[code9];
+            if (InvalidStaticCodeId == symbol) // Invalid code received
+                throw std::runtime_error("Unable to extract symbol from Fixed Huffman Code stream: <7>:" + std::to_string(code7) + " <8>:" + 
+                    std::to_string(code8) + " <9>:" + std::to_string(code9) + ".");
+        }
+    }
+
+   return symbol;
+}
+
 
 
 bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
 {
-    m_decoderIntegrityStatus = false;
-
-    // cleanup output vector
-    out.clear();
+    bool bResult = true;
 
     // Initialize and Build all Huffman Dynamic Decoder Infrastructures (Cl4Cl, Huffman trees, etc...)
-    pre_decode ();
-
-    uint32_t symbol = 0u;
-    uint32_t readSize = 8u; // initial read of 8 bits, because steam can't be started from distance code
-
-    // decoding loop
-    // Currently Length codes in range 257 - 287 isn't processed.
-    // Need to understand how resolve ambiguity on read from stream between these codes and Literal 8/9 bits codes
-    do {
-        uint32_t hCode = readStaticHuffmanBits (in, sp, readSize);
-
-        auto it1 = m_reverseTable.find (hCode);
-        if (it1 != m_reverseTable.end())
-            symbol = it1->second; // Return the symbol associated with the code
-        else
-        {
-            // complementar bit - make 9 bits code and search again
-            hCode = readComplementarStaticHuffmanBits (in, sp, hCode);
-            auto it2 = m_reverseTable.find(hCode);
-            if (it2 != m_reverseTable.end())
-                symbol = it2->second; // Return the symbol associated with the code
-        }
-
-        if (symbol != EndOfBlock)
-            out.push_back(symbol);
-
-    } while (symbol != EndOfBlock);
-
-    auto convertEndian = [](uint32_t value) -> uint32_t
+    if (true == (bResult = pre_decode()))
     {
-        return ((value >> 24) & 0x000000FF) | // Move byte 3 to byte 0
-            ((value >> 8) & 0x0000FF00) | // Move byte 2 to byte 1
-            ((value << 8) & 0x00FF0000) | // Move byte 1 to byte 2
-            ((value << 24) & 0xFF000000);  // Move byte 0 to byte 3
-    };
+        auto process_distance_sequence = [this]
+        (
+            const std::vector<uint8_t>& in,
+            CStreamPointer& sp,
+            const uint32_t& distanceCode
+        ) -> const std::pair<int32_t, int32_t>
+        {
+            // Get Length information
+            const int32_t LengtCodeArrayIdx = distanceCode - cLengthCodesMin;
+            const int32_t extraBitsInLen = cLengthGetExtra(LengtCodeArrayIdx);
+            const int32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
+            const int32_t finalLength = baseLength + (extraBitsInLen > 0 ? readBits(in, sp, extraBitsInLen) : 0);
 
+            if (finalLength > std::numeric_limits<uint32_t>::max() - (extraBitsInLen > 0 ? finalLength : 0u))
+                throw std::runtime_error("Potential overflow of size.");
 
-    sp.align2byte(); // Skip any remaining padding bits until the byte boundary is reached
-                     // integirty check: read ADLER-32 checksum
-    const uint32_t adler32Expected = convertEndian(readBits(in, sp, 32u));
-    // integirty check: compute ADLER-32 checksum
-    const uint32_t adler32Computed = computeAdler32(out);
+            // Read distance size
+            const uint32_t distanceSizeCode = readBits(in, sp, 5);
+            if (distanceSizeCode <= 29u) // let's ensure received distance code in range 0...29
+            {
+                const int32_t DistanceCodeArrayIdx = distanceSizeCode - cDistanceCodesMin;
+                const int32_t extraBitsInDist = cDistanceGetExtra(DistanceCodeArrayIdx);
+                const int32_t baseDistance = cDistanceGetBaseLen(DistanceCodeArrayIdx);
+                const int32_t finalDistance = baseDistance + (extraBitsInDist > 0 ? readBits(in, sp, extraBitsInDist) : 0);
 
-    // validate checksums
-    m_decoderIntegrityStatus = (adler32Expected == adler32Computed);
+                return std::make_pair(finalLength, finalDistance);
+            }
+            return std::make_pair(0, 0);
+        };
 
-    return m_decoderIntegrityStatus;
+        uint32_t symbol = InvalidStaticCodeId;
+
+        // decoding loop
+        do {
+            const CStreamPointer dbgSp{ sp };
+
+            symbol = read_fixed_huffman_code(in, sp);
+
+            if (symbol <= 255u)
+                out.push_back(static_cast<uint8_t>(symbol)); // put literal code 
+            else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax)) // process distance/length codes
+            {
+                const std::pair<int32_t, int32_t> pair_distance = process_distance_sequence(in, sp, symbol);
+                auto const& size = pair_distance.first;
+                auto const& distance = pair_distance.second;
+
+                if (0 == distance || 0 == size) // nothing to copy
+                {
+                    std::ostringstream ex;
+                    ex << "FIX: Distance or size equal to zero. Probably stream corrupted: symbol = " << symbol << " distance = " << distance << " size = " << size << ". SP(before) = " << dbgSp << " SP(after) = " << sp;
+                    const std::string ex_as_string(ex.str());
+                    throw std::runtime_error(ex_as_string);
+                    return false;
+                }
+
+                const int32_t outVectorSize = static_cast<int32_t>(out.size());
+                constexpr int32_t maxWinSize{ static_cast<int32_t>(max_WindowSize) };
+                if (outVectorSize < distance || distance > maxWinSize)
+                {
+                    std::ostringstream ex;
+                    ex << "FIX: Distance exceeds output buffer or max allowed window size " << maxWinSize << " bytes. Huffman Code = " << symbol
+                        << ". Distance = " << distance << " bytes. Out size = " << outVectorSize << " bytes. SP(before) = " << dbgSp << " SP(after) = " << sp;
+
+                    const std::string ex_as_string(ex.str());
+                    throw std::runtime_error(ex_as_string);
+                    return false;
+                }
+
+                auto const pre = outVectorSize - distance;
+
+                // Preallocate space for the output vector
+                out.reserve(out.size() + size);
+
+                // Perform the copy operation
+                for (int32_t i = 0; i < size; i++)
+                    out.push_back(out[pre + i]);
+
+            } // else if (symbol >= static_cast<uint32_t>(cLengthCodesMin) && symbol <= static_cast<uint32_t>(cLengthCodesMax)) 
+
+            else if (InvalidStaticCodeId == symbol || symbol > 285) // invalid code riched
+                throw std::runtime_error("FIX: Invalid Fixed Huffman Code Detected: " + std::to_string(symbol) + ".");
+
+        } while (symbol != EndOfBlock);
+    
+        bResult = true;
+    } // if (true == pre_decode())
+    else
+        bResult = false;
+
+   return bResult;
 }
 

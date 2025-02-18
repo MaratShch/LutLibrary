@@ -2,6 +2,7 @@
 #define __HUFFMAN_STREAM_API_DEFINITION__
 
 #include <vector>
+#include <array>
 #include <utility>
 #include <memory>
 #include "CHuffmanStreamPointer.h"
@@ -9,103 +10,46 @@
 
 namespace HuffmanUtils
 {
+    using InStreamT  = std::vector<uint8_t>;
+    using OutStreamT = std::vector<uint8_t>;
 
-    std::vector<std::pair<uint32_t, uint32_t>> generate_huffman_codes (const std::vector<uint32_t>& code_lengths, int32_t num_symbols);
-
-    // Read bit from specific position pointed by Stream Pointer.
-    // Pay attention! This function isn't modify Stream Pointer after read.
-    inline uint32_t readBit (const std::vector<uint8_t>& stream, const CStreamPointer& streamOffset) 
+    class CHuffmanStream
     {
-#ifdef _DEBUG
-        return (stream.at(streamOffset.byte()) >> streamOffset.bit()) & 0x01u;
-#else
-        return (stream[streamOffset.byte()] >> streamOffset.bit()) & 0x01u;
-#endif
-    }
+        public:
+            CHuffmanStream (const uint8_t* pData, size_t inDataSize, CStreamPointer sp = 0ll);
+            CHuffmanStream (const std::vector<uint8_t>& pData,  CStreamPointer sp = 0ll);
+            CHuffmanStream (const std::vector<uint8_t>&& pData, CStreamPointer sp = 0ll);
 
-    // Read number of regular bits from Huffman Stream pointed by Stream Pointer.
-    // Stream Pointer will be incremented automatically.
-    inline uint32_t readBits (const std::vector<uint8_t>& stream, CStreamPointer& streamOffset, uint32_t bitsRead = 1u) 
-    {
-        uint32_t value = 0u;
-        for (uint32_t i = 0; i < bitsRead; i++)
-        {
-            value |= ((readBit(stream, streamOffset)) << i);
-            streamOffset++;
-        }
-        return value;
-    }
+            template <size_t N>
+            CHuffmanStream(const std::array<uint8_t, N>& pData, CStreamPointer sp = 0ll);
 
-    // Read Huffman Codes from Huffman stream. Stream pointer will be automatically incremented
-    template <typename T>
-    inline const std::shared_ptr<Node<T>> readHuffmanBits
-    (
-        const std::vector<uint8_t>& stream,     // input Huffman Stream 
-        CStreamPointer& streamOffset,           // stream pointer (bits offset), value incremented internally 
-        const std::shared_ptr<Node<T>>& node    // Huffman Tree for traversing and stop read when code will be find
-    )
-    {
-        std::shared_ptr<Node<T>> huffmanNode = node;
-        uint32_t huffmanCode = 0u;
-        uint32_t position = 0u;
+            virtual ~CHuffmanStream();
 
-        do {
-            const uint32_t huffmanBit = readBit(stream, streamOffset);;
-            (huffmanCode <<= position) |= huffmanBit;
-            streamOffset++, position++;
-            huffmanNode = ((0u == huffmanBit) ? huffmanNode->left : huffmanNode->right);
-        } while (nullptr != huffmanNode->left || nullptr != huffmanNode->right);
+            OutStreamT Decode (void);
+            OutStreamT Encode (void);
+            bool StreamIntegrityStatus(void) const noexcept { return m_Integrity; }
+            const CStreamPointer get_sp (void) const noexcept {return m_Sp;}
 
-        return huffmanNode;
-    }
+        private:
 
+            bool read_stream_properties (CStreamPointer sp = 0ll);
+          
+            uint8_t m_CMF = 0u;
+            uint8_t m_FLG = 0u;
+            uint8_t m_FCHECK = 0u;
+            uint8_t m_FDICT = 0u;
+            uint8_t m_FLEVEL = 0u;
+            uint32_t m_WindowSize = 0u;
 
-    inline uint32_t readStaticHuffmanBits
-    (
-        const std::vector<uint8_t>& stream, // input Huffman Stream 
-        CStreamPointer& streamOffset,       // stream pointer (bits offset), value incremented internally
-        uint32_t bits                       // size of Huffman static code for read
-    )
-    {
-        uint32_t huffmanCode = 0u;
-        uint32_t shft = 0u;
-        for (uint32_t i = 0u; i < bits; i++)
-        {
-            const uint32_t huffmanBit = readBit(stream, streamOffset);
-            (huffmanCode <<= shft) |= huffmanBit;
-            shft = 1u;
-            streamOffset++;
-        }
-        return huffmanCode;
-    }
+            uint32_t m_blockCnt = 0u;
+            bool m_Integrity = false;
 
-    inline uint32_t readComplementarStaticHuffmanBits
-    (
-        const std::vector<uint8_t>& stream, // input Huffman Stream 
-        CStreamPointer& streamOffset,       // stream pointer (bits offset), value incremented internally
-        uint32_t code                       // size of Huffman static code for read
-    )
-    {
-        const uint32_t huffmanCode = (code << 1) | readBit(stream, streamOffset);
-        streamOffset++;
-        return huffmanCode;
-    }
+            CStreamPointer m_Sp = 0ll;
+            InStreamT m_StreamData;
+            
 
+    }; // class CHuffmanStream
 
-    inline uint32_t computeAdler32 (const std::vector<uint8_t> data)
-    {
-        uint32_t A = 1u; // A starts with 1
-        uint32_t B = 0u; // B starts with 0
-        constexpr uint32_t MOD_ADLER = 65521u;
-        const size_t length = data.size();
-
-        for (const auto& element : data) {
-            A = (A + element) % MOD_ADLER;
-            B = (B + A) % MOD_ADLER;
-        }
-
-        return (B << 16) | A; // Combine B (high) and A (low) into a 32-bit checksum
-    }
 
 }; // namespace HuffmanUtils
 

@@ -3,25 +3,32 @@
 
 
 #include "IBlockDecoder.h"
-#include <unordered_map>
+#include "CDecoderConstants.h"
+#include <array>
 
 namespace HuffmanUtils
 {
+
     class CStatBlockDecoder : public IBlockDecoder
     {
        public:
+           virtual ~CStatBlockDecoder();
+
            bool decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& inSp);
            uint8_t get_decoder_type(void) { return 0x01u; }
-
-       private:
-           std::unordered_map<int32_t,  uint32_t> m_Table;
-           std::unordered_map<uint32_t, int32_t>  m_reverseTable;
            
+       private:
+
+           std::array<uint32_t, 512u> mStaticCodes;
+           std::array<uint32_t, 512u> mCodesLookUp;
+
            bool m_decoderIntegrityStatus = false;
 
-           void pre_decode (void);
+           bool pre_decode (void);
            void createCodesTable   (void);
            void createReverseTable(void);
+
+           uint32_t read_fixed_huffman_code(const std::vector<uint8_t>& in, CStreamPointer& sp);
 
     }; // class CStatBlockDecoder : public IBlockDecoder
 	

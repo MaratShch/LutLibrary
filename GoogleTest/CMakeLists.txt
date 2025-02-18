@@ -3,6 +3,9 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+cmake_policy(PUSH)
+set(CMAKE_POLICY_DEFAULT_CMP0148 OLD)
+
 project(googletest-distribution)
 set(GOOGLETEST_VERSION 1.14.0)
 
@@ -34,3 +37,4 @@ if(BUILD_GMOCK)
 else()
   add_subdirectory( googletest )
 endif()
+cmake_policy(POP)
