@@ -1,13 +1,14 @@
 #include "CFakedBlockDecoder.h"
 #include "CDecoderConstants.h"
 #include "CHuffmanIo.h"
+#include <sstream>
 
 using namespace HuffmanUtils;
 
 
 CFakedBlockDecoder::~CFakedBlockDecoder (void)
 {
-    m_LEN = m_NLEN = 0;
+    m_LEN = m_NLEN = 0u;
     return;
 }
 
@@ -19,10 +20,14 @@ bool CFakedBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uin
     // Read NLEN (16-bit little-endian)
     m_NLEN = readBits (in, sp, 16);
  
-    const uint16_t lenComplement = ~m_LEN & static_cast<uint16_t>(0xFFFFu); 
     // Check if m_NLEN is a one's complement of m_LEN
-    if (m_NLEN != lenComplement)
-        throw std::runtime_error("Invalid NLEN for stored block: Data integrity check failed"); 
+    if ((0U == m_LEN) || (m_NLEN != ~m_LEN))
+    {
+        std::ostringstream ex;
+        ex << "RAW: Invalid NLEN for stored block: Data integrity check failed. LEN = " << m_LEN << " NLEN = " << m_NLEN << ". SP = " << sp;
+        const std::string ex_as_string(ex.str());
+        throw std::runtime_error(ex_as_string);
+    }
 
     const size_t actualLen = static_cast<size_t>(m_LEN) + 1ull;
     // reserve memory for output vector     
