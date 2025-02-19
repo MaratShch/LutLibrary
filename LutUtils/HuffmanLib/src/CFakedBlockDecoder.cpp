@@ -27,7 +27,7 @@ bool CFakedBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uin
     if (m_NLEN != static_cast<uint16_t>(~m_LEN))
     {
         std::ostringstream ex;
-        ex << "RAW: Invalid NLEN for stored block: Data integrity check failed. LEN = " << m_LEN << " NLEN = " << m_NLEN << ". SP = " << sp << " total size = " << in.size() << " bytes" ;
+        ex << "RAW: Invalid NLEN for stored block: Data integrity check failed. LEN = " << m_LEN << " NLEN = " << m_NLEN << ". SP = " << sp << " IN stream size = " << in.size() << " bytes" ;
         const std::string ex_as_string(ex.str());
         throw std::runtime_error(ex_as_string);
     }
