@@ -73,7 +73,7 @@ def save_concatenated_data(concatenated_data, output_file, debug_info):
   """
   folder_path = "."
   full_file_path = os.path.join(folder_path, output_file)
-  rowCounter = 32
+  rowCounter = 16
 
   with open(full_file_path, 'w') as file:
     # Write the first line as a C-style comment with the data size
@@ -104,10 +104,10 @@ if __name__ == '__main__':
     # Example usage
     # Replace this with actual PNG file reading
     try:
-        with open("AnalogFX-Sepia-Color.png", "rb") as file:
+        with open("Identity_level_16.HCLUT.png", "rb") as file:
             png_data = file.read()
     except FileNotFoundError:
-        print ("Can't find test.png file")
+        print ("Can't find input file")
         exit()
 
     concatenated_idat_data, debug_info = concatenate_idat_chunks(png_data)
