@@ -350,7 +350,7 @@ private:
 			this->idat_save_dbg(ihdrData);
 #endif /* #ifdef _DEBUG_SAVE_IDAT */
 
-            HuffmanUtils::CStreamPointer sp(HuffmanUtils::byte2sp(4)); // forward stream pointer on 4 bytes for avoid IDAT header name
+            HuffmanUtils::CStreamPointer sp(HuffmanUtils::byte2sp(4u)); // forward stream pointer on 4 bytes for avoid IDAT header name
             HuffmanUtils::CHuffmanStream deflateStream (std::move(ihdrData), sp);
             std::vector<uint8_t> decodedData = deflateStream.Decode();
 
@@ -393,15 +393,15 @@ private:
                             {
                                 if (8u == m_bitDepth)
                                     m_lutBody3D[r][g][b] = {
-                                        static_cast<float>(vecRGB8.at(dec + 0u)),
-                                        static_cast<float>(vecRGB8.at(dec + 1u)),
-                                        static_cast<float>(vecRGB8.at(dec + 2u))
+                                        static_cast<float>(vecRGB8[dec + 0u]),
+                                        static_cast<float>(vecRGB8[dec + 1u]),
+                                        static_cast<float>(vecRGB8[dec + 2u])
                                 };
                                 else
                                     m_lutBody3D[r][g][b] = {
-                                        static_cast<float>(vecRGB16.at(dec + 0u)),
-                                        static_cast<float>(vecRGB16.at(dec + 1u)),
-                                        static_cast<float>(vecRGB16.at(dec + 2u))
+                                        static_cast<float>(vecRGB16[dec + 0u]),
+                                        static_cast<float>(vecRGB16[dec + 1u]),
+                                        static_cast<float>(vecRGB16[dec + 2u])
                                 };
                                 dec += 3u;
                             }
