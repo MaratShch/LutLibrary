@@ -26,9 +26,6 @@ void CStatBlockDecoder::createCodesTable (void)
 bool CStatBlockDecoder::pre_decode (void)
 {
     createCodesTable();
-    if (InvalidStaticCodeId == mCodesLookUp[EndOfBlock])
-        throw std::runtime_error("FIX: Code for End of Block not defined!!!");
-       
     return true;
 }
 
