@@ -15,33 +15,20 @@ CStatBlockDecoder::~CStatBlockDecoder(void)
 void CStatBlockDecoder::createCodesTable (void)
 {
     uint32_t i = 0u;
-    // initialize Huffman Static Codes array with invalid code values
-    mStaticCodes.fill(InvalidStaticCodeId);
-    // fill by Literal/Length Codes (in range from 0...287) 
-    for (i = 0u;   i <= 143u; ++i) mStaticCodes[i] = 0b00110000  + i;           // Literal/Length codes 0-143:   8-bit codes.
-    for (        ; i <= 255u; ++i) mStaticCodes[i] = 0b110010000 + (i - 144u);  // Literal/Length codes 144-255: 9-bit codes.
-    for (        ; i <= 279u; ++i) mStaticCodes[i] = i - 256u;                  // Literal/Length codes 256-279: 7-bit codes.
-    for (        ; i <= 287u; ++i) mStaticCodes[i] = 0b11000000  + (i - 280u);  // Literal/Length codes 280-285: 8-bit codes.
+    mCodesLookUp.fill(InvalidStaticCodeId);
+    for (i = 0; i < 144u; i++) mCodesLookUp[HuffmanStaticCodes8 [i      ]] = i;
+    for (     ; i < 256u; i++) mCodesLookUp[HuffmanStaticCodes9 [i - 144]] = i;
+    for (     ; i < 288u; i++) mCodesLookUp[HuffmanStaticLengths[i - 256]] = i;
     // Literal/length values 286-287 will never actually occur in the compressed data, but participate in the code construction.
     return;
 }
 
-void CStatBlockDecoder::createReverseTable (void)
-{
-    // initialize Huffman Static Codes array with invalid code values
-    mCodesLookUp.fill(InvalidStaticCodeId);
-    for (uint32_t i = 0u; i < 512u; i++)
-        mCodesLookUp[mStaticCodes[i]] = i;
-
-    return;
-}
-
-
 bool CStatBlockDecoder::pre_decode (void)
 {
     createCodesTable();
-    createReverseTable();
-
+    if (InvalidStaticCodeId == mCodesLookUp[EndOfBlock])
+        throw std::runtime_error("FIX: Code for End of Block not defined!!!");
+       
     return true;
 }
 
@@ -55,14 +42,14 @@ uint32_t CStatBlockDecoder::read_fixed_huffman_code (const std::vector<uint8_t>&
         // This code doesn't match 7 bits Static Huffman Codes values.
         // Let's try to identify this code as 8 bits Static Huffman Code
         const uint32_t code8 = readComplementarStaticHuffmanBits(in, sp, code7);
-        if (InvalidStaticCodeId == (symbol = mCodesLookUp[code7]))
+        if (InvalidStaticCodeId == (symbol = mCodesLookUp[code8]))
         {
-            // Again, this code doen't match 8 bits Static Huffman Codes values.
+            // Again, this code doesn't match 8 bits Static Huffman Codes values.
             // Last chance to try identify this code as 9 bits Static Huffman Code
             const uint32_t code9 = readComplementarStaticHuffmanBits(in, sp, code8);
             symbol = mCodesLookUp[code9];
             if (InvalidStaticCodeId == symbol) // Invalid code received
-                throw std::runtime_error("Unable to extract symbol from Fixed Huffman Code stream: <7>:" + std::to_string(code7) + " <8>:" + 
+                throw std::runtime_error("FIX: Unable to extract symbol from Fixed Huffman Code stream: <7>:" + std::to_string(code7) + " <8>:" + 
                     std::to_string(code8) + " <9>:" + std::to_string(code9) + ".");
         }
     }
@@ -93,7 +80,7 @@ bool CStatBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint
             const int32_t finalLength = baseLength + (extraBitsInLen > 0 ? readBits(in, sp, extraBitsInLen) : 0);
 
             if (finalLength > std::numeric_limits<uint32_t>::max() - (extraBitsInLen > 0 ? finalLength : 0u))
-                throw std::runtime_error("Potential overflow of size.");
+                throw std::runtime_error("FIX: Potential overflow of size.");
 
             // Read distance size
             const uint32_t distanceSizeCode = readBits(in, sp, 5);

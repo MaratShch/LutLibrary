@@ -19,14 +19,13 @@ namespace HuffmanUtils
            
        private:
 
-           std::array<uint32_t, 512u> mStaticCodes;
-           std::array<uint32_t, 512u> mCodesLookUp;
+           static constexpr uint32_t codesArraySize = 512u;
+           std::array<uint32_t, codesArraySize> mCodesLookUp;
 
            bool m_decoderIntegrityStatus = false;
 
            bool pre_decode (void);
            void createCodesTable   (void);
-           void createReverseTable(void);
 
            uint32_t read_fixed_huffman_code(const std::vector<uint8_t>& in, CStreamPointer& sp);
 
