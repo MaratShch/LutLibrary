@@ -20,7 +20,7 @@ sync
 cd $BUILD_FOLDER
 
 echo 'Start make generation...'
-$CMAKE_BIN -DCMAKE_INSTALL_PREFIX=$INSTALL_FOLDER -DLUT_LIB_TESTS=ON -DCMAKE_BUILD_TYPE=Release ..
+$CMAKE_BIN -DCMAKE_INSTALL_PREFIX=$INSTALL_FOLDER -DLUT_LIB_TESTS=ON ..
 
 echo 'Start build...'
 make -j $(nproc) && make install -j $(nproc)
