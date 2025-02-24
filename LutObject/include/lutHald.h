@@ -385,26 +385,35 @@ private:
                     // resize LUT buffer
                     m_lutBody3D = std::move(LutElement::lutTable3D<T>(m_lutSize, LutElement::lutTable2D<T>(m_lutSize, LutElement::lutTable1D<T>(m_lutSize, LutElement::lutTableRaw<T>(3)))));
 
-                    // fill LUT data
                     uint32_t b, g, r, dec = 0u;
-                    for (b = 0u; b < m_lutSize; b++)
-                        for (g = 0u; g < m_lutSize; g++)
-                            for (r = 0u; r < m_lutSize; r++)
-                            {
-                                if (8u == m_bitDepth)
+                    // fill LUT data
+                    if (8u == m_bitDepth)
+                    { // copy from vector with 8 bits values
+                        for (b = 0u; b < m_lutSize; b++)
+                            for (g = 0u; g < m_lutSize; g++)
+                                for (r = 0u; r < m_lutSize; r++)
+                                {
                                     m_lutBody3D[r][g][b] = {
                                         static_cast<float>(vecRGB8[dec + 0u]),
                                         static_cast<float>(vecRGB8[dec + 1u]),
-                                        static_cast<float>(vecRGB8[dec + 2u])
-                                };
-                                else
+                                        static_cast<float>(vecRGB8[dec + 2u]) };
+                                    dec += 3u;  
+                                }
+                    }
+                    else
+                    { // copy from vector with 16 bits values
+                        for (b = 0u; b < m_lutSize; b++)
+                            for (g = 0u; g < m_lutSize; g++)
+                                for (r = 0u; r < m_lutSize; r++)
+                                {
                                     m_lutBody3D[r][g][b] = {
                                         static_cast<float>(vecRGB16[dec + 0u]),
                                         static_cast<float>(vecRGB16[dec + 1u]),
-                                        static_cast<float>(vecRGB16[dec + 2u])
-                                };
-                                dec += 3u;
-                            }
+                                        static_cast<float>(vecRGB16[dec + 2u]) };
+                                    dec += 3u;  
+                                }
+                    }
+
                     bRet = true;
 
                 } // if (decodedDataSize >= expectedDataSize)
