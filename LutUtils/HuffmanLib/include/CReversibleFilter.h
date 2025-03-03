@@ -117,8 +117,7 @@ namespace HuffmanUtils
         const int32_t& channels         // number of color channel (1-monochrome, 3-RGB, 4-RGBA)
     ) 
     {
-        constexpr int32_t in_out_factor = sizeof(uint16_t) / sizeof(uint8_t);
-        const int32_t inChannelIncrement = channels * in_out_factor;
+        const int32_t inChannelIncrement = channels;
         const int32_t lineIn  = inLineBytesSize  * lineIdx;
         const int32_t lineOut = outLineSize * lineIdx;
         const int32_t lineUp  = outLineSize * (lineIdx - 1); 
