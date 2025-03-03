@@ -16,7 +16,8 @@ CFakedBlockDecoder::~CFakedBlockDecoder (void)
 bool CFakedBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8_t>& out, CStreamPointer& sp)
 {
     // rfc1951: Any bits of input up to the next byte boundary are ignored.
-    sp.align2byte();
+    if (sp.bit())
+        sp.align2byte();
 
     // Read LEN (16-bits little-endian)
     m_LEN  = readBits (in, sp, 16);
@@ -32,12 +33,15 @@ bool CFakedBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uin
         throw std::runtime_error(ex_as_string);
     }
 
-    const size_t actualLen = static_cast<size_t>(m_LEN) + 1ull;
-    // reserve memory for output vector     
-    out.reserve (out.size() + actualLen);
-    
-    for (size_t i = 0ull; i < actualLen; i++)
-        out.push_back (readBits (in, sp, 8)); 
+    const size_t actualLen = static_cast<size_t>(m_LEN);
+    if (0ull != actualLen)
+    {
+        // reserve memory for output vector
+        out.reserve (out.size() + actualLen);
+
+        for (size_t i = 0ull; i < actualLen; i++)
+            out.push_back (readBits (in, sp, 8));
+    } // if (0ull != actualLen)
 
     return true;
 }
