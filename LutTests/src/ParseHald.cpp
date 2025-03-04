@@ -1,6 +1,13 @@
 #include "gtest/gtest.h"
 #include "lutHald.h"
 
+
+#ifdef PROJECT_GIT_BRANCH
+const std::string dbgBranchName = {PROJECT_GIT_BRANCH};
+#else
+const std::string dbgBranchName = "Not defined";
+#endif
+
 const std::string dbgLutsFolder = { HALD_LUT_FOLDER };
 
 TEST(ParseHald, Parse_Contrast_HCLUT)
@@ -132,6 +139,7 @@ TEST(ParseHald, Parse_Neutral_HCLUT)
 int main (int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    std::cout << "Parse from: " << dbgLutsFolder << std::endl;
+    std::cout << "Parse from : " << dbgLutsFolder << std::endl;
+    std::cout << "Branch name: " << dbgBranchName << std::endl;
     return RUN_ALL_TESTS();	
 }

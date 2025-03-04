@@ -2,6 +2,9 @@ cmake_minimum_required (VERSION 3.25 FATAL_ERROR)
 
 project (LutLibrary LANGUAGES CXX)
 
+# global features
+set (BUILD_INCLUDE_BRANCH_NAME ON)
+
 # Versioning
 set(LUT_LIB_MAJOR 0)
 set(LUT_LIB_MINOR 0)
@@ -49,6 +52,32 @@ endif()
 
 include(${PROJ_CONFIG_FILE})
 set(CMAKE_DEBUG_POSTFIX "d")
+
+if (BUILD_INCLUDE_BRANCH_NAME)
+	# determine git branch
+	# Execute Git command to get the current branch name
+	execute_process(
+		COMMAND git branch --show-current
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		OUTPUT_VARIABLE GIT_BRANCH
+		ERROR_QUIET
+		RESULT_VARIABLE GIT_RESULT
+	)
+
+	# Check if the Git command was successful
+	if(NOT ${GIT_RESULT} EQUAL "0")
+		message(WARNING "Failed to determine Git branch name.")
+		set(GIT_BRANCH "unknown")
+	else()
+		message(STATUS "Current GIT branch name ${GIT_BRANCH}") 	
+	endif()
+
+	# Sanitize the branch name (remove leading/trailing whitespace)
+	string(STRIP "${GIT_BRANCH}" GIT_BRANCH)
+
+	# Define a preprocessor macro with the branch name
+	add_definitions(-DPROJECT_GIT_BRANCH="${GIT_BRANCH}")
+endif(BUILD_INCLUDE_BRANCH_NAME)
 
 add_subdirectory(LutUtils)
 add_subdirectory(LutObject)
