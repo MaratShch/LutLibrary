@@ -146,7 +146,7 @@ namespace HuffmanUtils
                 {
                     idxFilt  = lineIn  + i;
                     idxRecon = lineOut + o;  
-		    restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0]);
+		            restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0]);
                     restored[idxRecon + 1] = ref_none_filter(decoded[idxFilt + 1]);
                     restored[idxRecon + 2] = ref_none_filter(decoded[idxFilt + 2]);
                 }// for (i = lineIn + 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
@@ -399,7 +399,7 @@ namespace HuffmanUtils
                 {
                     idxFilt  = lineIn  + i;
                     idxRecon = lineOut + o;  
-		    restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0], decoded[idxFilt + 1]);
+		            restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0], decoded[idxFilt + 1]);
                     restored[idxRecon + 1] = ref_none_filter(decoded[idxFilt + 2], decoded[idxFilt + 3]);
                     restored[idxRecon + 2] = ref_none_filter(decoded[idxFilt + 4], decoded[idxFilt + 5]);
                 }// for (i = lineIn + 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
