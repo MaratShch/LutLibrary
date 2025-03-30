@@ -1,3 +1,7 @@
+clc
+clear all;
+close all;
+
 % Gradient Generation Script 
 % --- Configuration ---
 imageSize = 1024; % Size of the images (square)

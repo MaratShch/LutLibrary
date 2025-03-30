@@ -1,4 +1,8 @@
-% Rainbow Gradient Image Generation Script (MATLAB 2018b) - BMP Output
+clc
+clear all;
+close all;
+
+% Rainbow Gradient Image Generation Script - BMP Output
 
 % --- Configuration ---
 imageWidth = 1920;   % Image width
