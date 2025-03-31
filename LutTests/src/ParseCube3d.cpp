@@ -1,8 +1,13 @@
 #include "gtest/gtest.h"
 #include "lutCube3D.h"
 
-const std::string dbgLutsFolder = { CUBE_3D_LUT_FOLDER };
+#ifdef PROJECT_GIT_BRANCH
+const std::string dbgBranchName = { PROJECT_GIT_BRANCH };
+#else
+const std::string dbgBranchName = "Not defined";
+#endif
 
+const std::string dbgLutsFolder = { CUBE_3D_LUT_FOLDER };
 
 TEST (ParseCube3d, Parse_Tiny_Cube3D_f32)
 {
@@ -184,13 +189,32 @@ TEST(ParseCube3d, Parse_MagicHour_Cube3D_f64)
     GTEST_EXPECT_TRUE(lutSize == 33);
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
-/*
- add huge LUT with 96 entries - where we may take lut like this ??? 
-*/
+
+TEST(ParseCube3d, Parse_Huge_negative_lut_96_Cube3D_f32)
+{
+    const std::string lutName{ dbgLutsFolder + "/Huge_negative_lut_96.cube" };
+    CCubeLut3D<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    GTEST_EXPECT_TRUE(lutSize == 96);
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseCube3d, Parse_Huge_negative_lut_96_Cube3D_f64)
+{
+    const std::string lutName{ dbgLutsFolder + "/Huge_negative_lut_96.cube" };
+    CCubeLut3D<double> lutFileF64;
+    auto const result = lutFileF64.LoadFile(lutName);
+    auto const lutSize = lutFileF64.getLutSize();
+    GTEST_EXPECT_TRUE(lutSize == 96);
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
 
 int main (int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
 	std::cout << "Parse from: " << dbgLutsFolder << std::endl;
-	return RUN_ALL_TESTS();	
+    std::cout << "Branch name: " << dbgBranchName << std::endl;
+    return RUN_ALL_TESTS();
 }
