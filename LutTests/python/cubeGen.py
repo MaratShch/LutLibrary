@@ -1,7 +1,7 @@
 import math
 
 # --- Configuration ---
-LUT_SIZE = 96  # Set to 96 or 128, or any other desired size
+LUT_SIZE = 128  # Set to 96 or 128, or any other desired size
 OUTPUT_FILENAME = f"negative_lut_{LUT_SIZE}.cube"
 PRECISION = 6  # Number of decimal places for output values in the file
 

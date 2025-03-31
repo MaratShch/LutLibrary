@@ -210,6 +210,25 @@ TEST(ParseCube3d, Parse_Huge_negative_lut_96_Cube3D_f64)
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
+TEST(ParseCube3d, Parse_Huge_negative_lut_128_Cube3D_f32)
+{
+    const std::string lutName{ dbgLutsFolder + "/Huge_negative_lut_128.cube" };
+    CCubeLut3D<float> lutFileF32;
+    auto const result = lutFileF32.LoadFile(lutName);
+    auto const lutSize = lutFileF32.getLutSize();
+    GTEST_EXPECT_TRUE(lutSize == 128);
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseCube3d, Parse_Huge_negative_lut_128_Cube3D_f64)
+{
+    const std::string lutName{ dbgLutsFolder + "/Huge_negative_lut_128.cube" };
+    CCubeLut3D<double> lutFileF64;
+    auto const result = lutFileF64.LoadFile(lutName);
+    auto const lutSize = lutFileF64.getLutSize();
+    GTEST_EXPECT_TRUE(lutSize == 128);
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
 
 int main (int argc, char** argv)
 {
