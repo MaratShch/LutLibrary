@@ -86,3 +86,8 @@ lutlib_test (
 	LutObject)
 unset(TST_PRIVATE_LINK_LIBRARIES)
 
+lutlib_test (
+	VertexTest 
+	${LUT_TESTS_FILES_FOLDER}/src/VertexObjTest.cpp 
+	LutInterpolator
+)
