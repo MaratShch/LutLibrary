@@ -99,12 +99,12 @@ namespace HuffmanUtils
           constexpr operator uint64_t() const noexcept {return static_cast<uint64_t>(m_StreamPointer);}
 
        // Prefix increment operator
-	      CStreamPointer operator ++ () noexcept { ++m_StreamPointer; return *this;}
+	      CStreamPointer& operator ++ () noexcept { ++m_StreamPointer; return *this;}
        // Postfix increment operator
 	      CStreamPointer operator ++ (int) noexcept { CStreamPointer tmp(*this); step_forward(); return tmp;}
 
        // Prefix decrement operator
-          CStreamPointer operator -- () noexcept {m_StreamPointer > 0ll ? --m_StreamPointer : 0ll; return *this;}
+          CStreamPointer& operator -- () noexcept {m_StreamPointer > 0ll ? --m_StreamPointer : 0ll; return *this;}
        // Postfix decrement operator
           CStreamPointer operator -- (int) noexcept {CStreamPointer tmp(*this); step_backward(); return tmp;}
 

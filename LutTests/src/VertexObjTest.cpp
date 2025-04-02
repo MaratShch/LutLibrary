@@ -5,14 +5,25 @@
 
 TEST(VertexTest, VertexF_test)
 {
-    Lut::CVertex<float> a;
+    float f32 = 0.55f;
+    f32++;
 
-    Lut::CVertex<float> b(25.3f, 30.6f, 40.11f);
+    constexpr Lut::CVertex<float> b(25.3f, 30.6f, 40.11f);
 
-    Lut::CVertex<float> c = floor(b);
-    Lut::CVertex<float> d = ceil (b);
+    const Lut::CVertex<int> ii(b);
+    std::cout << "Vertex<float>: " << b << " Vertex after int cast: " << ii << std::endl;
 
-    //dummy, let's update it later
+    std::cout << "Vertex<float>: " << b << " Vertex after int cast: " << static_cast<Lut::CVertex<int>>(b) << std::endl;
+
+    Lut::CVertex<int> integer;
+    integer.floor();
+
+    Lut::CVertex<float> e(b);
+
+    e = e + 0.5f;
+    e = 0.75f + e;
+
+     //dummy, let's update it later
     EXPECT_EQ(1, 1);
 }
 
