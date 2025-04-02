@@ -142,11 +142,7 @@ public:
         return *this;
     }
 
-    constexpr explicit operator bool() noexcept
-    {
-       constexpr T zero{0}; 
-       return (zero != r && zero != g && zero != b); 
-    }
+    constexpr explicit operator bool() const noexcept { return (static_cast<T>(0) != r && static_cast<T>(0) != g && static_cast<T>(0) != b); }
  
     // Prefix increment operator
     CVertex& operator ++ () noexcept { ++r, ++g, ++b; return *this; }
@@ -209,7 +205,7 @@ private:
    // logical operators == 
    template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
    inline bool operator == (const CVertex<T>& l, const CVertex<T>& r) noexcept
-   { return (l.red == r.red && l.green == r.green && l.blue == r.blue); }
+   { return ((l.red() == r.red()) && (l.green() == r.green()) && (l.blue() == r.blue())); }
 
    // logical operators != 
    template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
