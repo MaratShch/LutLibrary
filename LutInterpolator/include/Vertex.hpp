@@ -14,6 +14,17 @@ namespace Lut
 {
 
 template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+struct Point3D
+{
+   T x;
+   T y;
+   T z;
+
+   using Point3D_T = T;
+};
+
+
+template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
 class CVertex
 {
 public:
@@ -29,6 +40,7 @@ public:
     explicit constexpr CVertex (const std::tuple<T, T, T>& t) noexcept : r{std::get<0>(t)}, g{std::get<1>(t)}, b{std::get<2>(t)} {};
     explicit constexpr CVertex (const std::vector<T>& elem)            : r{elem[0]}, g{elem[1]}, b{elem[2]} {};
     explicit constexpr CVertex (const std::array<T,3>& elem)  noexcept : r{elem[0]}, g{elem[1]}, b{elem[2]} {};
+    explicit constexpr CVertex (const Point3D<T>& p) noexcept : r{p.x}, g{p.y}, b{p.z} {};
 
     // conversion constructor
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
@@ -46,6 +58,8 @@ public:
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
     constexpr CVertex(const std::array<U,3>& elem) noexcept : r{static_cast<T>(elem[0])}, g{static_cast<T>(elem[1])}, b{static_cast<T>(elem[2])} {};
 
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    constexpr CVertex (const Point3D<U>& p) noexcept : r{static_cast<T>(p.x)}, g{static_cast<T>(p.y)}, b{static_cast<T>(p.z)} {};
 
     // class destructor
     ~CVertex(void) noexcept = default;
@@ -58,6 +72,11 @@ public:
     CVertex& operator=(const std::tuple<T, T, T>& t) noexcept { r = std::get<0>(t), g = std::get<1>(t), b = std::get<2>(t); return *this; };
     CVertex& operator=(const std::vector<T>& elem)            { r = elem[0], g = elem[1], b = elem[2]; return *this; };
     CVertex& operator=(const std::array<T,3>& elem)  noexcept { r = elem[0], g = elem[1], b = elem[2]; return *this; };
+
+    CVertex& operator=(const Point3D<T>& p)          noexcept { r = p.x, g = p.y, b = p.z; return *this; }
+
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    CVertex& operator=(const Point3D<U>& p)          noexcept { r = static_cast<T>(p.x), g = static_cast<T>(p.y), b = static_cast<T>(p.z); return *this; }
 
 
     // components get/set API's
@@ -77,6 +96,8 @@ public:
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
     std::vector<U> get(void) {std::vector<U>v(3); v[0] = static_cast<U>(r), v[1] = static_cast<U>(g), v[2] = static_cast<U>(b); return v;}
 
+    const Point3D<T> get_3D_point(void) const noexcept {Point3D<T> p{r, g, b}; return p;}
+    void set_3D_point (const Point3D<T>& point) noexcept {r = point.x, g = point.y, b = point.z;}
  
     // swap operator
     void swap (CVertex& other) noexcept { std::swap(r, other.r), std::swap(g, other.g); std::swap(b, other.b); }
@@ -132,7 +153,13 @@ public:
         return std::sqrt(dR * dR + dG * dG + dB * dB); 
     }
 
-    CVertex& zero_clamp (void) noexcept { r=std::max(r, static_cast<T>(0)), g=std::max(g, static_cast<T>(0)), b=std::max(b, static_cast<T>(0)); return *this; }
+    template <typename ClassT = T>
+    std::enable_if_t<std::is_signed<ClassT>::value, CVertex<T>> zero_clamp()
+    { r=std::max(r, static_cast<ClassT>(0)), g=std::max(g, static_cast<ClassT>(0)), b=std::max(b, static_cast<ClassT>(0)); return *this; }
+
+    template <typename ClassT = T>
+    std::enable_if_t<std::is_unsigned<ClassT>::value, CVertex<T>> zero_clamp()
+    { return *this; }
 
     CVertex& clamp (const T& v_min, const T& v_max) noexcept
     {
@@ -141,6 +168,11 @@ public:
         b = std::max(v_min, std::min(b, v_max));
         return *this;
     }
+
+    CVertex& abs (void) noexcept {r = std::abs(r), g = std::abs(g), b = std::abs(b); return *this;}
+
+    template <typename ClassT = T>
+    std::enable_if_t<std::is_floating_point<ClassT>::value, ClassT> hypot (void)  noexcept { return std::sqrt(r*r + g*g + b*b); }
 
     constexpr explicit operator bool() const noexcept { return (static_cast<T>(0) != r && static_cast<T>(0) != g && static_cast<T>(0) != b); }
  
@@ -154,36 +186,71 @@ public:
     // Postfix decrement operator
     CVertex  operator -- (int) noexcept { CVertex tmp(*this); operator--(); return tmp.zero_clamp(); }
 
+
     // operators +=
     CVertex& operator += (const T& v) noexcept { r += v, g += v, b += v; return *this; }
     CVertex& operator += (const CVertex& v) noexcept { r += v.r, g += v.g, b += v.b; return *this; }
+
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    CVertex& operator += (const U& v) {r += static_cast<T>(v), g += static_cast<T>(v), b += static_cast<T>(v); return *this; }
+
 
     // operators -=
     CVertex& operator -= (const T& v) noexcept { r -= v, g -= v, b -= v; return *this; }
     CVertex& operator -= (const CVertex& v) noexcept { r -= v.r, g -= v.g, b -= v.b; return *this; }
 
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    CVertex& operator -= (const U& v) {r -= static_cast<T>(v), g -= static_cast<T>(v), b -= static_cast<T>(v); return *this; }
+
+
     // operators *=
     CVertex& operator *= (const T& v) noexcept { r *= v, g *= v, b *= v; return *this; }
     CVertex& operator *= (const CVertex& v) noexcept { r *= v.r, g *= v.g, b *= v.b; return *this; }
 
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    CVertex& operator *= (const U& v) {r *= static_cast<T>(v), g *= static_cast<T>(v), b *= static_cast<T>(v); return *this; }
+
+
     // operators /=
     CVertex& operator /= (const T& v) noexcept { r /= v, g /= v, b /= v; return *this; }
     CVertex& operator /= (const CVertex& v) noexcept { r /= v.r, g /= v.g, b /= v.b; return *this; }
+
 
     // operator +
     friend CVertex<T> operator + (CVertex<T> l, const CVertex<T>& r) noexcept { l += r; return l; }
     friend CVertex<T> operator + (CVertex<T> l, const T& r) noexcept { l += r; return l; }
     friend CVertex<T> operator + (const T& l, CVertex<T> r) noexcept { r += l; return r; }
 
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    friend CVertex<T> operator + (CVertex<T> l, const U& r) noexcept { l += r; return l; }
+
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    friend CVertex<T> operator + (const U& l, CVertex<T> r) noexcept { r += l; return r; }
+
+
     // operator -
     friend CVertex<T> operator - (CVertex<T> l, const CVertex<T>& r) noexcept { l -= r; return l; }
     friend CVertex<T> operator - (CVertex<T> l, const T& r) noexcept { l -= r; return l; }
     friend CVertex<T> operator - (const T& l, CVertex<T> r) noexcept { r -= l; return r; }
 
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    friend CVertex<T> operator - (CVertex<T> l, const U& r) noexcept { l -= r; return l; }
+
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    friend CVertex<T> operator - (const U& l, CVertex<T> r) noexcept { r -= l; return r; }
+
+
     // operator *
     friend CVertex<T> operator * (CVertex<T> l, const CVertex<T>& r) noexcept { l *= r; return l; }
     friend CVertex<T> operator * (CVertex<T> l, const T& r) noexcept { l *= r; return l; }
     friend CVertex<T> operator * (const T& l, CVertex<T> r) noexcept { r *= l; return r; }
+
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    friend CVertex<T> operator * (CVertex<T> l, const U& r) noexcept { l *= r; return l; }
+
+    template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
+    friend CVertex<T> operator * (const U& l, CVertex<T> r) noexcept { r *= l; return r; }
+
 
     // operator /
     friend CVertex<T> operator / (CVertex<T> l, const CVertex<T>& r) noexcept { l /= r; return l; }
@@ -232,26 +299,102 @@ private:
    inline bool operator >= (const CVertex<T>& l, const CVertex<T>& r) noexcept
    { return (l.red >= r.red && l.green >= r.green && l.blue >= r.blue); }
 
-   // commond defintions and API's 
+
+   // Common/Generic API's
+   // clip
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   CVertex<T> clip(const CVertex<T>& v, const T& min, const T& max) noexcept { return CVertex<T>(v).clamp(min, max); }
+
+   template <typename T, typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value && std::is_arithmetic<T>::value>>
+   CVertex<T> clip(const CVertex<T>& v, const U& min, const U& max) noexcept { return CVertex<T>(v).clamp(static_cast<T>(min), static_cast<T>(max)); }
+
+ 
+   // floor/ceil/round/trunc API's
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   CVertex<T> floor(const CVertex<T>& v) noexcept { return CVertex<T>(v).floor(); }
+
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   CVertex<T> ceil (const CVertex<T>& v) noexcept { return CVertex<T>(v).ceil(); }
+
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   CVertex<T> round (const CVertex<T>& v) noexcept { return CVertex<T>(v).round(); }
+
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   CVertex<T> trunc (const CVertex<T>& v) noexcept { return CVertex<T>(v).trunc(); }
+
+
+   // abs
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   CVertex<T> abs (const CVertex<T>& v) noexcept { return CVertex<T>(v).abs(); }
+
+   // hypot
+   template <typename T, typename = std::enable_if_t<std::is_floating_point<T>::value>>
+   T hypot (const CVertex<T>& v) noexcept { return CVertex<T>(v).hypot(); }
+
+   // euclidian disatnce
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   T euclidean_distance (const CVertex<T>& l, const CVertex<T>& r) noexcept { return l.euclidean_distance(r); }
+
+   
+   // global create functions
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (void)                               noexcept { return CVertex<T>(); }
+
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const CVertex<T>& v)                noexcept { return CVertex<T>(v); }
+
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const CVertex<T>&& v)               noexcept { return CVertex<T>(std::move(v)); }
+
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const T& r, const T& g, const T& b) noexcept { return CVertex<T>(r, g, b); }
+
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const std::tuple<T, T, T>& t)       noexcept { return CVertex<T>(t); }
+
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const std::vector<T>& v)            noexcept { return CVertex<T>(v); }
+
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const std::array<T,3>& a)           noexcept { return CVertex<T>(a); }
+
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const Point3D<T>& p)                noexcept { return CVertex<T>(p); }
+
+   template <typename T, typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value && std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const U& r, const U& g, const U& b) noexcept { return CVertex<T>(r, g, b); }
+
+   template <typename T, typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value && std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const Point3D<U>& p)                noexcept { return CVertex<T>(p); }
+
+   template <typename T, typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value && std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const std::vector<U>& v)            noexcept { return CVertex<T>(v); }
+
+   template <typename T, typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value && std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const std::tuple<U, U, U>& t)       noexcept { return CVertex<T>(t); }
+
+   template <typename T, typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value && std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const std::array<U,3>& a)           noexcept { return CVertex<T>(a); }
+
+   template <typename T, typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value && std::is_arithmetic<T>::value>>
+   constexpr CVertex<T> create_vertex (const CVertex<U>& v)                noexcept { return CVertex<T>(v); }
+
+
+   // global swap
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   void swap (CVertex<T>& l, CVertex<T>& r) noexcept { l.swap(r); }
+   	   
+
+   // zeroing
+   template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+   void zero (CVertex<T>& v) {v.zero();}
+
+
+   // common defintions
    using CVertexI = CVertex<int>;
    using CVertexF = CVertex<float>;
    using CVertexD = CVertex<double>;
 
-   // floor/ceil/round/trunc API's
-   template <typename T>
-   CVertex<T> floor(const CVertex<T>& v) noexcept { return CVertex<T>(v).floor(); }
-
-   template <typename T>
-   CVertex<T> ceil (const CVertex<T>& v) noexcept { return CVertex<T>(v).ceil(); }
-
-   template <typename T>
-   CVertex<T> round (const CVertex<T>& v) noexcept { return CVertex<T>(v).round(); }
-
-   template <typename T>
-   CVertex<T> trunc (const CVertex<T>& v) noexcept { return CVertex<T>(v).trunc(); }
-
-   template <typename T>
-   T euclidean_distance (const CVertex<T>& l, const CVertex<T>& r) noexcept { return r.euclidean_distance(l); }
 
 }; // namespace Lut
 
