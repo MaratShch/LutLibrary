@@ -15,12 +15,12 @@ public:
 private:
     CVertex c000;
     CVertex c001;
-    CVetex  c010;
-    CVetex  c011;
-    CVetex  c100;
-    CVetex  c101;
-    CVetex  c110;
-    CVetex  c111;
+    CVertex c010;
+    CVertex c011;
+    CVertex c100;
+    CVertex c101;
+    CVertex c110;
+    CVertex c111;
 
 }; // CCube3D
 

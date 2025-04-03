@@ -98,10 +98,9 @@ public:
 
     const Point3D<T> get_3D_point(void) const noexcept {Point3D<T> p{r, g, b}; return p;}
     void set_3D_point (const Point3D<T>& point) noexcept {r = point.x, g = point.y, b = point.z;}
- 
+
     // swap operator
     void swap (CVertex& other) noexcept { std::swap(r, other.r), std::swap(g, other.g); std::swap(b, other.b); }
-
 
     // zero set API
     CVertex& zero (void) noexcept { r = g = b = static_cast<T>(0); return *this; } 
@@ -394,7 +393,6 @@ private:
    using CVertexI = CVertex<int>;
    using CVertexF = CVertex<float>;
    using CVertexD = CVertex<double>;
-
 
 }; // namespace Lut
 
