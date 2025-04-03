@@ -33,14 +33,14 @@ public:
     // default constructor
     constexpr CVertex (void) noexcept : r{0}, g{0}, b{0} {};
     // copy and move constructors
-    explicit constexpr CVertex (const CVertex& other_vertex) noexcept = default;
+    explicit constexpr CVertex (const CVertex& other_vertex) noexcept(std::is_nothrow_copy_constructible<T>::value) = default;
     explicit constexpr CVertex (CVertex&& other_vertex) noexcept(std::is_nothrow_move_constructible<T>::value) = default;
     // value constructor
     explicit constexpr CVertex (const T& _r_, const T& _g_, const T& _b_) noexcept : r{_r_}, g{_g_}, b{_b_} {};
     explicit constexpr CVertex (const std::tuple<T, T, T>& t) noexcept : r{std::get<0>(t)}, g{std::get<1>(t)}, b{std::get<2>(t)} {};
     explicit constexpr CVertex (const std::vector<T>& elem)            : r{elem[0]}, g{elem[1]}, b{elem[2]} {};
     explicit constexpr CVertex (const std::array<T,3>& elem)  noexcept : r{elem[0]}, g{elem[1]}, b{elem[2]} {};
-    explicit constexpr CVertex (const Point3D<T>& p)          noexcept : r{p.x}, g{p.y}, b{p.z} {};
+    explicit constexpr CVertex (const Point3D<T>& p)          noexcept(std::is_nothrow_copy_constructible<T>::value) : r{p.x}, g{p.y}, b{p.z} {};
     explicit constexpr CVertex (const Point3D<T>&& p)         noexcept(std::is_nothrow_move_constructible<T>::value) : r(std::move(p.x)), g(std::move(p.y)), b(std::move(p.z)) {};
 
     // conversion constructor
