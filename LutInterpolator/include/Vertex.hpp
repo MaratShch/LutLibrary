@@ -561,7 +561,7 @@ private:
    constexpr CVertex<T> create_vertex (const CVertex<U>& v)                noexcept { return CVertex<T>(v); }
 
    template <typename T, typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value && std::is_arithmetic<T>::value>>
-   	     CVertex<T> create_vertex (CVertex<U>&& v)                     noexcept { return CVertex<T>(std::move(v)); }
+   	     CVertex<T> create_vertex (CVertex<U>&& v)                         noexcept { return CVertex<T>(std::move(v)); }
 
 
    // global swap
