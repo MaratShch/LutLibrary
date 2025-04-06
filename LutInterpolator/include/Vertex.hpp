@@ -156,13 +156,32 @@ public:
  
    
     // ariphmetic computations
-    T euclidean_distance (const CVertex& other) const noexcept
+    template <typename ClassT = T>
+    std::enable_if_t<std::is_floating_point<ClassT>::value, ClassT> euclidean_distance (const CVertex& other) noexcept
     { 
         const T dR{ r - other.r };
         const T dG{ g - other.g };
         const T dB{ b - other.b };
         return std::sqrt(dR * dR + dG * dG + dB * dB); 
     }
+
+    template <typename ClassT = T>
+    std::enable_if_t<std::is_integral<ClassT>::value, ClassT> euclidean_distance (const CVertex& other) noexcept
+    { return static_cast<T>(0); }
+
+    template <typename ClassT = T>
+    std::enable_if_t<std::is_floating_point<ClassT>::value, ClassT> euclidean_distance (const Point3D<ClassT>& other) noexcept
+    { 
+        const T dR{ r - static_cast<T>(other.x) };
+        const T dG{ g - static_cast<T>(other.y) };
+        const T dB{ b - static_cast<T>(other.z) };
+        return std::sqrt(dR * dR + dG * dG + dB * dB); 
+    }
+
+    template <typename ClassT = T>
+    std::enable_if_t<std::is_integral<ClassT>::value, ClassT> euclidean_distance (const Point3D<ClassT>& other) noexcept
+    { return static_cast<T>(0); }
+
 
     template <typename ClassT = T>
     std::enable_if_t<std::is_signed<ClassT>::value, CVertex<T>&> zero_clamp()
