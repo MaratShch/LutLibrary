@@ -249,6 +249,11 @@ private:
 	}
 
 
+        const LutElement::lutTable3D<T>& get_data(void) const noexcept
+        {
+                return m_lutBody;
+        } 
+ 
 	LutErrorCode::LutState lut_size_validation (const LutElement::lutSize& r, const LutElement::lutSize& g, const LutElement::lutSize& b)
 	{
 		/* validate real LUT size */
