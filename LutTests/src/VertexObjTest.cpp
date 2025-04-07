@@ -14,17 +14,19 @@ TEST(VertexTest, Vertex_create_test)
     Lut::CVertex<int32_t> a = Lut::create_vertex (1, 2, 3);
     Lut::CVertex<float>   b = Lut::create_vertex (4.f, 5.f, 6.f);
     Lut::CVertex<double>  c = Lut::create_vertex (0.543, 1.867, 12.598);
+    Lut::CVertex<long double> d = Lut::create_vertex(2.541l, 3.867l, 7.98l);
 
-    const bool val1 = (a.red() == 1     && a.green() == 2     && a.blue() == 3      ? true : false);
-    const bool val2 = (b.red() == 4.f   && b.green() == 5.f   && b.blue() == 6.f    ? true : false);
-    const bool val3 = (c.red() == 0.543 && c.green() == 1.867 && c.blue() == 12.598 ? true : false);
+    const bool val1 = (a.red() == 1      && a.green() == 2      && a.blue() == 3      ? true : false);
+    const bool val2 = (b.red() == 4.f    && b.green() == 5.f    && b.blue() == 6.f    ? true : false);
+    const bool val3 = (c.red() == 0.543  && c.green() == 1.867  && c.blue() == 12.598 ? true : false);
+    const bool val4 = (d.red() == 2.541l && d.green() == 3.867l && d.blue() == 7.98l ? true : false);
 
-    if (!val1 || !val2 || !val3)
+    if (!val1 || !val2 || !val3 || !val4)
     {
-       std::cout << "val1 = " << val1 << " val2 = " << val2 << " val3 = " << val3 << std::endl; 
+       std::cout << "val1 = " << val1 << " val2 = " << val2 << " val3 = " << val3 << " val4 = " << val4 << std::endl; 
     }
  
-    EXPECT_EQ(true, val1 && val2 && val3);
+    EXPECT_EQ(true, val1 && val2 && val3 & val4);
 }
 
 

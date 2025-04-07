@@ -348,10 +348,10 @@ class CCineSpaceLut3D
 			/* let's set lutSize equal to minimal component size ??? */
 			m_lutSize = std::min(m_lutComponentSize[0], std::min(m_lutComponentSize[1], m_lutComponentSize[2]));
 
-			m_lutBody = std::move(LutElement::lutTable3D<T>(
+			m_lutBody = LutElement::lutTable3D<T>(
 				getLutComponentSize(LutElement::LutComponent::Blue),  LutElement::lutTable2D<T>(
 				getLutComponentSize(LutElement::LutComponent::Green), LutElement::lutTable1D<T>(
-				getLutComponentSize(LutElement::LutComponent::Red),   LutElement::lutTableRaw<T>(3))))
+				getLutComponentSize(LutElement::LutComponent::Red),   LutElement::lutTableRaw<T>(3)))
 			);
 			return LutErrorCode::LutState::OK;
 		}
