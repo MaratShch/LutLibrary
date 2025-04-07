@@ -2,12 +2,12 @@
 #define __LUT_LIBRARY_LUT_VERTEX_3D__
 
 #include <type_traits>
+#include <cmath>
 #include <algorithm>
 #include <cstddef>
 #include <tuple>
 #include <vector>
 #include <array>
-#include <cmath>
 #include <iostream>
 #include <utility>
 
@@ -460,7 +460,18 @@ private:
    // logical operators < 
    template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
    inline bool operator < (const CVertex<T>& l, const CVertex<T>& r) noexcept
-   { return std::tie(l.red(), l.green(), l.blue()) < std::tie(r.red(), r.green(), r.blue()); }
+   {
+       // Manual lexicographical comparison
+       if (l.red() < r.red()) return true;
+       if (l.red() > r.red()) return false;
+
+       // If red components are equal, compare green
+       if (l.green() < r.green()) return true;
+       if (l.green() > r.green()) return false;
+
+       // If red and green components are equal, compare blue
+       return l.blue() < r.blue();
+   }
 
    // logical operators > 
    template <typename T, typename = std::enable_if_t<std::is_arithmetic<T>::value>>
