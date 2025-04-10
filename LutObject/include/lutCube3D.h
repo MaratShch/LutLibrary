@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <utility>
 
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
@@ -220,6 +221,23 @@ public:
 		return err;
 	}
 
+        
+        std::pair<LutElement::lutTableRaw<T>, LutElement::lutTableRaw<T>> getMinMaxDomain (void)
+        {
+            if (3 != m_domainMin.size())
+            {
+                m_domainMin.resize(3);
+                m_domainMin[0] = m_domainMin[1] = m_domainMin[2] = static_cast<T>(0);
+            }
+    
+            if (3 != m_domainMax.size())
+            {
+                m_domainMax.resize(3);
+                m_domainMax[0] = m_domainMax[1] = m_domainMax[2] = static_cast<T>(1);
+            }
+
+            return std::make_pair(m_domainMin, m_domainMax); 
+        }
 
 private:
 	LutElement::lutTableRaw<T> m_domainMin;
@@ -249,6 +267,11 @@ private:
 	}
 
 
+        const LutElement::lutTable3D<T>& get_data(void) const noexcept
+        {
+                return m_lutBody;
+        } 
+ 
 	LutErrorCode::LutState lut_size_validation (const LutElement::lutSize& r, const LutElement::lutSize& g, const LutElement::lutSize& b)
 	{
 		/* validate real LUT size */
@@ -313,7 +336,7 @@ private:
 		if (lutSize >= 2 && lutSize <= 256)
 		{
 			m_lutSize = static_cast<decltype(m_lutSize)>(lutSize);
-			m_lutBody = std::move(LutElement::lutTable3D<T>(lutSize, LutElement::lutTable2D<T>(lutSize, LutElement::lutTable1D<T>(lutSize, LutElement::lutTableRaw<T>(3)))));
+			m_lutBody = LutElement::lutTable3D<T>(lutSize, LutElement::lutTable2D<T>(lutSize, LutElement::lutTable1D<T>(lutSize, LutElement::lutTableRaw<T>(3))));
 			return LutErrorCode::LutState::OK;
 		}
 		return LutErrorCode::LutState::LutSizeOutOfRange;

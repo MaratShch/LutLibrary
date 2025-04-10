@@ -383,7 +383,7 @@ private:
                 if (decodedDataSize >= expectedDataSize)
                 {
                     // resize LUT buffer
-                    m_lutBody3D = std::move(LutElement::lutTable3D<T>(m_lutSize, LutElement::lutTable2D<T>(m_lutSize, LutElement::lutTable1D<T>(m_lutSize, LutElement::lutTableRaw<T>(3)))));
+                    m_lutBody3D = LutElement::lutTable3D<T>(m_lutSize, LutElement::lutTable2D<T>(m_lutSize, LutElement::lutTable1D<T>(m_lutSize, LutElement::lutTableRaw<T>(3))));
 
                     uint32_t b, g, r, dec = 0u;
                     // fill LUT data
