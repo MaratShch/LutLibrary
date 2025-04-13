@@ -896,6 +896,9 @@ if __name__ == "__main__":
             (1.0, 0.0, 1.0),   # Purple
             (0.1, 0.5, 0.9),   # Random interior point 1
             (0.15, 0.15, 0.15),# Dark Gray
+            (0.155, 0.15, 0.15),# Dark Gray (variation)
+            (0.15, 0.155, 0.15),# Dark Gray (variation)
+            (0.15, 0.15, 0.155),# Dark Gray (variation)
             (0.5, 0.5, 0.5),   # Center point
             (0.75, 0.75, 0.75),# Brigth Gray
             (0.8, 0.2, 0.4),   # Random interior point 2
@@ -904,6 +907,7 @@ if __name__ == "__main__":
             (0.997, 0.782, 0.901),   # Random interior point 5
             (1/3, 1/7, 1/6),   # Random interior point 6
             (0.25, 0.5, 0.75), # Point between grid lines
+            (0.75, 0.5, 0.25), # Point between grid lines
             (0.251, 0.51, 0.751), # Point closely to grid lines
             (-0.1, 0.5, 1.1),  # Point 1 outside bounds (will be clamped)
             (-0.01, 0.62, 1.01)# Point 2 outside bounds (will be clamped)
