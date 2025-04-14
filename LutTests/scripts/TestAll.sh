@@ -10,6 +10,7 @@ EXECUTABLE_LIST=(
     "ParseCube3d.gtest"
     "ParseHald.gtest"
     "SaveCube3d.gtest"
+    "InterpolateCube3d.gtest"
     "VertexTest.gtest"
 )
 

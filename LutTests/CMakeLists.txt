@@ -92,6 +92,14 @@ lutlib_test (
 	LutInterpolator
 )
 
+set (TST_PRIVATE_COMPILATION_DEFINES -DCUBE_3D_LUT_FOLDER=\"${CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY}/3D\")
+lutlib_test (
+	InterpolateCube3d 
+	${LUT_TESTS_FILES_FOLDER}/src/InterpolatorTest.cpp 
+	LutObject
+)
+
+
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 install(FILES "scripts/TestAll.cmd"
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE

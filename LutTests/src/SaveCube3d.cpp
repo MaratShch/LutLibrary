@@ -18,13 +18,10 @@ TEST (SaveCube3d, Parse_Tiny_Cube3D_f32)
 }
 
 
-/*
- add huge LUT with 96 entries - wge we may take lut like this ??? 
-*/
 
 int main (int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-	std::cout << "Parse from: " << dbgLutsFolder << std::endl;
-	return RUN_ALL_TESTS();	
+    std::cout << "Parse from: " << dbgLutsFolder << std::endl;
+    return RUN_ALL_TESTS();	
 }
