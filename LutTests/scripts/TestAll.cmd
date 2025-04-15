@@ -4,7 +4,7 @@ REM --- Save this file with a .cmd extension (e.g., RunMyTests.cmd) ---
 
 REM --- Configuration ---
 REM --- Add or remove executable names from this list as needed ---
-SET "ExecutableList=Crc32Test.gtest.exe Parse3DL.gtest.exe ParseCsp3d.gtest.exe ParseCube3d.gtest.exe ParseHald.gtest.exe SaveCube3d.gtest.exe VertexTest.gtest.exe"
+SET "ExecutableList=Crc32Test.gtest.exe Parse3DL.gtest.exe ParseCsp3d.gtest.exe ParseCube3d.gtest.exe ParseHald.gtest.exe SaveCube3d.gtest.exe InterpolateCube3d.gtest VertexTest.gtest.exe"
 
 REM --- Check if the list is empty ---
 IF "%ExecutableList%"=="" (
