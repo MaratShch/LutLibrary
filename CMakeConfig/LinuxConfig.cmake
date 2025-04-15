@@ -18,11 +18,25 @@ message (STATUS "Install BIN folder:        ${CMAKE_INSTALL_BIN_DIRECTORY}")
 message (STATUS "Install TESTS folder:      ${CMAKE_INSTALL_TST_DIRECTORY}")
 message (STATUS "Install TEST LUT's folder: ${CMAKE_INSTALL_LUT_TST_DIRECTORY}")
 
-add_definitions(-D_LARGEFILE64_SOURCE=1 -D__USE_LARGEFILE64)
+add_compile_definitions(
+    _LARGEFILE64_SOURCE=1
+    __USE_LARGEFILE64
+    "$<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>" # Enables checks in glibc functions (like memcpy, sprintf) 
+	                                              # for potential buffer overflows
+)
 
 add_compile_options(
-	"$<$<CONFIG:DEBUG>:-O0 -mavx2>"		# disable optimization, AVX2 instruction set
-	"$<$<CONFIG:RELEASE>:-O3 -mavx2>"	# highest optimization, AVX2 instruction set
+    -Wall                    # Enable common warnings
+    -Wextra                  # Enable more warnings
+    -pedantic                # Uncomment for stricter ISO C++/C compliance warnings
+    -Werror                  # Uncomment to treat warnings as errors (good for CI/strict dev)
+    -fstack-protector-strong # Add stack smashing protection
+    -mavx2                   # Target CPU instruction set (Requires AVX2 support at runtime!)
+)
+
+add_compile_options(
+	"$<$<CONFIG:DEBUG>:-O0 -g3 -D_GLIBCXX_DEBUG>"	# disable optimization, includes debugging information
+	"$<$<CONFIG:RELEASE>:-O3 -DNDEBUG"				# highest optimization
 )
 
 include(GNUInstallDirs)
