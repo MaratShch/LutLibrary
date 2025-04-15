@@ -36,7 +36,7 @@ if(MSVC)
     add_compile_options(/EHsc /GS /FC)
 
 	add_compile_options(
-		"$<$<CONFIG:Debug>:/Od;/Ot;/arch:AVX2;/Zi;/RTC1>"    				# disable optimization, favor fast code, AVX2 instruction set
+		"$<$<CONFIG:Debug>:/Od;/Ot;/arch:AVX2;/Zi;/RTC1>"    				# disable optimization, favor fast code, AVX2 instruction set, enables runtime checks for stack frame errors
 		"$<$<CONFIG:Release>:/O2;/Oi;/Ot;/arch:AVX2;/FAs;/DNDEBUG>"			# high optimization, inline functions, favor fast code, AVX2 instruction set, ASM output with Source code
 		"$<$<CONFIG:RelWithDebInfo>:/O2;/Oi;/Ot;/arch:AVX2;/FAs;/DNDEBUG>"	# high optimization, inline functions, favor fast code, AVX2 instruction set, ASM output with Source code
 		"$<$<CONFIG:MinSizeRel>:/O1;/Ob0;/Os;/arch:AVX2;/FAs>"	    		# minimal size, no inline functions, favor small code,  AVX2 instruction set, ASM output with Source code
