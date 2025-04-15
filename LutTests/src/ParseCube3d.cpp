@@ -466,6 +466,121 @@ TEST(ParseCube3d, Parse_Huge_negative_lut_128_Cube3D_f64)
     EXPECT_EQ(result, LutErrorCode::LutState::OK);
 }
 
+TEST(ParseCube3d, Parse_Identify_8_Cube3D_f32)
+{
+    const std::string lutName{ dbgLutsFolder + "/Identify_8.cube" };
+    CCubeLut3D<float> lutFileF32;
+    // load and parse file
+    auto const result = lutFileF32.LoadFile(lutName);
+    // identify LUT size
+    auto const lutSize = lutFileF32.getLutSize();
+    GTEST_EXPECT_TRUE(lutSize == 8);
+    // identify MIN/MAX domain 
+    auto const domain = lutFileF32.getMinMaxDomain();
+    const bool domainValid = 
+           (0.f == domain.first[0]  && 0.f == domain.first [1] && 0.f == domain.first[2] &&
+            1.f == domain.second[0] && 1.f == domain.second[1] && 1.f == domain.second[2]);
+    GTEST_EXPECT_TRUE(domainValid == true);
+
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseCube3d, Parse_Identify_8_Cube3D_f64)
+{
+    const std::string lutName{ dbgLutsFolder + "/Identify_8.cube" };
+    CCubeLut3D<double> lutFileF64;
+    // load and parse file
+    auto const result = lutFileF64.LoadFile(lutName);
+    // identify LUT size
+    auto const lutSize = lutFileF64.getLutSize();
+    GTEST_EXPECT_TRUE(lutSize == 8);
+    // identify MIN/MAX domain 
+    auto const domain = lutFileF64.getMinMaxDomain();
+    const bool domainValid = 
+           (0.0 == domain.first[0]  && 0.0 == domain.first [1] && 0.0 == domain.first[2] &&
+            1.0 == domain.second[0] && 1.0 == domain.second[1] && 1.0 == domain.second[2]);
+    GTEST_EXPECT_TRUE(domainValid == true);
+
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseCube3d, Parse_Identify_33_Cube3D_f32)
+{
+    const std::string lutName{ dbgLutsFolder + "/Identify_33.cube" };
+    CCubeLut3D<float> lutFileF32;
+    // load and parse file
+    auto const result = lutFileF32.LoadFile(lutName);
+    // identify LUT size
+    auto const lutSize = lutFileF32.getLutSize();
+    GTEST_EXPECT_TRUE(lutSize == 33);
+    // identify MIN/MAX domain 
+    auto const domain = lutFileF32.getMinMaxDomain();
+    const bool domainValid = 
+           (0.f == domain.first[0]  && 0.f == domain.first [1] && 0.f == domain.first[2] &&
+            1.f == domain.second[0] && 1.f == domain.second[1] && 1.f == domain.second[2]);
+    GTEST_EXPECT_TRUE(domainValid == true);
+
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseCube3d, Parse_Identify_33_Cube3D_f64)
+{
+    const std::string lutName{ dbgLutsFolder + "/Identify_33.cube" };
+    CCubeLut3D<double> lutFileF64;
+    // load and parse file
+    auto const result = lutFileF64.LoadFile(lutName);
+    // identify LUT size
+    auto const lutSize = lutFileF64.getLutSize();
+    GTEST_EXPECT_TRUE(lutSize == 33);
+    // identify MIN/MAX domain 
+    auto const domain = lutFileF64.getMinMaxDomain();
+    const bool domainValid = 
+           (0.0 == domain.first[0]  && 0.0 == domain.first [1] && 0.0 == domain.first[2] &&
+            1.0 == domain.second[0] && 1.0 == domain.second[1] && 1.0 == domain.second[2]);
+    GTEST_EXPECT_TRUE(domainValid == true);
+
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseCube3d, Parse_Identify_65_Cube3D_f32)
+{
+    const std::string lutName{ dbgLutsFolder + "/Identify_65.cube" };
+    CCubeLut3D<float> lutFileF32;
+    // load and parse file
+    auto const result = lutFileF32.LoadFile(lutName);
+    // identify LUT size
+    auto const lutSize = lutFileF32.getLutSize();
+    GTEST_EXPECT_TRUE(lutSize == 65);
+    // identify MIN/MAX domain 
+    auto const domain = lutFileF32.getMinMaxDomain();
+    const bool domainValid = 
+           (0.f == domain.first[0]  && 0.f == domain.first [1] && 0.f == domain.first[2] &&
+            1.f == domain.second[0] && 1.f == domain.second[1] && 1.f == domain.second[2]);
+    GTEST_EXPECT_TRUE(domainValid == true);
+
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+TEST(ParseCube3d, Parse_Identify_65_Cube3D_f64)
+{
+    const std::string lutName{ dbgLutsFolder + "/Identify_65.cube" };
+    CCubeLut3D<double> lutFileF64;
+    // load and parse file
+    auto const result = lutFileF64.LoadFile(lutName);
+    // identify LUT size
+    auto const lutSize = lutFileF64.getLutSize();
+    GTEST_EXPECT_TRUE(lutSize == 65);
+    // identify MIN/MAX domain 
+    auto const domain = lutFileF64.getMinMaxDomain();
+    const bool domainValid = 
+           (0.0 == domain.first[0]  && 0.0 == domain.first [1] && 0.0 == domain.first[2] &&
+            1.0 == domain.second[0] && 1.0 == domain.second[1] && 1.0 == domain.second[2]);
+    GTEST_EXPECT_TRUE(domainValid == true);
+
+    EXPECT_EQ(result, LutErrorCode::LutState::OK);
+}
+
+
 int main (int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

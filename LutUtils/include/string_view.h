@@ -57,7 +57,7 @@ namespace lututils_std
       
       /* construct basic_string_view from std::string */
       template <typename tAllocator>
-      basic_string_view (const std::basic_string<CharT,Traits,tAllocator>& std_str) noexcept : m_string{std_str.c_str()}, m_size{std_str.size()} {};
+      basic_string_view (const std::basic_string<CharT,Traits,tAllocator>& std_str) noexcept : m_string{std_str.c_str()}, m_size{std_str.size()} {}
       
       /* assignment / copy / move operators */
       basic_string_view& operator=(const basic_string_view& other) = default;

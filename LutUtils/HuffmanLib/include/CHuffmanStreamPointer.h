@@ -63,32 +63,32 @@ namespace HuffmanUtils
           void swap (CStreamPointer& other) noexcept {std::swap(m_StreamPointer, other.m_StreamPointer);}
 
        // set / reset
-           const int64_t set (int64_t newOffset) noexcept { const int64_t old = m_StreamPointer; m_StreamPointer = newOffset; return old; }
-           const int64_t set (const CStreamPointer& newOffset) noexcept { return set(newOffset.m_StreamPointer); }
-           const int64_t reset (void) noexcept { return set(0ll); }
-           const int64_t set_byte(uint32_t byte) noexcept { const int64_t old = m_StreamPointer; m_StreamPointer = static_cast<int64_t>(byte) << 3; return old; }
+           int64_t set (int64_t newOffset) noexcept { const int64_t old = m_StreamPointer; m_StreamPointer = newOffset; return old; }
+           int64_t set (const CStreamPointer& newOffset) noexcept { return set(newOffset.m_StreamPointer); }
+           int64_t reset (void) noexcept { return set(0ll); }
+           int64_t set_byte(uint32_t byte) noexcept { const int64_t old = m_StreamPointer; m_StreamPointer = static_cast<int64_t>(byte) << 3; return old; }
 
        // forward / backward
-          const int64_t forward  (int64_t add) noexcept { return (m_StreamPointer += add); }
-          const int64_t backward (int64_t sub) noexcept { const int64_t _sub {sub}; return (_sub < m_StreamPointer ?  (m_StreamPointer -= _sub) : 0ll); }
-          const int64_t step_forward  (void) noexcept { return m_StreamPointer++; }
-          const int64_t step_backward (void) noexcept { return (m_StreamPointer > 0ll ? m_StreamPointer-- : 0ll); }
-          const int64_t to_next_byte(void) noexcept   { return m_StreamPointer += 8ll; }
-          const int64_t to_prev_byte(void) noexcept   { return m_StreamPointer < 8ll ? 0ll : m_StreamPointer - 8ll; }
+          int64_t forward  (int64_t add) noexcept { return (m_StreamPointer += add); }
+          int64_t backward (int64_t sub) noexcept { const int64_t _sub {sub}; return (_sub < m_StreamPointer ?  (m_StreamPointer -= _sub) : 0ll); }
+          int64_t step_forward  (void) noexcept { return m_StreamPointer++; }
+          int64_t step_backward (void) noexcept { return (m_StreamPointer > 0ll ? m_StreamPointer-- : 0ll); }
+          int64_t to_next_byte(void) noexcept   { return m_StreamPointer += 8ll; }
+          int64_t to_prev_byte(void) noexcept   { return m_StreamPointer < 8ll ? 0ll : m_StreamPointer - 8ll; }
 
        // distance
           constexpr int64_t distance (const int64_t v) const noexcept { return m_StreamPointer - v; }
           constexpr int64_t distance (const CStreamPointer& v) const noexcept { return distance (v.m_StreamPointer); }
       
        // compare
-          const int compare (const int64_t& other_sp) const noexcept
+          int compare (const int64_t& other_sp) const noexcept
           {
              if (m_StreamPointer == other_sp) return 0;
              else if (m_StreamPointer < other_sp) return -1;
              else return 1;
           }
  
-          const int compare (const CStreamPointer& other_sp) const noexcept {return compare (other_sp.m_StreamPointer);}  
+          int compare (const CStreamPointer& other_sp) const noexcept {return compare (other_sp.m_StreamPointer);}  
 
        // alignment 
           void align2byte (void) noexcept { (m_StreamPointer += 7ll) &= 0x7FFFFFFFFFFFFFF8; }
@@ -226,6 +226,6 @@ namespace HuffmanUtils
     constexpr CStreamPointer byte2sp (const uint32_t& byte) noexcept { return CStreamPointer(byte, 0u); }
     constexpr int64_t sp2byte (const CStreamPointer& sp) noexcept { return sp.byte(); }
 
-}; // namespace HuffmanUtils
+} // namespace HuffmanUtils
 
 #endif // __C_HUFFMAN_STREAM_POINTER_OBJECT_DEFINITION__

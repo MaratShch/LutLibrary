@@ -31,7 +31,20 @@ public:
     LutErrorCode::LutState LoadFile(const string_view& lutFileName)
     {
         LutErrorCode::LutState err = LutErrorCode::LutState::OK;
-        return err;
+        if (!lutFileName.empty() && lutFileName != m_lutName)
+        {
+            std::ifstream file3DL{ lutFileName };
+            if (!file3DL.good())
+                return LutErrorCode::LutState::FileNotOpened;
+
+            err = LoadFile(file3DL);
+            file3DL.close();
+
+            if (LutErrorCode::LutState::OK == err)
+            m_lutName = lutFileName;
+         }
+         m_error = err;
+         return err;
     }
 
     LutErrorCode::LutState LoadFile (const char* lutFileName)
@@ -43,6 +56,19 @@ public:
     LutErrorCode::LutState LoadFile(const std::string& lutFileName)
     {
         LutErrorCode::LutState err = LutErrorCode::LutState::OK;
+        if (!lutFileName.empty() && lutFileName != m_lutName)
+        {
+            std::ifstream file3DL{ lutFileName };
+            if (!file3DL.good())
+                return LutErrorCode::LutState::FileNotOpened;
+
+            err = LoadFile(file3DL);
+            file3DL.close();
+
+            if (LutErrorCode::LutState::OK == err)
+                m_lutName = lutFileName;
+        }
+        m_error = err;
         return err;
     }
 

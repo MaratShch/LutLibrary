@@ -15,8 +15,8 @@ class CCineSpaceLut3D
  public:
  	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
 	LutErrorCode::LutState getLastError  (void)         { return m_error; }
-	LutElement::lutSize const getLutSize (void)         { return m_lutSize; }
-	LutElement::lutSize const getLutComponentSize (const LutElement::LutComponent component) {return m_lutComponentSize[static_cast<uint32_t>(component)];}
+	LutElement::lutSize getLutSize (void)               { return m_lutSize; }
+	LutElement::lutSize getLutComponentSize (const LutElement::LutComponent component) {return m_lutComponentSize[static_cast<uint32_t>(component)];}
 	
 	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
 	{
@@ -238,14 +238,14 @@ class CCineSpaceLut3D
 		if (LutErrorCode::LutState::OK == (err1 = ReadLine(lutFile, strBuffer, lineSeparator)))
 		{
 			std::istringstream inStr(strBuffer);
-			for (int32_t i = 0; i < preLutSize; i++)
+			for (uint32_t i = 0u; i < preLutSize; i++)
 				inStr >> in[i];
 		}
 		strBuffer.clear();
 		if (LutErrorCode::LutState::OK == (err2 = ReadLine(lutFile, strBuffer, lineSeparator)))
 		{
 			std::istringstream outStr (strBuffer);
-			for (int32_t i = 0; i < preLutSize; i++)
+			for (uint32_t i = 0u; i < preLutSize; i++)
 				outStr >> out[i];
 		}
 		return (LutErrorCode::LutState::OK == err1 && LutErrorCode::LutState::OK == err2 ? LutErrorCode::LutState::OK : LutErrorCode::LutState::ReadError);
@@ -270,7 +270,7 @@ class CCineSpaceLut3D
 	{
 		bool one_digit = false;
 		auto const strBufSize = strBuffer.size();
-		for (auto i = 0; i < strBufSize; i++)
+		for (auto i = 0ull; i < strBufSize; i++)
 		{
 			if ('+' < strBuffer[i] && ':' > strBuffer[i])
 				one_digit = true;

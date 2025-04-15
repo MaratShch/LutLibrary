@@ -113,6 +113,6 @@ namespace HuffmanUtils
         return (B << 16) | A; // Combine B (high) and A (low) into a 32-bit checksum
     }
 
-}; // namespace HuffmanUtils
+} // namespace HuffmanUtils
 
 #endif // __HUFFMAN_INPUT_OUTPUT_API_DEFINITIONS__

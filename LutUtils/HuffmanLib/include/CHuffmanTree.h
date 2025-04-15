@@ -245,7 +245,7 @@ namespace HuffmanUtils
     }
 
 
-};
+}
 
 
 #endif // __C_HUFFMAN_TREE_OBJECT__

@@ -3,21 +3,15 @@
 # --- Script to check and run multiple executables sequentially in the CURRENT terminal ---
 
 # --- Configuration ---
-EXECUTABLE_LIST=(
-    "Crc32Test.gtest"
-    "Parse3DL.gtest"
-    "ParseCsp3d.gtest"
-    "ParseCube3d.gtest"
-    "ParseHald.gtest"
-    "SaveCube3d.gtest"
-    "InterpolateCube3d.gtest"
-    "VertexTest.gtest"
-)
+EXECUTABLE_LIST=()
+while IFS= read -r -d $'\0' file; do
+    EXECUTABLE_LIST+=("$file")
+done < <(find . -maxdepth 1 -type f -name '*gtest*' -executable -print0 | sort -z)
 
 # --- Check if the list is empty ---
 if [ ${#EXECUTABLE_LIST[@]} -eq 0 ]; then
-    echo "ERROR: EXECUTABLE_LIST is empty. Please edit the script."
-    exit 1 # Exit with an error code
+    echo "ERROR: No executable files with 'gtest' in the name found in current directory: $(pwd)"
+    exit 1
 fi
 
 # --- Loop and Execution Logic ---

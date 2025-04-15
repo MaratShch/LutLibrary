@@ -18,7 +18,7 @@ namespace HuffmanUtils
         FILTER_INVALID
     };
 
-    inline const eFILTER_T detect_filter (const uint8_t& fIdx) noexcept
+    inline eFILTER_T detect_filter (const uint8_t& fIdx) noexcept
     {
         eFILTER_T filterT = eFILTER_T::FILTER_INVALID;
           // Use switch or if-else to check possible values and convert data correctly
@@ -81,7 +81,7 @@ namespace HuffmanUtils
         // Lambda expression for UP filter
         auto average_filter = [&](const int16_t filtered, const int16_t left, const int16_t above) -> uint8_t
         {
-            const int16_t floorVal = std::floor((left + above) >> 1);
+            const int16_t floorVal = static_cast<const int16_t>(std::floor((left + above) >> 1));
             return static_cast<uint8_t>((filtered + floorVal) & 0x00FF);
         };
 
@@ -123,11 +123,6 @@ namespace HuffmanUtils
         const int32_t lineUp  = outLineSize * (lineIdx - 1); 
 
         int32_t i /* input pixel idx */, o /* output pixel idx */;
-        int32_t idxFilt;       // current input pixel index
-        int32_t idxRecon;      // current output pixel index
-        int32_t idxReconLeft;  // left in current line input pixel index
-        int32_t idxReconUp;    // up line input pixel index
-        int32_t idxReconUpleft;// up line left input pixel index
 
         uint8_t lR,  lG,  lB; // left pixel color component value
         uint8_t uR,  uG,  uB; // up pixels color components value
@@ -144,9 +139,9 @@ namespace HuffmanUtils
             {
                 for (i = lineIn + 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
                 {
-                    idxFilt  = lineIn  + i;
-                    idxRecon = lineOut + o;  
-		            restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0]);
+                    int32_t idxFilt  = lineIn  + i;
+                    int32_t idxRecon = lineOut + o;  
+		    restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0]);
                     restored[idxRecon + 1] = ref_none_filter(decoded[idxFilt + 1]);
                     restored[idxRecon + 2] = ref_none_filter(decoded[idxFilt + 2]);
                 }// for (i = lineIn + 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
@@ -157,8 +152,8 @@ namespace HuffmanUtils
             {
                 for (i = 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
                 {
-                    idxFilt  = lineIn  + i;
-                    idxRecon = lineOut + o;  
+                    int32_t idxFilt  = lineIn  + i;
+                    int32_t idxRecon = lineOut + o;  
 
                     if (o >= channels)
                     {
@@ -180,9 +175,9 @@ namespace HuffmanUtils
             {
                 for (i = 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
                 {
-                    idxFilt        = lineIn   + i;
-                    idxRecon       = lineOut  + o;
-                    idxReconUp     = lineUp   + o; 
+                    int32_t idxFilt        = lineIn   + i;
+                    int32_t idxRecon       = lineOut  + o;
+                    int32_t idxReconUp     = lineUp   + o; 
 
                     if (lineUp >= 0)
                     { // we have up line
@@ -204,10 +199,9 @@ namespace HuffmanUtils
             {
                 for (i = 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
                 {
-                    idxFilt        = lineIn   + i;
-                    idxRecon       = lineOut  + o;
-                    idxReconLeft   = idxRecon - channels;
-                    idxReconUp     = lineUp   + o;
+                    int32_t idxFilt        = lineIn   + i;
+                    int32_t idxRecon       = lineOut  + o;
+                    int32_t idxReconUp     = lineUp   + o;
                     if (o >= channels)
                     { // we have left pixels
                         lR = restored[idxRecon - channels + 0];
@@ -237,11 +231,10 @@ namespace HuffmanUtils
             {
                 for (i = 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
                 {
-                    idxFilt        = lineIn   + i;
-                    idxRecon       = lineOut  + o;
-                    idxReconLeft   = idxRecon - channels;
-                    idxReconUp     = lineUp   + o; 
-                    idxReconUpleft = idxReconUp - channels;
+                    int32_t idxFilt        = lineIn   + i;
+                    int32_t idxRecon       = lineOut  + o;
+                    int32_t idxReconUp     = lineUp   + o; 
+                    int32_t idxReconUpleft = idxReconUp - channels;
   
                     if (o >= channels)
                     { // we have left pixels
@@ -327,7 +320,7 @@ namespace HuffmanUtils
         // Lambda expression for UP filter
         auto average_filter = [&](const int16_t filtered, const int16_t left, const int16_t above) -> uint8_t
         {
-            const int16_t floorVal = std::floor((left + above) >> 1);
+            const int16_t floorVal = static_cast<const int16_t>(std::floor((left + above) >> 1));
             return static_cast<uint8_t>((filtered + floorVal) & 0x00FF);
         };
 
@@ -376,11 +369,6 @@ namespace HuffmanUtils
         const int32_t lineUp  = outLineSize * (lineIdx - 1); 
 
         int32_t i /* input pixel idx */, o /* output pixel idx */;
-        int32_t idxFilt;       // current input pixel index
-        int32_t idxRecon;      // current output pixel index
-        int32_t idxReconLeft;  // left in current line input pixel index
-        int32_t idxReconUp;    // up line input pixel index
-        int32_t idxReconUpleft;// up line left input pixel index
 
         uint16_t lR,  lG,  lB; // left pixel color component value
         uint16_t uR,  uG,  uB; // up pixels color components value
@@ -397,9 +385,9 @@ namespace HuffmanUtils
             {
                 for (i = lineIn + 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
                 {
-                    idxFilt  = lineIn  + i;
-                    idxRecon = lineOut + o;  
-		            restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0], decoded[idxFilt + 1]);
+                    int32_t idxFilt  = lineIn  + i;
+                    int32_t idxRecon = lineOut + o;  
+		    restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0], decoded[idxFilt + 1]);
                     restored[idxRecon + 1] = ref_none_filter(decoded[idxFilt + 2], decoded[idxFilt + 3]);
                     restored[idxRecon + 2] = ref_none_filter(decoded[idxFilt + 4], decoded[idxFilt + 5]);
                 }// for (i = lineIn + 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
@@ -410,8 +398,8 @@ namespace HuffmanUtils
             {
                 for (i = 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
                 {
-                    idxFilt  = lineIn  + i;
-                    idxRecon = lineOut + o;  
+                    int32_t idxFilt  = lineIn  + i;
+                    int32_t idxRecon = lineOut + o;  
 
                     if (o >= channels)
                     {
@@ -433,9 +421,9 @@ namespace HuffmanUtils
             {
                 for (i = 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
                 {
-                    idxFilt        = lineIn   + i;
-                    idxRecon       = lineOut  + o;
-                    idxReconUp     = lineUp   + o; 
+                    int32_t idxFilt        = lineIn   + i;
+                    int32_t idxRecon       = lineOut  + o;
+                    int32_t idxReconUp     = lineUp   + o; 
 
                     if (lineUp >= 0)
                     { // we have up line
@@ -457,10 +445,9 @@ namespace HuffmanUtils
             {
                 for (i = 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
                 {
-                    idxFilt        = lineIn   + i;
-                    idxRecon       = lineOut  + o;
-                    idxReconLeft   = idxRecon - channels;
-                    idxReconUp     = lineUp   + o;
+                    int32_t idxFilt        = lineIn   + i;
+                    int32_t idxRecon       = lineOut  + o;
+                    int32_t idxReconUp     = lineUp   + o;
                     if (o >= channels)
                     { // we have left pixels
                         lR = restored[idxRecon - channels + 0];
@@ -490,11 +477,10 @@ namespace HuffmanUtils
             {
                 for (i = 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
                 {
-                    idxFilt        = lineIn   + i;
-                    idxRecon       = lineOut  + o;
-                    idxReconLeft   = idxRecon - channels;
-                    idxReconUp     = lineUp   + o; 
-                    idxReconUpleft = idxReconUp - channels;
+                    int32_t idxFilt        = lineIn   + i;
+                    int32_t idxRecon       = lineOut  + o;
+                    int32_t idxReconUp     = lineUp   + o; 
+                    int32_t idxReconUpleft = idxReconUp - channels;
   
                     if (o >= channels)
                     { // we have left pixels
@@ -583,6 +569,6 @@ namespace HuffmanUtils
         return out_data;
     }
 
-}; // namespace HuffmanUtils
+} // namespace HuffmanUtils
 
 #endif // __C_PNG_REVERSIBLE_FILTER_API__

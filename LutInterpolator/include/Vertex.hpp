@@ -47,29 +47,29 @@ public:
     // conversion constructor
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
     constexpr CVertex (const CVertex<U>& other) noexcept(std::is_nothrow_copy_constructible<T>::value) : 
-                   r{static_cast<T>(other.red())}, g{static_cast<T>(other.green())}, b{static_cast<T>(other.blue())} {};
+                   r{static_cast<T>(other.red())}, g{static_cast<T>(other.green())}, b{static_cast<T>(other.blue())} {}
  
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
               CVertex (const CVertex<U>&& other) noexcept(std::is_nothrow_move_constructible<T>::value) : 
-                   r(std::move(static_cast<T>(other.red()))), g(std::move(static_cast<T>(other.green()))), b(std::move(static_cast<T>(other.blue()))) {};
+                   r(std::move(static_cast<T>(other.red()))), g(std::move(static_cast<T>(other.green()))), b(std::move(static_cast<T>(other.blue()))) {}
 
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
-    constexpr CVertex (const U& _r_, const U& _g_, const U& _b_) noexcept : r{static_cast<T>(_r_)}, g{static_cast<T>(_g_)}, b{static_cast<T>(_b_)} {};
+    constexpr CVertex (const U& _r_, const U& _g_, const U& _b_) noexcept : r{static_cast<T>(_r_)}, g{static_cast<T>(_g_)}, b{static_cast<T>(_b_)} {}
 
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
-    constexpr CVertex (const std::tuple<U, U, U>& t) noexcept : r{static_cast<T>(std::get<0>(t))}, g{static_cast<T>(std::get<1>(t))}, b{static_cast<T>(std::get<2>(t))} {};
+    constexpr CVertex (const std::tuple<U, U, U>& t) noexcept : r{static_cast<T>(std::get<0>(t))}, g{static_cast<T>(std::get<1>(t))}, b{static_cast<T>(std::get<2>(t))} {}
 
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
-    constexpr CVertex (const std::vector<U>& elem) : r{static_cast<T>(elem[0])}, g{static_cast<T>(elem[1])}, b{static_cast<T>(elem[2])} {};
+    constexpr CVertex (const std::vector<U>& elem) : r{static_cast<T>(elem[0])}, g{static_cast<T>(elem[1])}, b{static_cast<T>(elem[2])} {}
 
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
-    constexpr CVertex (const std::array<U,3>& elem) noexcept : r{static_cast<T>(elem[0])}, g{static_cast<T>(elem[1])}, b{static_cast<T>(elem[2])} {};
+    constexpr CVertex (const std::array<U,3>& elem) noexcept : r{static_cast<T>(elem[0])}, g{static_cast<T>(elem[1])}, b{static_cast<T>(elem[2])} {}
 
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
-    constexpr CVertex (const Point3D<U>& p) noexcept(std::is_nothrow_copy_constructible<T>::value) : r{static_cast<T>(p.x)}, g{static_cast<T>(p.y)}, b{static_cast<T>(p.z)} {};
+    constexpr CVertex (const Point3D<U>& p) noexcept(std::is_nothrow_copy_constructible<T>::value) : r{static_cast<T>(p.x)}, g{static_cast<T>(p.y)}, b{static_cast<T>(p.z)} {}
 
     template <typename U, typename = std::enable_if_t<std::is_arithmetic<U>::value>>
-              CVertex (const Point3D<U>&& p) noexcept(std::is_nothrow_move_constructible<T>::value) : r(std::move(static_cast<T>(p.x))), g(std::move(static_cast<T>(p.y))), b(std::move(static_cast<T>(p.z))) {};
+              CVertex (const Point3D<U>&& p) noexcept(std::is_nothrow_move_constructible<T>::value) : r(std::move(static_cast<T>(p.x))), g(std::move(static_cast<T>(p.y))), b(std::move(static_cast<T>(p.z))) {}
 
 
     // class destructor
@@ -596,6 +596,6 @@ private:
    using CVertexF = CVertex<float>;
    using CVertexD = CVertex<double>;
 
-}; // namespace Lut
+} // namespace Lut
 
 #endif // __LUT_LIBRARY_LUT_VERTEX_3D__

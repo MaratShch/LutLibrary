@@ -18,6 +18,6 @@ namespace HuffmanUtils
 
     }; // class IBlockDecoder
 	
-}; // namespace HuffmanUtils
+} // namespace HuffmanUtils
 
 #endif // __I_HUFFMAN_BLOCK_DECODER_INTERACE__

@@ -7,21 +7,24 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 #include <utility>
-
+#include  <cctype>
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CCubeLut3D
 {
 public:
-	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
-	LutErrorCode::LutState getLastError(void) { return m_error; }
-	LutElement::lutSize const getLutSize (void) { return m_lutSize; }
-	LutElement::lutSize const getLutComponentSize (const LutElement::LutComponent component) {(void)component; return getLutSize();}
+	LutElement::lutFileName const getLutFileName (void) const {return m_lutName;}
+	LutErrorCode::LutState getLastError(void) const { return m_error; }
+	LutElement::lutSize getLutSize (void) const { return m_lutSize; }
+	LutElement::lutSize getLutComponentSize (const LutElement::LutComponent component) const {(void)component; return getLutSize();}
 
 	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
 	{
-		/* clear file stream status */
+        std::string stringBuffer, keyword;
+      
+        /* clear file stream status */
 		lutFile.clear();
 		/* cleanup internal objects before parsing */
 		_cleanup();
@@ -35,21 +38,19 @@ public:
 		lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
 
 		LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
-		std::string stringBuffer, keyword;
-		constexpr T nonValidDomain = static_cast<T>(-1);
 		bool bData = false;
 
 		/* IN FIRST READ KEYWORDS */
 		do {
 			stringBuffer.clear(); /* cleanup string before read line from file */
-			const std::streampos linePos = lutFile.tellg();
+                        const auto linePos = (lutFile.good() ? lutFile.tellg() : static_cast<std::streampos>(-1));
 			if (LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
 			{
 				keyword.clear();
 				std::istringstream line(stringBuffer);
 				line >> keyword;
 
-				if ("+" < keyword && ":" > keyword)
+                if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
 				{
 					/* LUT data itself starting */
 					lutFile.seekg(linePos, std::ios_base::beg);
@@ -109,7 +110,7 @@ public:
 		LutErrorCode::LutState err = LutErrorCode::LutState::OK;
 		if (!lutFileName.empty() && lutFileName != m_lutName)
 		{
-			std::ifstream cubeFile3D { lutFileName };
+			std::ifstream cubeFile3D { lutFileName, std::ios::in | std::ios::binary };
 			if (!cubeFile3D.good())
 				return LutErrorCode::LutState::FileNotOpened;
 			
@@ -133,7 +134,7 @@ public:
 		LutErrorCode::LutState err = LutErrorCode::LutState::OK;
 		if (!lutFileName.empty() && lutFileName != m_lutName)
 		{
-			std::ifstream cubeFile3D { lutFileName };
+			std::ifstream cubeFile3D { lutFileName, std::ios::in | std::ios::binary };
 			if (!cubeFile3D.good())
 				return LutErrorCode::LutState::FileNotOpened;
 			
@@ -222,28 +223,24 @@ public:
 	}
 
 
-        const LutElement::lutTable3D<T>& get_data(void) const noexcept
-        {
-                return m_lutBody;
-        } 
+   const LutElement::lutTable3D<T>& get_data(void) const noexcept { return m_lutBody; } 
  
         
-        const std::pair<LutElement::lutTableRaw<T>, LutElement::lutTableRaw<T>> getMinMaxDomain (void)
-        {
-            if (3 != m_domainMin.size())
-            {
-                m_domainMin.resize(3);
-                m_domainMin[0] = m_domainMin[1] = m_domainMin[2] = static_cast<T>(0);
-            }
-    
-            if (3 != m_domainMax.size())
-            {
-                m_domainMax.resize(3);
-                m_domainMax[0] = m_domainMax[1] = m_domainMax[2] = static_cast<T>(1);
-            }
+   const std::pair<LutElement::lutTableRaw<T>, LutElement::lutTableRaw<T>> getMinMaxDomain (void)
+   {
+      if (3 != m_domainMin.size())
+      {
+          m_domainMin.resize(3);
+          m_domainMin[0] = m_domainMin[1] = m_domainMin[2] = static_cast<T>(0);
+      }
+      if (3 != m_domainMax.size())
+      {
+          m_domainMax.resize(3);
+          m_domainMax[0] = m_domainMax[1] = m_domainMax[2] = static_cast<T>(1);
+      }
 
-            return std::make_pair(m_domainMin, m_domainMax); 
-        }
+      return std::make_pair(m_domainMin, m_domainMax); 
+   }
 
 private:
 	LutElement::lutTableRaw<T> m_domainMin;
@@ -403,6 +400,7 @@ private:
 
 		return lutRawData;
 	}
+
 
 }; /* class CCubeLut3D */
 
