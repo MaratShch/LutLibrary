@@ -27,20 +27,24 @@ message (STATUS "Install TEST LUT's folder: ${CMAKE_INSTALL_LUT_TST_DIRECTORY}")
 
 if(MSVC)
 # Microsoft Visual Studio compiler used
- message (STATUS "Microsofr Visual Studio compiler detected...")
+ message (STATUS "Microsoft Visual Studio compiler detected...")
  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
 
-    # Set standard C++ exception handling model (usually default, but good to be explicit)
-    # Set security checks (usually default in modern VS, good practice)
-    # Set Full Path diagnostic messages (helps locate errors/warnings)
-    add_compile_options(/EHsc /GS /FC)
+    # ADD COMMON COMPILER OPTIONS
+    # /EHsc - Set standard C++ exception handling model (usually default, but good to be explicit)
+    # /GS - Set security checks (usually default in modern VS, good practice)
+    # /FC - Set Full Path diagnostic messages (helps locate errors/warnings)
+    # /W4 - Recommended level for strong warnings
+    # /Za - Disables MS language extensions
+    add_compile_options(/EHsc /GS /FC /W4 /Za)
 
-	add_compile_options(
-		"$<$<CONFIG:Debug>:/Od;/Ot;/arch:AVX2;/Zi;/RTC1>"    				# disable optimization, favor fast code, AVX2 instruction set, enables runtime checks for stack frame errors
-		"$<$<CONFIG:Release>:/O2;/Oi;/Ot;/arch:AVX2;/FAs;/DNDEBUG>"			# high optimization, inline functions, favor fast code, AVX2 instruction set, ASM output with Source code
-		"$<$<CONFIG:RelWithDebInfo>:/O2;/Oi;/Ot;/arch:AVX2;/FAs;/DNDEBUG>"	# high optimization, inline functions, favor fast code, AVX2 instruction set, ASM output with Source code
-		"$<$<CONFIG:MinSizeRel>:/O1;/Ob0;/Os;/arch:AVX2;/FAs>"	    		# minimal size, no inline functions, favor small code,  AVX2 instruction set, ASM output with Source code
-	)
+    # ADD COMPILER OPTIONS SPECIFIC FOR BUILD FLAVOR
+    add_compile_options(
+        "$<$<CONFIG:Debug>:/Od;/Ot;/arch:AVX2;/Zi;/RTC1>"                   # disable optimization, favor fast code, AVX2 instruction set, enables runtime checks for stack frame errors
+        "$<$<CONFIG:Release>:/O2;/Oi;/Ot;/arch:AVX2;/FAs;/DNDEBUG>"	    # high optimization, inline functions, favor fast code, AVX2 instruction set, ASM output with Source code
+        "$<$<CONFIG:RelWithDebInfo>:/O2;/Oi;/Ot;/arch:AVX2;/FAs;/DNDEBUG>"  # high optimization, inline functions, favor fast code, AVX2 instruction set, ASM output with Source code
+        "$<$<CONFIG:MinSizeRel>:/O1;/Ob0;/Os;/arch:AVX2;/FAs>"	            # minimal size, no inline functions, favor small code,  AVX2 instruction set, ASM output with Source code
+    )
 endif(MSVC)
 
 include(InstallRequiredSystemLibraries)

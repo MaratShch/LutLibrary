@@ -29,7 +29,7 @@ add_compile_options(
     -Wall                    # Enable common warnings
     -Wextra                  # Enable more warnings
     -pedantic                # Uncomment for stricter ISO C++/C compliance warnings
-#    -Werror                  # Uncomment to treat warnings as errors (good for CI/strict dev)
+    -Werror                  # Uncomment to treat warnings as errors (good for CI/strict dev)
     -fstack-protector-strong # Add stack smashing protection
     -mavx2                   # Target CPU instruction set (Requires AVX2 support at runtime!)
 )
