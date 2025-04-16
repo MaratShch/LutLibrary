@@ -16,8 +16,8 @@ class CCubeLut3D
 public:
 	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
 	LutErrorCode::LutState getLastError(void) { return m_error; }
-	LutElement::lutSize const getLutSize (void) { return m_lutSize; }
-	LutElement::lutSize const getLutComponentSize (const LutElement::LutComponent component) {(void)component; return getLutSize();}
+	LutElement::lutSize getLutSize (void) { return m_lutSize; }
+	LutElement::lutSize getLutComponentSize (const LutElement::LutComponent component) {(void)component; return getLutSize();}
 
 	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
 	{
@@ -36,7 +36,6 @@ public:
 
 		LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
 		std::string stringBuffer, keyword;
-		constexpr T nonValidDomain = static_cast<T>(-1);
 		bool bData = false;
 
 		/* IN FIRST READ KEYWORDS */

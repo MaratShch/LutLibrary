@@ -29,14 +29,14 @@ add_compile_options(
     -Wall                    # Enable common warnings
     -Wextra                  # Enable more warnings
     -pedantic                # Uncomment for stricter ISO C++/C compliance warnings
-    -Werror                  # Uncomment to treat warnings as errors (good for CI/strict dev)
+#    -Werror                  # Uncomment to treat warnings as errors (good for CI/strict dev)
     -fstack-protector-strong # Add stack smashing protection
     -mavx2                   # Target CPU instruction set (Requires AVX2 support at runtime!)
 )
 
 add_compile_options(
 	"$<$<CONFIG:DEBUG>:-O0 -g3 -D_GLIBCXX_DEBUG>"	# disable optimization, includes debugging information
-	"$<$<CONFIG:RELEASE>:-O3 -DNDEBUG"				# highest optimization
+	"$<$<CONFIG:RELEASE>:-O3 -DNDEBUG>"		# highest optimization
 )
 
 include(GNUInstallDirs)

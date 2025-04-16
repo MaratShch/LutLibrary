@@ -24,7 +24,7 @@ CHuffmanStream::CHuffmanStream (const std::vector<uint8_t>&& pData, CStreamPoint
     // read stream properties and initial stream pointer
     read_stream_properties (sp);
     return;
-};
+}
             
 CHuffmanStream::CHuffmanStream (const std::vector<uint8_t>& pData, CStreamPointer sp) : m_StreamData(pData)
 {

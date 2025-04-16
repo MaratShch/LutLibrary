@@ -46,6 +46,6 @@ namespace HuffmanUtils
 
     }; // class CHuffmanBlock
 
-}; // namespace HuffmanUtils
+} // namespace HuffmanUtils
 
 #endif // __HUFFMAN_BLOCK_DEFLATE_ALGO__

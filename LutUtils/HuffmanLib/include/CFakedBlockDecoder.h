@@ -23,7 +23,7 @@ namespace HuffmanUtils
            uint16_t m_NLEN= static_cast<uint16_t>(0u); 
     }; // class CFakedBlockDecoder : public IBlockDecoder
 	
-}; // namespace HuffmanUtils
+} // namespace HuffmanUtils
 
 
 

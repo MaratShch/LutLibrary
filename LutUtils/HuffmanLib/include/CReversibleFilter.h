@@ -18,7 +18,7 @@ namespace HuffmanUtils
         FILTER_INVALID
     };
 
-    inline const eFILTER_T detect_filter (const uint8_t& fIdx) noexcept
+    inline eFILTER_T detect_filter (const uint8_t& fIdx) noexcept
     {
         eFILTER_T filterT = eFILTER_T::FILTER_INVALID;
           // Use switch or if-else to check possible values and convert data correctly
@@ -583,6 +583,6 @@ namespace HuffmanUtils
         return out_data;
     }
 
-}; // namespace HuffmanUtils
+} // namespace HuffmanUtils
 
 #endif // __C_PNG_REVERSIBLE_FILTER_API__

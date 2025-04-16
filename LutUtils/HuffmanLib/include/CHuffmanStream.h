@@ -51,6 +51,6 @@ namespace HuffmanUtils
     }; // class CHuffmanStream
 
 
-}; // namespace HuffmanUtils
+} // namespace HuffmanUtils
 
 #endif // __HUFFMAN_STREAM_API_DEFINITION__

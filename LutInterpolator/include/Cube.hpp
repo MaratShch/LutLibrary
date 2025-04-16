@@ -24,6 +24,6 @@ private:
 
 }; // CCube3D
 
-};// namespace Lut
+}// namespace Lut
 
 #endif // __LUT_LIBRARY_LUT_INTERPOLATOR_SMALL_CUBE__

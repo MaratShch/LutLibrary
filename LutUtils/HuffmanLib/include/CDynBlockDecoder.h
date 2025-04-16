@@ -40,7 +40,7 @@ namespace HuffmanUtils
 
     }; // class CDynBlockDecoder : public IBlockDecoder
 	
-}; // namespace HuffmanUtils
+} // namespace HuffmanUtils
 
 
 

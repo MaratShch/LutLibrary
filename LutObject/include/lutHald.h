@@ -45,8 +45,8 @@ class CHaldLut
 public:
 	LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
 	LutErrorCode::LutState getLastError(void) { return m_error; }
-	LutElement::lutSize const getLutSize (void) { return m_lutSize; }
-	LutElement::lutSize const getLutComponentSize (const LutElement::LutComponent component) {(void)component; return getLutSize();}
+	LutElement::lutSize getLutSize (void) { return m_lutSize; }
+	LutElement::lutSize getLutComponentSize (const LutElement::LutComponent component) {(void)component; return getLutSize();}
 
 	void set_property_3D (void) noexcept { m_3d_lut = true; }
 	void set_property_1D (void) noexcept { m_3d_lut = false; }
@@ -75,7 +75,6 @@ public:
 
                 // add logic for handle multiple IDAT sections in one PNG
                 const std::string idatName = (0u == sections_IDAT ? "IDAT" : "IDAT" + std::to_string(sections_IDAT));
-                auto idat = mHaldChunkOrig.find(idatName);
                 auto it = chunkMap.find({ idatName });
                 if (it != chunkMap.end())
                     sections_IDAT++;
@@ -172,21 +171,21 @@ private:
 
 	void _cleanup (void)
 	{
-		m_lutBody3D.clear();
-		m_lutBody1D.clear();
-		m_lutSize = 0u;
-		m_error = LutErrorCode::LutState::NotInitialized;
-        m_sizeX = m_sizeY = 0u;
-        m_Channels = 0u;
-		m_bitDepth = 0u;
-        m_IdatNumber = 0u;
-		m_3d_lut = true;
-		return;
+             m_lutBody3D.clear();
+             m_lutBody1D.clear();
+             m_lutSize = 0u;
+             m_error = LutErrorCode::LutState::NotInitialized;
+             m_sizeX = m_sizeY = 0u;
+             m_Channels = 0u;
+             m_bitDepth = 0u;
+             m_IdatNumber = 0u;
+             m_3d_lut = true;
+             return;
 	}
 
 	bool verifyPngFileSignature (const uint64_t& signature) noexcept {return (signature == 0x89504E470D0A1A0Au);}
 
-	const uint64_t readPngSignature (std::ifstream& lutFile)
+	uint64_t readPngSignature (std::ifstream& lutFile)
 	{
 		uint64_t signature = 0u, signature_le = 0u;
 		lutFile.read (reinterpret_cast<char*>(&signature), sizeof(signature));
@@ -441,6 +440,12 @@ private:
 			width  = endian_convert(*reinterpret_cast<uint32_t*>(const_cast<uint8_t*>(&ihdrData[4])));
 			height = endian_convert(*reinterpret_cast<uint32_t*>(const_cast<uint8_t*>(&ihdrData[8])));
 			bitDepth = ihdrData[12], colorType = ihdrData[13], compressionMethod = ihdrData[14], filterMethod = ihdrData[15], interlaceMethod = ihdrData[16];
+
+                        // disable compilation warnings
+                        (void)compressionMethod;
+                        (void)filterMethod;
+                        (void)interlaceMethod;
+                        //
 
 			auto const isPowerOf2 = [&](auto const x) noexcept -> bool {return ((x != 0) && !(x & (x - 1))); };
 
