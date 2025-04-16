@@ -34,9 +34,9 @@ if(MSVC)
     # /EHsc - Set standard C++ exception handling model (usually default, but good to be explicit)
     # /GS - Set security checks (usually default in modern VS, good practice)
     # /FC - Set Full Path diagnostic messages (helps locate errors/warnings)
-    # /W4 - Recommended level for strong warnings
+    # /W3 - Recommended level for warnings
     # /Za - Disables MS language extensions
-    add_compile_options(/EHsc /GS /FC /W4 /Za)
+    add_compile_options(/EHsc /GS /FC /W3) # /Za)
 
     # ADD COMPILER OPTIONS SPECIFIC FOR BUILD FLAVOR
     add_compile_options(
