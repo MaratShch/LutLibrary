@@ -43,7 +43,7 @@ public:
 		/* IN FIRST READ KEYWORDS */
 		do {
 			stringBuffer.clear(); /* cleanup string before read line from file */
-                        const auto linePos = (lutFile.good() ? lutFile.tellg() : static_cast<std::streampos>(-1));
+            const auto linePos = (lutFile.good() ? lutFile.tellg() : static_cast<std::streampos>(-1));
 			if (LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
 			{
 				keyword.clear();
@@ -51,23 +51,21 @@ public:
 				line >> keyword;
 
                 if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
-				{
-					/* LUT data itself starting */
-					lutFile.seekg(linePos, std::ios_base::beg);
-					bData = true;
-				}
-				else if ("TITLE" == keyword)
-					loadStatus = read_lut_title(line);
-				else if ("LUT_3D_SIZE" == keyword)
-					loadStatus = set_lut_size(line);
-				else if ("LUT_1D_SIZE" == keyword)
-					return LutErrorCode::LutState::IncorrectDimension; /* because 3D and 1D CUBE LUT looks very similar we need put protection here from incorrect read */
-				else if ("DOMAIN_MIN" == keyword)
-					loadStatus = set_domain_min_value(line);
-				else if ("DOMAIN_MAX" == keyword)
-					loadStatus = set_domain_max_value(line);
-				else
-					loadStatus = LutErrorCode::LutState::UnknownOrRepeatedKeyword;
+                {
+                    /* LUT data itself starting */
+                    lutFile.seekg(linePos, std::ios_base::beg);
+                    bData = true;
+                }
+                else if ("TITLE" == keyword)
+                    loadStatus = read_lut_title(line);
+                else if ("LUT_3D_SIZE" == keyword)
+                    loadStatus = set_lut_size(line);
+                else if ("LUT_1D_SIZE" == keyword)
+                    return LutErrorCode::LutState::IncorrectDimension; /* because 3D and 1D CUBE LUT looks very similar we need put protection here from incorrect read */
+                else if ("DOMAIN_MIN" == keyword)
+                    loadStatus = set_domain_min_value(line);
+                else if ("DOMAIN_MAX" == keyword)
+                    loadStatus = set_domain_max_value(line);
 			} /* if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator))) */
 		} while (loadStatus == LutErrorCode::LutState::OK && false == bData);
 
