@@ -1,15 +1,19 @@
-@ECHO OFF
-REM --- Script to check and run multiple executables from a list ---
-REM --- Save this file with a .cmd extension (e.g., RunMyTests.cmd) ---
+@echo off
+setlocal enabledelayedexpansion
 
-REM --- Configuration ---
-REM --- Add or remove executable names from this list as needed ---
-SET "ExecutableList=Crc32Test.gtest.exe Parse3DL.gtest.exe ParseCsp3d.gtest.exe ParseCube3d.gtest.exe ParseHald.gtest.exe SaveCube3d.gtest.exe VertexTest.gtest.exe"
+REM --- Dynamically find all executable files containing 'gtest' in their name in the current directory ---
+set "ExecutableList="
+
+for %%F in (*gtest*.exe) do (
+    if exist "%%F" (
+        set "ExecutableList=!ExecutableList! %%F"
+    )
+)
 
 REM --- Check if the list is empty ---
-IF "%ExecutableList%"=="" (
-    ECHO ERROR: ExecutableList variable is empty. Please edit the script.
-    GOTO EndScript
+if "%ExecutableList%"=="" (
+    echo ERROR: No executable files with 'gtest' in the filename found in current directory: %CD%
+    goto EndScript
 )
 
 REM --- Loop and Execution Logic ---

@@ -31,6 +31,6 @@ namespace HuffmanUtils
 
     }; // class CStatBlockDecoder : public IBlockDecoder
 	
-}; // namespace HuffmanUtils
+} // namespace HuffmanUtils
 
 #endif // __C_HUFFMAN_STATIC_BLOCK_DECODER_IMPLEMENTATION__

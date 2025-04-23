@@ -93,11 +93,10 @@ lutlib_test (
 )
 
 set (TST_PRIVATE_COMPILATION_DEFINES -DCUBE_3D_LUT_FOLDER=\"${CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY}/3D\")
-lutlib_test (
-	InterpolateCube3d 
-	${LUT_TESTS_FILES_FOLDER}/src/InterpolatorTest.cpp 
-	LutObject
-)
+lutlib_test (InterpolateCube3d64 ${LUT_TESTS_FILES_FOLDER}/src/InterpolatorTest64.cpp LutInterpolator)
+
+set (TST_PRIVATE_COMPILATION_DEFINES -DCUBE_3D_LUT_FOLDER=\"${CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY}/3D\")
+lutlib_test (InterpolateCube3d32 ${LUT_TESTS_FILES_FOLDER}/src/InterpolatorTest32.cpp LutInterpolator)
 
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")

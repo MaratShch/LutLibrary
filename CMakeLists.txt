@@ -1,9 +1,19 @@
 cmake_minimum_required (VERSION 3.25 FATAL_ERROR)
 
+# Cleanup default C++ CMake options
+# All parameters for build will be defined explicitly in developer provided CMake files
+set(CMAKE_CXX_FLAGS_DEBUG "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_RELEASE "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_MINSIZEREL "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "" CACHE STRING "" FORCE)
+#
+
 project (LutLibrary LANGUAGES CXX)
 
 # global features
 set (BUILD_INCLUDE_BRANCH_NAME ON)
+
+option(ENABLE_HIGH_ACCURACY "Enable floating point computations with highest accuracy (potentially slower)." OFF)
 
 # Versioning
 set(LUT_LIB_MAJOR 0)
@@ -50,6 +60,7 @@ else()
 	message (STATUS  "Build project with configuration file ${PROJ_CONFIG_FILE}")
 endif()
 
+include(ColorPrint)
 include(${PROJ_CONFIG_FILE})
 set(CMAKE_DEBUG_POSTFIX "d")
 
@@ -84,6 +95,6 @@ add_subdirectory(LutObject)
 add_subdirectory(LutInterface)
 add_subdirectory(LutInterpolator)
 if (LUT_LIB_TESTS)
-	add_subdirectory(GoogleTest)
 	add_subdirectory(LutTests)
+	add_subdirectory(GoogleTest)
 endif()

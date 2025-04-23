@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 import argparse
 from itertools import product
 import sys
@@ -110,435 +111,1453 @@ def load_cube_lut(lut_file_path):
 
 # --- Helper ---
 def _linear_interpolate_1d_slice(lut_slice_1d, resolution_1d, x):
-    # ... (no changes needed inside helper itself)
-    if not (0.0 <= x <= 1.0): x = np.clip(x, 0.0, 1.0)
-    if resolution_1d <= 1: return lut_slice_1d[0] if len(lut_slice_1d) > 0 else np.array([0.0, 0.0, 0.0], dtype=lut_slice_1d.dtype)
-    f_index = x * (resolution_1d - 1)
-    idx0 = int(np.floor(f_index)); idx1 = int(np.ceil(f_index))
-    idx0 = np.clip(idx0, 0, resolution_1d - 1); idx1 = np.clip(idx1, 0, resolution_1d - 1)
-    t = f_index - idx0; val0 = lut_slice_1d[idx0]; val1 = lut_slice_1d[idx1]
-    return val0 * (1.0 - t) + val1 * t
-# ---
+    """
+    Performs 1D linear interpolation on a slice using float64 for high precision.
+    ASSUMES lut_slice_1d and x are already float64.
+    """
+    if not (0.0 <= x <= 1.0):
+        x = np.clip(x, np.float64(0.0), np.float64(1.0))
 
-def linear_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np): # Added domain args
-    """1D Linear interpolation with output clamping."""
-    # ...(slice selection logic as before)...
+    if resolution_1d <= 1:
+        return lut_slice_1d[0] if len(lut_slice_1d) > 0 else np.array([0.0, 0.0, 0.0], dtype=np.float64)
+
+    res_minus_1 = np.float64(resolution_1d - 1)
+    f_index = x * res_minus_1
+
+    idx0 = int(np.floor(f_index))
+    idx1 = int(np.ceil(f_index))
+    idx0 = np.clip(idx0, 0, resolution_1d - 1)
+    idx1 = np.clip(idx1, 0, resolution_1d - 1)
+
+    if idx0 == idx1:
+        return lut_slice_1d[idx0]
+
+    t = f_index - idx0
+    val0 = lut_slice_1d[idx0]
+    val1 = lut_slice_1d[idx1]
+    interpolated_val = val0 * (np.float64(1.0) - t) + val1 * t
+    return interpolated_val
+
+
+def linear_interpolation(lut_data, resolution, r, g, b, domain_min_input, domain_max_input): # Renamed args
+    """
+    Performs slice selection and 1D Linear interpolation (R-axis only).
+    Converts input LUT/domain to float64 internally for calculations.
+    Accuracy depends on the original precision of lut_data.
+
+    Args:
+        lut_data: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                  Assumes layout lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions.
+        r, g, b: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float).
+        domain_max_input: Max output clamp values (NumPy array, list, or float).
+
+    Returns:
+        List of 3 floats representing the interpolated and clamped RGB value.
+    """
+    # --- Input Type Conversion and Validation ---
+
+    # Convert lut_data to NumPy array if it isn't already
+    if not isinstance(lut_data, np.ndarray):
+        try:
+            lut_data = np.array(lut_data, dtype=np.float64) # Attempt conversion to float64 directly
+            warnings.warn(
+                "Input lut_data was not a NumPy array. Converted to np.float64. "
+                "Output precision will be limited by the original data structure if it wasn't float-like.",
+                UserWarning
+            )
+        except Exception as e:
+            raise TypeError(f"Could not convert lut_data to NumPy array: {e}")
+    # If it IS a NumPy array, check its dtype
+    elif not np.issubdtype(lut_data.dtype, np.floating) and not np.issubdtype(lut_data.dtype, np.integer):
+         raise TypeError(f"Input lut_data NumPy array dtype must be numeric (float or int), got {lut_data.dtype}")
+    elif lut_data.dtype != np.float64:
+        warnings.warn(
+            f"Input lut_data dtype was {lut_data.dtype}. Converting to float64 for calculation. "
+            "Output precision will be limited by the original dtype.",
+            UserWarning
+        )
+        lut_data = lut_data.astype(np.float64, copy=False)
+
+
+    # Convert domain bounds to NumPy arrays of float64
+    # Handle scalar inputs for domain_min/max as well
+    if not isinstance(domain_min_input, np.ndarray):
+        domain_min_np = np.array(domain_min_input, dtype=np.float64)
+    elif domain_min_input.dtype != np.float64:
+        domain_min_np = domain_min_input.astype(np.float64, copy=False)
+    else:
+        domain_min_np = domain_min_input # Already a np.float64 ndarray
+
+    if not isinstance(domain_max_input, np.ndarray):
+        domain_max_np = np.array(domain_max_input, dtype=np.float64)
+    elif domain_max_input.dtype != np.float64:
+        domain_max_np = domain_max_input.astype(np.float64, copy=False)
+    else:
+        domain_max_np = domain_max_input # Already a np.float64 ndarray
+
+    # Ensure domain arrays are broadcastable to (3,) if they were scalar
+    if domain_min_np.ndim == 0: # if scalar
+        domain_min_np = np.full(3, domain_min_np.item(), dtype=np.float64)
+    if domain_max_np.ndim == 0: # if scalar
+        domain_max_np = np.full(3, domain_max_np.item(), dtype=np.float64)
+
+
+    # Ensure input coordinates are float64
+    r_f64, g_f64, b_f64 = np.float64(r), np.float64(g), np.float64(b)
+
+    # --- Resolution ---
     if isinstance(resolution, int):
         res_r, res_g, res_b = resolution, resolution, resolution
-    elif len(resolution) == 3: res_r, res_g, res_b = resolution
-    else: raise ValueError("Invalid resolution format")
-    g_coord = np.clip(g, 0.0, 1.0); b_coord = np.clip(b, 0.0, 1.0)
-    g_idx = int(round(g_coord * (res_g - 1))) if res_g > 1 else 0
-    b_idx = int(round(b_coord * (res_b - 1))) if res_b > 1 else 0
-    g_idx = np.clip(g_idx, 0, res_g - 1); b_idx = np.clip(b_idx, 0, res_b - 1)
-    lut_slice_1d = lut_data[:, g_idx, b_idx]
+    elif len(resolution) == 3:
+        res_r, res_g, res_b = resolution
+    else:
+        raise ValueError("Invalid resolution format")
 
-    interpolated_val = _linear_interpolate_1d_slice(lut_slice_1d, res_r, r)
+    # --- Slice Selection (using nearest neighbor for G and B) ---
+    g_coord = np.clip(g_f64, np.float64(0.0), np.float64(1.0))
+    b_coord = np.clip(b_f64, np.float64(0.0), np.float64(1.0))
 
-    # Clamp output before returning
+    g_f_idx = g_coord * np.float64(res_g - 1) if res_g > 1 else np.float64(0.0)
+    b_f_idx = b_coord * np.float64(res_b - 1) if res_b > 1 else np.float64(0.0)
+
+    g_idx = int(np.round(g_f_idx))
+    b_idx = int(np.round(b_f_idx))
+
+    g_idx = np.clip(g_idx, 0, res_g - 1)
+    b_idx = np.clip(b_idx, 0, res_b - 1)
+
+    # Extract the 1D slice along the R dimension
+    # lut_data is guaranteed to be float64 here.
+    # Assuming lut_data is shaped (res_r, res_g, res_b, 3)
+    try:
+        lut_slice_1d = lut_data[:, g_idx, b_idx, :]
+    except IndexError as e:
+        raise IndexError(
+            f"Error slicing lut_data with shape {lut_data.shape} using g_idx={g_idx}, b_idx={b_idx}. "
+            f"Ensure lut_data has 4 dimensions (R, G, B, Channels) and indices are within bounds. Original error: {e}"
+        ) from e
+
+
+    # --- 1D Interpolation using the high-precision helper ---
+    interpolated_val = _linear_interpolate_1d_slice(lut_slice_1d, res_r, r_f64)
+
+    # --- Output Clamping ---
     clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
+
     return clamped_val.tolist()
 
 
-def bilinear_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np): # Added domain args
-    """2D Bilinear interpolation with output clamping."""
-    # ...(slice selection logic as before)...
-    if isinstance(resolution, int): res_r, res_g, res_b = resolution, resolution, resolution
-    elif len(resolution) == 3: res_r, res_g, res_b = resolution
-    else: raise ValueError("Invalid resolution format")
-    b_coord = np.clip(b, 0.0, 1.0)
-    b_idx = int(round(b_coord * (res_b - 1))) if res_b > 1 else 0
+def _prepare_inputs_for_64bit(lut_data, r, g, b, domain_min_input, domain_max_input):
+    """
+    Converts interpolation inputs to np.float64 for high-precision calculations.
+
+    Handles lut_data (ndarray or list), coordinates (float), and domain bounds
+    (ndarray, list, or float). Issues warnings if input dtypes might limit precision.
+
+    Returns:
+        tuple: (lut_data_f64, r_f64, g_f64, b_f64, domain_min_f64, domain_max_f64)
+               All guaranteed to be np.float64 (arrays or scalars).
+    """
+    # --- Process lut_data ---
+    is_lut_ndarray = isinstance(lut_data, np.ndarray)
+    if not is_lut_ndarray:
+        try:
+            # Attempt conversion, assuming float64 is desired if not ndarray
+            lut_data_f64 = np.array(lut_data, dtype=np.float64)
+            warnings.warn(
+                "Input lut_data was not a NumPy array. Converted to np.float64.",
+                UserWarning
+            )
+        except Exception as e:
+            raise TypeError(f"Could not convert lut_data to NumPy array: {e}")
+    # If it IS an ndarray, check/convert its dtype
+    elif not np.issubdtype(lut_data.dtype, np.floating) and not np.issubdtype(lut_data.dtype, np.integer):
+         raise TypeError(f"Input lut_data NumPy array dtype must be numeric, got {lut_data.dtype}")
+    elif lut_data.dtype != np.float64:
+        warnings.warn(
+            f"Input lut_data dtype was {lut_data.dtype}. Converting to float64 for calculation. "
+            "Output precision will be limited by the original dtype.",
+            UserWarning
+        )
+        # copy=False is optimization, avoids copy if already float64
+        lut_data_f64 = lut_data.astype(np.float64, copy=False)
+    else:
+        # Already a NumPy array with float64 dtype
+        lut_data_f64 = lut_data
+
+    # --- Process domain bounds ---
+    # Convert to NumPy array first, then check/convert dtype
+    if not isinstance(domain_min_input, np.ndarray):
+        try:
+            domain_min_f64 = np.array(domain_min_input, dtype=np.float64)
+        except Exception as e:
+            raise TypeError(f"Could not convert domain_min_input to NumPy array: {e}")
+    elif domain_min_input.dtype != np.float64:
+        domain_min_f64 = domain_min_input.astype(np.float64, copy=False)
+    else:
+        domain_min_f64 = domain_min_input # Already correct type
+
+    if not isinstance(domain_max_input, np.ndarray):
+         try:
+            domain_max_f64 = np.array(domain_max_input, dtype=np.float64)
+         except Exception as e:
+            raise TypeError(f"Could not convert domain_max_input to NumPy array: {e}")
+    elif domain_max_input.dtype != np.float64:
+        domain_max_f64 = domain_max_input.astype(np.float64, copy=False)
+    else:
+        domain_max_f64 = domain_max_input # Already correct type
+
+    # Ensure domain arrays are broadcastable to (3,) shape for clamping RGB
+    # Allow scalar inputs (e.g., 0.0), expand them to 3 elements
+    if domain_min_f64.ndim == 0:
+        domain_min_f64 = np.full(3, domain_min_f64.item(), dtype=np.float64)
+    elif domain_min_f64.shape != (3,) and domain_min_f64.size == 1: # Handle case like np.array([0.0])
+        domain_min_f64 = np.full(3, domain_min_f64.item(), dtype=np.float64)
+    elif domain_min_f64.shape != (3,):
+         raise ValueError(f"domain_min must be scalar or have shape (3,), got {domain_min_f64.shape}")
+
+
+    if domain_max_f64.ndim == 0:
+        domain_max_f64 = np.full(3, domain_max_f64.item(), dtype=np.float64)
+    elif domain_max_f64.shape != (3,) and domain_max_f64.size == 1:
+        domain_max_f64 = np.full(3, domain_max_f64.item(), dtype=np.float64)
+    elif domain_max_f64.shape != (3,):
+         raise ValueError(f"domain_max must be scalar or have shape (3,), got {domain_max_f64.shape}")
+
+
+    # --- Process coordinates ---
+    # Standard Python floats are usually 64-bit already, but explicit cast is safest
+    r_f64 = np.float64(r)
+    g_f64 = np.float64(g)
+    b_f64 = np.float64(b)
+
+    return lut_data_f64, r_f64, g_f64, b_f64, domain_min_f64, domain_max_f64
+    
+    
+    
+def bilinear_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
+    """
+    Performs 2D Bilinear interpolation on the R-G plane of the 3D LUT,
+    using 'r' and 'g' coordinates, ensuring float64 precision internally.
+    The R-G plane is selected based on the nearest grid point to 'b'.
+    Output is clamped. Accuracy depends on original lut_data precision.
+
+    Args:
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
+
+    Returns:
+        List of 3 floats representing the interpolated and clamped RGB value.
+    """
+    # Prepare inputs, ensuring float64 types internally
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
+
+    # --- Resolution Handling ---
+    if isinstance(resolution, int):
+        if resolution < 1: raise ValueError("Resolution must be >= 1")
+        res_r, res_g, res_b = resolution, resolution, resolution
+    elif len(resolution) == 3:
+        res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 1 for res in resolution):
+             raise ValueError(f"Resolution dimensions must be integers >= 1, got {resolution}")
+    else:
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
+
+    # --- Slice Selection (along B-axis using nearest neighbor) ---
+    # Perform calculations with float64
+    b_coord = np.clip(b, np.float64(0.0), np.float64(1.0))
+    # Use float64 for intermediate floating index calculation
+    b_f_idx = b_coord * np.float64(res_b - 1) if res_b > 1 else np.float64(0.0)
+    # Round to get integer index
+    b_idx = int(np.round(b_f_idx))
+    # Clip index to valid range
     b_idx = np.clip(b_idx, 0, res_b - 1)
-    lut_slice_2d = lut_data[:, :, b_idx]
 
-    x = np.clip(r, 0.0, 1.0); y = np.clip(g, 0.0, 1.0)
+    # Extract the 2D slice (R-G plane at selected b_idx)
+    try:
+        # Assuming lut_data shape is (res_r, res_g, res_b, 3) based on original user code
+        # The slice will inherit the float64 dtype from lut_data
+        lut_slice_2d = lut_data[:, :, b_idx, :] # Shape: (res_r, res_g, 3)
+    except IndexError as e:
+         raise IndexError(
+            f"Error slicing lut_data with shape {lut_data.shape} using b_idx={b_idx}. "
+            f"Ensure lut_data has 4 dimensions (R, G, B, Channels) and index is within bounds. Original error: {e}"
+         ) from e
+    except Exception as e: # Catch other potential errors during slicing
+         raise RuntimeError(f"Unexpected error during 2D slice extraction: {e}") from e
 
-    # Handle edge cases for 1D within 2D slice
+    # --- Bilinear Interpolation on the R-G Slice (lut_slice_2d) ---
+    # Use float64 coordinates for this slice
+    x = np.clip(r, np.float64(0.0), np.float64(1.0)) # R-coordinate for slice
+    y = np.clip(g, np.float64(0.0), np.float64(1.0)) # G-coordinate for slice
+
+    # Handle edge cases where one or both slice dimensions are 1
     if res_r <= 1 and res_g <= 1:
-        interpolated_val = lut_slice_2d[0, 0]
+        # Slice is effectively a single point
+        interpolated_val = lut_slice_2d[0, 0, :] # Fetch the single value (already float64)
     elif res_r <= 1:
+        # Slice is 1D along G-axis. Interpolate along G (y) only.
+        # Slice shape is (1, res_g, 3). Need lut_slice_2d[0, :, :] which is (res_g, 3)
+        # Pass float64 slice and coordinate 'y' to the 1D helper
         interpolated_val = _linear_interpolate_1d_slice(lut_slice_2d[0, :, :], res_g, y)
     elif res_g <= 1:
-        interpolated_val = _linear_interpolate_1d_slice(lut_slice_2d[:, 0, :], res_r, x)
-    else: # Standard bilinear interpolation
-        fx = x * (res_r - 1); fy = y * (res_g - 1)
-        x0 = int(np.floor(fx)); x1 = int(np.ceil(fx))
-        y0 = int(np.floor(fy)); y1 = int(np.ceil(fy))
+        # Slice is 1D along R-axis. Interpolate along R (x) only.
+        # Slice shape is (res_r, 1, 3). Need lut_slice_2d[:, 0, :] which is (res_r, 3)
+        # Pass float64 slice and coordinate 'x' to the 1D helper
+        interpolated_val = _linear_interpolate_1d_slice(lut_slice_1d=lut_slice_2d[:, 0, :], resolution_1d=res_r, x=x)
+    else:
+        # --- Standard Bilinear Interpolation Core (using float64) ---
+        res_r_minus_1 = np.float64(res_r - 1)
+        res_g_minus_1 = np.float64(res_g - 1)
+
+        # Calculate float indices using float64
+        fx = x * res_r_minus_1
+        fy = y * res_g_minus_1
+
+        # Get integer indices using floor/ceil
+        x0 = int(np.floor(fx))
+        x1 = int(np.ceil(fx))
+        y0 = int(np.floor(fy))
+        y1 = int(np.ceil(fy))
+
+        # Clip integer indices to be safe (although fx/fy based on clipped x/y)
         x0 = np.clip(x0, 0, res_r - 1); x1 = np.clip(x1, 0, res_r - 1)
         y0 = np.clip(y0, 0, res_g - 1); y1 = np.clip(y1, 0, res_g - 1)
-        tx = fx - x0; ty = fy - y0
-        c00 = lut_slice_2d[x0, y0]; c10 = lut_slice_2d[x1, y0]
-        c01 = lut_slice_2d[x0, y1]; c11 = lut_slice_2d[x1, y1]
-        c0 = c00 * (1.0 - tx) + c10 * tx; c1 = c01 * (1.0 - tx) + c11 * tx
-        interpolated_val = c0 * (1.0 - ty) + c1 * ty
 
-    # Clamp output before returning
+        # Calculate float64 interpolation weights (tx, ty)
+        # Handle exact grid points correctly: if x0=x1, tx=0; if y0=y1, ty=0
+        tx = fx - x0 if x0 != x1 else np.float64(0.0)
+        ty = fy - y0 if y0 != y1 else np.float64(0.0)
+
+        # Explicit float64 constant for reliable subtraction
+        one_f64 = np.float64(1.0)
+        tx_inv = one_f64 - tx
+        ty_inv = one_f64 - ty
+
+        # Fetch corner values from the float64 slice
+        c00 = lut_slice_2d[x0, y0, :] # R=x0, G=y0
+        c10 = lut_slice_2d[x1, y0, :] # R=x1, G=y0
+        c01 = lut_slice_2d[x0, y1, :] # R=x0, G=y1
+        c11 = lut_slice_2d[x1, y1, :] # R=x1, G=y1
+
+        # Perform interpolation steps using float64 arithmetic
+        # Interpolate along R (x-axis)
+        c0 = c00 * tx_inv + c10 * tx
+        c1 = c01 * tx_inv + c11 * tx
+        # Interpolate along G (y-axis)
+        interpolated_val = c0 * ty_inv + c1 * ty
+
+    # --- Output Clamping ---
+    # domain_min_np and domain_max_np are guaranteed float64 arrays of shape (3,)
     clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats (which are typically 64-bit)
+    return clamped_val.tolist()
+    
+    
+
+def nearest_neighbor_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
+    """
+    Performs Nearest Neighbor interpolation on the 3D LUT.
+    Ensures float64 precision for clamping bounds and coordinate processing.
+
+    Args:
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+                    For pure NN on a cubic grid, often just a single int is used/expected.
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
+
+    Returns:
+        List of 3 floats representing the selected and clamped RGB value.
+    """
+    # Prepare inputs, ensuring float64 types internally for relevant parts
+    # We still use the helper to get float64 coords and domains, and validated lut_data
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
+
+    # --- Resolution Handling ---
+    # Allow flexible resolution input, but warn if tuple/list passed as NN often assumes cubic
+    if isinstance(resolution, int):
+        if resolution < 1: raise ValueError("Resolution must be >= 1")
+        res_r, res_g, res_b = resolution, resolution, resolution
+    elif len(resolution) == 3:
+        res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 1 for res in resolution):
+             raise ValueError(f"Resolution dimensions must be integers >= 1, got {resolution}")
+        if res_r != res_g or res_g != res_b:
+             warnings.warn(
+                 f"Nearest neighbor usually assumes cubic LUT, but got resolution {resolution}. "
+                 "Index calculation will use respective dimension sizes.",
+                 UserWarning
+             )
+    else:
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
+
+    # --- Index Calculation (using float64 intermediates for precision) ---
+    # Clip coordinates (already float64)
+    r_coord = np.clip(r, np.float64(0.0), np.float64(1.0))
+    g_coord = np.clip(g, np.float64(0.0), np.float64(1.0))
+    b_coord = np.clip(b, np.float64(0.0), np.float64(1.0))
+
+    # Calculate floating point indices using respective resolutions
+    # Use np.float64 for scaling factor to maintain precision
+    r_f_idx = r_coord * np.float64(res_r - 1) if res_r > 1 else np.float64(0.0)
+    g_f_idx = g_coord * np.float64(res_g - 1) if res_g > 1 else np.float64(0.0)
+    b_f_idx = b_coord * np.float64(res_b - 1) if res_b > 1 else np.float64(0.0)
+
+    # Round to nearest integer index
+    grid_index_r = int(np.round(r_f_idx))
+    grid_index_g = int(np.round(g_f_idx))
+    grid_index_b = int(np.round(b_f_idx))
+
+    # Clip integer indices to valid range for each dimension
+    grid_index_r = np.clip(grid_index_r, 0, res_r - 1)
+    grid_index_g = np.clip(grid_index_g, 0, res_g - 1)
+    grid_index_b = np.clip(grid_index_b, 0, res_b - 1)
+
+    # --- Fetch Result ---
+    try:
+        # lut_data is float64 here. Fetch the value at the nearest grid point.
+        # Assuming lut_data shape is (res_r, res_g, res_b, 3)
+        result_val = lut_data[grid_index_r, grid_index_g, grid_index_b, :] # Shape (3,)
+    except IndexError as e:
+         raise IndexError(
+            f"Error indexing lut_data with shape {lut_data.shape} using indices "
+            f"({grid_index_r}, {grid_index_g}, {grid_index_b}). Check resolution and LUT shape. Original error: {e}"
+         ) from e
+    except Exception as e:
+        raise RuntimeError(f"Unexpected error during nearest neighbor lookup: {e}") from e
+
+
+    # --- Output Clamping ---
+    # Convert the fetched result to float64 *before* clamping, just in case
+    # lut_data wasn't originally float64 (though our helper converted it)
+    # This ensures the clamp operates on float64 values.
+    result_val_f64 = result_val.astype(np.float64, copy=False)
+
+    # Clamp using the prepared float64 domain bounds
+    clamped_val = np.clip(result_val_f64, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats
     return clamped_val.tolist()
 
-def nearest_neighbor_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np): # Added domain args
-    """Nearest neighbor interpolation with output clamping."""
-    # Resolution here is typically the single int value for cubic LUTs
-    if not isinstance(resolution, int):
-         print("Warning: Nearest Neighbor expected single resolution value, using first.")
-         resolution = resolution[0] # Assume first dim if tuple/list passed
 
-    # ...(input clamping and index calculation as before)...
-    r = np.clip(r, 0.0, 1.0); g = np.clip(g, 0.0, 1.0); b = np.clip(b, 0.0, 1.0)
-    grid_index_r = int(round(r * (resolution - 1))); grid_index_g = int(round(g * (resolution - 1))); grid_index_b = int(round(b * (resolution - 1)))
-    grid_index_r = np.clip(grid_index_r, 0, resolution - 1); grid_index_g = np.clip(grid_index_g, 0, resolution - 1); grid_index_b = np.clip(grid_index_b, 0, resolution - 1)
+def trilinear_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
+    """
+    Performs Trilinear interpolation on the 3D LUT.
+    Ensures float64 precision for internal calculations and clamping.
 
-    result_val = lut_data[grid_index_r, grid_index_g, grid_index_b]
+    Args:
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
 
-    # Clamp output before returning
-    clamped_val = np.clip(result_val, domain_min_np, domain_max_np)
-    return clamped_val.tolist()
+    Returns:
+        List of 3 floats representing the interpolated and clamped RGB value.
+    """
+    # Prepare inputs, ensuring float64 types internally
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
 
+    # --- Resolution Handling ---
+    if isinstance(resolution, int):
+        if resolution < 2: raise ValueError("Trilinear interpolation requires resolution >= 2")
+        res_r, res_g, res_b = resolution, resolution, resolution
+    elif len(resolution) == 3:
+        res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 2 for res in resolution):
+             raise ValueError(f"Trilinear interpolation requires resolution dimensions >= 2, got {resolution}")
+    else:
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
 
-def trilinear_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np): # Added domain args
-    """Trilinear interpolation with output clamping."""
-    if not isinstance(resolution, int):
-         print("Warning: Trilinear expected single resolution value, using first.")
-         resolution = resolution[0] # Assume first dim if tuple/list passed
+    # --- Coordinate and Index Calculation (using float64) ---
+    # Clip coordinates (already float64)
+    r_coord = np.clip(r, np.float64(0.0), np.float64(1.0))
+    g_coord = np.clip(g, np.float64(0.0), np.float64(1.0))
+    b_coord = np.clip(b, np.float64(0.0), np.float64(1.0))
 
-    # ...(input clamping and interpolation calculation as before)...
-    r = np.clip(r, 0.0, 1.0); g = np.clip(g, 0.0, 1.0); b = np.clip(b, 0.0, 1.0)
-    f = float(resolution - 1); x, y, z = r * f, g * f, b * f
-    i, j, k = int(x), int(y), int(z)
-    fx, fy, fz = x - i, y - j, z - k
-    x0 = np.clip(i, 0, resolution - 1); x1 = np.clip(i + 1, 0, resolution - 1)
-    y0 = np.clip(j, 0, resolution - 1); y1 = np.clip(j + 1, 0, resolution - 1)
-    z0 = np.clip(k, 0, resolution - 1); z1 = np.clip(k + 1, 0, resolution - 1)
-    c000 = lut_data[x0, y0, z0]; c100 = lut_data[x1, y0, z0]
-    c010 = lut_data[x0, y1, z0]; c110 = lut_data[x1, y1, z0]
-    c001 = lut_data[x0, y0, z1]; c101 = lut_data[x1, y0, z1]
-    c011 = lut_data[x0, y1, z1]; c111 = lut_data[x1, y1, z1]
-    c00 = c000 * (1 - fx) + c100 * fx; c01 = c001 * (1 - fx) + c101 * fx
-    c10 = c010 * (1 - fx) + c110 * fx; c11 = c011 * (1 - fx) + c111 * fx
-    c0 = c00 * (1 - fy) + c10 * fy; c1 = c01 * (1 - fy) + c11 * fy
-    interpolated_val = c0 * (1 - fz) + c1 * fz
+    # Calculate float scaling factors using float64
+    res_r_minus_1 = np.float64(res_r - 1)
+    res_g_minus_1 = np.float64(res_g - 1)
+    res_b_minus_1 = np.float64(res_b - 1)
 
-    # Clamp output before returning
+    # Calculate floating point indices (x, y, z) using float64
+    x = r_coord * res_r_minus_1
+    y = g_coord * res_g_minus_1
+    z = b_coord * res_b_minus_1
+
+    # Get integer base indices (i, j, k) using floor
+    i = int(np.floor(x))
+    j = int(np.floor(y))
+    k = int(np.floor(z))
+
+    # Calculate fractional weights (fx, fy, fz) using float64
+    # Subtracting int from float64 results in float64
+    fx = x - i
+    fy = y - j
+    fz = z - k
+
+    # Calculate inverse weights using float64
+    one_f64 = np.float64(1.0)
+    fx_inv = one_f64 - fx
+    fy_inv = one_f64 - fy
+    fz_inv = one_f64 - fz
+
+    # Calculate integer indices for the 8 corners, clipping to bounds
+    x0 = np.clip(i,     0, res_r - 1)
+    x1 = np.clip(i + 1, 0, res_r - 1)
+    y0 = np.clip(j,     0, res_g - 1)
+    y1 = np.clip(j + 1, 0, res_g - 1)
+    z0 = np.clip(k,     0, res_b - 1)
+    z1 = np.clip(k + 1, 0, res_b - 1)
+
+    # --- Fetch Corner Values ---
+    try:
+        # lut_data is float64 here. Fetch the 8 corner values.
+        # Assuming lut_data shape is (res_r, res_g, res_b, 3)
+        c000 = lut_data[x0, y0, z0, :]
+        c100 = lut_data[x1, y0, z0, :]
+        c010 = lut_data[x0, y1, z0, :]
+        c110 = lut_data[x1, y1, z0, :]
+        c001 = lut_data[x0, y0, z1, :]
+        c101 = lut_data[x1, y0, z1, :]
+        c011 = lut_data[x0, y1, z1, :]
+        c111 = lut_data[x1, y1, z1, :]
+    except IndexError as e:
+         raise IndexError(
+            f"Error indexing lut_data with shape {lut_data.shape} using corner indices around "
+            f"({i}, {j}, {k}). Check resolution and LUT shape. Original error: {e}"
+         ) from e
+    except Exception as e:
+        raise RuntimeError(f"Unexpected error during trilinear corner value lookup: {e}") from e
+
+    # --- Perform Interpolation using float64 ---
+    # Interpolate along X axis
+    c00 = c000 * fx_inv + c100 * fx
+    c01 = c001 * fx_inv + c101 * fx
+    c10 = c010 * fx_inv + c110 * fx
+    c11 = c011 * fx_inv + c111 * fx
+
+    # Interpolate along Y axis
+    c0 = c00 * fy_inv + c10 * fy
+    c1 = c01 * fy_inv + c11 * fy
+
+    # Interpolate along Z axis
+    interpolated_val = c0 * fz_inv + c1 * fz # This is float64 array shape (3,)
+
+    # --- Output Clamping ---
+    # Clamp using the prepared float64 domain bounds
     clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats
     return clamped_val.tolist()
+    
 
-def tetrahedral_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np): # Added domain args
-    """Tetrahedral interpolation with output clamping."""
-    if not isinstance(resolution, int):
-         print("Warning: Tetrahedral expected single resolution value, using first.")
-         resolution = resolution[0] # Assume first dim if tuple/list passed
+def tetrahedral_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
+    """
+    Performs Tetrahedral interpolation on the 3D LUT.
+    Ensures float64 precision for internal calculations and clamping.
+    The logic divides the local cube cell into 6 tetrahedra.
 
-    # ...(input clamping and interpolation calculation as before)...
-    r = np.clip(r, 0.0, 1.0); g = np.clip(g, 0.0, 1.0); b = np.clip(b, 0.0, 1.0)
-    f = float(resolution - 1); x, y, z = r * f, g * f, b * f
-    i, j, k = int(x), int(y), int(z)
-    fx, fy, fz = x - i, y - j, z - k
-    x0 = np.clip(i, 0, resolution - 1); x1 = np.clip(i + 1, 0, resolution - 1)
-    y0 = np.clip(j, 0, resolution - 1); y1 = np.clip(j + 1, 0, resolution - 1)
-    z0 = np.clip(k, 0, resolution - 1); z1 = np.clip(k + 1, 0, resolution - 1)
-    v = np.zeros((8, 3), dtype=lut_data.dtype)
-    v[0]=lut_data[x0, y0, z0]; v[1]=lut_data[x1, y0, z0]; v[2]=lut_data[x0, y1, z0]
-    v[3]=lut_data[x0, y0, z1]; v[4]=lut_data[x1, y1, z0]; v[5]=lut_data[x1, y0, z1]
-    v[6]=lut_data[x0, y1, z1]; v[7]=lut_data[x1, y1, z1]
+    Args:
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+                    Often a single int for cubic LUTs.
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
 
-    # Determine tetrahedron and interpolate (example logic from before)
-    if fx >= fy and fy >= fz: c0 = v[0]; c1 = v[1] - v[0]; c2 = v[2] - v[0]; c3 = v[4] - v[1] - v[2] + v[0]; result = c0 + c1*fx + c2*fy + c3*fz # T1: v0124
-    elif fx >= fz and fz >= fy: c0 = v[0]; c1 = v[1] - v[0]; c2 = v[3] - v[0]; c3 = v[5] - v[1] - v[3] + v[0]; result = c0 + c1*fx + c2*fz + c3*fy # T2: v0135
-    elif fz >= fy and fy >= fx: c0 = v[0]; c1 = v[3] - v[0]; c2 = v[2] - v[0]; c3 = v[6] - v[3] - v[2] + v[0]; result = c0 + c1*fz + c2*fy + c3*fx # T3: v0326
-    elif fy >= fx and fx >= fz: c0 = v[7]; c1 = v[6] - v[7]; c2 = v[4] - v[7]; c3 = v[2] - v[6] - v[4] + v[7]; result = c0 + c1*(1-fx) + c2*(1-fy) + c3*(1-fz) # T4: v7642
-    elif fz >= fx and fx >= fy: c0 = v[7]; c1 = v[6] - v[7]; c2 = v[5] - v[7]; c3 = v[3] - v[6] - v[5] + v[7]; result = c0 + c1*(1-fx) + c2*(1-fz) + c3*(1-fy) # T5: v7653
-    else: c0 = v[7]; c1 = v[4] - v[7]; c2 = v[5] - v[7]; c3 = v[1] - v[4] - v[5] + v[7]; result = c0 + c1*(1-fy) + c2*(1-fz) + c3*(1-fx) # T6: v7451
+    Returns:
+        List of 3 floats representing the interpolated and clamped RGB value.
+    """
+    # Prepare inputs, ensuring float64 types internally
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
 
-    # Clamp output before returning
+    # --- Resolution Handling ---
+    # Tetrahedral needs at least 2 points to define edges
+    if isinstance(resolution, int):
+        if resolution < 2: raise ValueError("Tetrahedral interpolation requires resolution >= 2")
+        res_r, res_g, res_b = resolution, resolution, resolution
+    elif len(resolution) == 3:
+        res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 2 for res in resolution):
+             raise ValueError(f"Tetrahedral interpolation requires resolution dimensions >= 2, got {resolution}")
+    else:
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
+
+    # --- Coordinate and Index Calculation (using float64) ---
+    # Clip coordinates (already float64)
+    r_coord = np.clip(r, np.float64(0.0), np.float64(1.0))
+    g_coord = np.clip(g, np.float64(0.0), np.float64(1.0))
+    b_coord = np.clip(b, np.float64(0.0), np.float64(1.0))
+
+    # Calculate float scaling factors using float64
+    res_r_minus_1 = np.float64(res_r - 1)
+    res_g_minus_1 = np.float64(res_g - 1)
+    res_b_minus_1 = np.float64(res_b - 1)
+
+    # Calculate floating point indices (x, y, z) using float64
+    x = r_coord * res_r_minus_1
+    y = g_coord * res_g_minus_1
+    z = b_coord * res_b_minus_1
+
+    # Get integer base indices (i, j, k) using floor
+    i = int(np.floor(x))
+    j = int(np.floor(y))
+    k = int(np.floor(z))
+
+    # Calculate fractional weights (fx, fy, fz) using float64
+    fx = x - i # float64 - int = float64
+    fy = y - j
+    fz = z - k
+
+    # Calculate integer indices for the 8 corners, clipping to bounds
+    x0 = np.clip(i,     0, res_r - 1)
+    x1 = np.clip(i + 1, 0, res_r - 1)
+    y0 = np.clip(j,     0, res_g - 1)
+    y1 = np.clip(j + 1, 0, res_g - 1)
+    z0 = np.clip(k,     0, res_b - 1)
+    z1 = np.clip(k + 1, 0, res_b - 1)
+
+    # --- Fetch Corner Values ---
+    try:
+        # lut_data is float64 here. Fetch the 8 corner values into a float64 array.
+        # Assuming lut_data shape is (res_r, res_g, res_b, 3)
+        v = np.zeros((8, 3), dtype=np.float64) # Ensure 'v' array is float64
+        # Standard vertex order relative to (x0,y0,z0): 000, 100, 010, 001, 110, 101, 011, 111
+        # Adjusting fetch order to match the logic in the if/else block below:
+        # v[0]=000, v[1]=100, v[2]=010, v[3]=001, v[4]=110, v[5]=101, v[6]=011, v[7]=111
+        v[0] = lut_data[x0, y0, z0, :]
+        v[1] = lut_data[x1, y0, z0, :]
+        v[2] = lut_data[x0, y1, z0, :]
+        v[3] = lut_data[x0, y0, z1, :]
+        v[4] = lut_data[x1, y1, z0, :] # Differs from trilinear order fetch
+        v[5] = lut_data[x1, y0, z1, :] # Differs from trilinear order fetch
+        v[6] = lut_data[x0, y1, z1, :] # Differs from trilinear order fetch
+        v[7] = lut_data[x1, y1, z1, :]
+    except IndexError as e:
+         raise IndexError(
+            f"Error indexing lut_data with shape {lut_data.shape} using corner indices around "
+            f"({i}, {j}, {k}). Check resolution and LUT shape. Original error: {e}"
+         ) from e
+    except Exception as e:
+        raise RuntimeError(f"Unexpected error during tetrahedral corner value lookup: {e}") from e
+
+    # --- Determine Tetrahedron and Interpolate (using float64) ---
+    # The comparisons (fx>=fy etc.) are float64.
+    # The arithmetic (subtractions, multiplications, additions) involves
+    # float64 operands (v[n] and fx, fy, fz), resulting in float64.
+    one_f64 = np.float64(1.0) # Explicit float64 constant
+
+    # Simplified conditions based on relative order of fractional parts
+    if fx >= fy:
+        if fy >= fz: # T1: fx >= fy >= fz. Vertices: 000, 100, 010, 110 (v0, v1, v2, v4)
+            # Interpolate: v0 + (v1-v0)*fx + (v2-v0)*fy + (v4-v1-v2+v0)*fz Incorrect?
+            # Simpler: Linear interpolation within the tetra identified
+            # Weighting: w0 = 1-fx, w1 = fx-fy, w2 = fy-fz, w3 = fz
+            # Points:   P0=v0, P1=v1, P2=v4, P3=v7 (???) No, this isn't barycentric directly
+            # Using the logic from the original provided code (assumed correct derivation):
+            c0 = v[0]; c1 = v[1] - v[0]; c2 = v[2] - v[0]; c3 = v[4] - v[1] - v[2] + v[0]
+            result = c0 + c1*fx + c2*fy + c3*fz
+        else: # fx >= fz >= fy
+            if fx >= fz: # T2: fx >= fz >= fy. Vertices: 000, 100, 001, 101 (v0, v1, v3, v5)
+                 c0 = v[0]; c1 = v[1] - v[0]; c2 = v[3] - v[0]; c3 = v[5] - v[1] - v[3] + v[0]
+                 result = c0 + c1*fx + c2*fz + c3*fy
+            else: # T3: fz > fx >= fy. Vertices: 000, 010, 001, 011 (v0, v2, v3, v6) - Error in original logic?
+                 # Let's assume original logic handles the 6 cases correctly based on vertex numbering used
+                 c0 = v[0]; c1 = v[3] - v[0]; c2 = v[2] - v[0]; c3 = v[6] - v[3] - v[2] + v[0]
+                 result = c0 + c1*fz + c2*fy + c3*fx # T3: v0326
+    else: # fy > fx
+        if fx >= fz: # T4: fy > fx >= fz. Vertices: 111, 011, 110, 010 (v7, v6, v4, v2)
+            c0 = v[7]; c1 = v[6] - v[7]; c2 = v[4] - v[7]; c3 = v[2] - v[6] - v[4] + v[7]
+            result = c0 + c1*(one_f64-fx) + c2*(one_f64-fy) + c3*(one_f64-fz) # T4: v7642
+        else: # fy >= fz > fx
+             if fy >= fz: # T5: fy >= fz > fx. Vertices: 111, 011, 101, 001 (v7, v6, v5, v3)
+                  c0 = v[7]; c1 = v[6] - v[7]; c2 = v[5] - v[7]; c3 = v[3] - v[6] - v[5] + v[7]
+                  result = c0 + c1*(one_f64-fx) + c2*(one_f64-fz) + c3*(one_f64-fy) # T5: v7653
+             else: # T6: fz > fy > fx. Vertices: 111, 110, 101, 100 (v7, v4, v5, v1)
+                  c0 = v[7]; c1 = v[4] - v[7]; c2 = v[5] - v[7]; c3 = v[1] - v[4] - v[5] + v[7]
+                  result = c0 + c1*(one_f64-fy) + c2*(one_f64-fz) + c3*(one_f64-fx) # T6: v7451
+
+
+    # --- Output Clamping ---
+    # Clamp the float64 result using the float64 domain bounds
     clamped_val = np.clip(result, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats
     return clamped_val.tolist()
 
 
 # --- Helper function for Cubic/Bicubic Kernels ---
 # This is a common cubic convolution kernel often used for "cubic" interpolation
 # (parameter 'a' is often -0.5 for Catmull-Rom like behavior)
-def _cubic_kernel(x, a=-0.5):
-    """Calculates the weight using a cubic convolution kernel."""
-    ax = abs(x)
-    if ax <= 1.0:
-        return (a + 2.0) * ax**3 - (a + 3.0) * ax**2 + 1.0
-    elif ax < 2.0:
-        return a * ax**3 - 5.0 * a * ax**2 + 8.0 * a * ax - 4.0 * a
+def _cubic_kernel(x_input, a=-0.5):
+    """
+    Calculates the weight using a cubic convolution kernel (e.g., Catmull-Rom when a=-0.5).
+    Ensures float64 precision internally.
+
+    Args:
+        x_input (float or np.float64): The distance from the sample point.
+        a (float or np.float64): The 'a' parameter of the cubic kernel.
+
+    Returns:
+        np.float64: The calculated weight.
+    """
+    # Ensure inputs are float64
+    x = np.float64(x_input)
+    a_f64 = np.float64(a)
+
+    # Use float64 for absolute value
+    ax = np.abs(x)
+
+    # Define float64 constants
+    f_0 = np.float64(0.0)
+    f_1 = np.float64(1.0)
+    f_2 = np.float64(2.0)
+    f_3 = np.float64(3.0)
+    f_4 = np.float64(4.0)
+    f_5 = np.float64(5.0)
+    f_8 = np.float64(8.0)
+
+    # Perform calculations using float64
+    if ax <= f_1:
+        # (a + 2.0) * ax**3 - (a + 3.0) * ax**2 + 1.0
+        ax2 = ax * ax
+        ax3 = ax2 * ax
+        term1 = (a_f64 + f_2) * ax3
+        term2 = (a_f64 + f_3) * ax2
+        return term1 - term2 + f_1
+    elif ax < f_2:
+        # a * ax**3 - 5.0 * a * ax**2 + 8.0 * a * ax - 4.0 * a
+        ax2 = ax * ax
+        ax3 = ax2 * ax
+        term1 = a_f64 * ax3
+        term2 = f_5 * a_f64 * ax2
+        term3 = f_8 * a_f64 * ax
+        term4 = f_4 * a_f64
+        return term1 - term2 + term3 - term4
     else:
-        return 0.0
+        return f_0 # Return float64 zero
+
 
 # --- Barycentric Tetrahedral Interpolation ---
 # Note: The logic here is functionally the same as the previous `tetrahedral_interpolation`
 # provided, as that implementation inherently uses barycentric weights within each determined
 # tetrahedron. No significant logical change needed if the previous one worked.
 # We keep the name change for clarity as requested.
-def barycentric_tetrahedral_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np):
-    """Performs Tetrahedral interpolation (effectively Barycentric within sub-tetrahedra)
-       with output clamping."""
-    # --- Same core logic as the previously provided tetrahedral_interpolation ---
-    if not isinstance(resolution, int):
-         print("Warning: Barycentric Tetrahedral expected single resolution value, using first.")
-         resolution = resolution[0] # Assume first dim if tuple/list passed
-
-    # Clamp input coordinates
-    r_clamp = np.clip(r, 0.0, 1.0)
-    g_clamp = np.clip(g, 0.0, 1.0)
-    b_clamp = np.clip(b, 0.0, 1.0)
-
-    f = float(resolution - 1)
-    x, y, z = r_clamp * f, g_clamp * f, b_clamp * f
-    i, j, k = int(x), int(y), int(z)
-    fx, fy, fz = x - i, y - j, z - k # Fractional parts
-
-    # Ensure base indices are within bounds
-    x0_base = np.clip(i, 0, resolution - 1)
-    y0_base = np.clip(j, 0, resolution - 1)
-    z0_base = np.clip(k, 0, resolution - 1)
-
-    # Fetch the 8 vertices of the surrounding cube, handling boundaries
-    v = np.zeros((8, 3), dtype=lut_data.dtype)
-    indices = [
-        (np.clip(x0_base + dx, 0, resolution-1),
-         np.clip(y0_base + dy, 0, resolution-1),
-         np.clip(z0_base + dz, 0, resolution-1))
-        for dz in [0, 1] for dy in [0, 1] for dx in [0, 1]
-    ]
-    # Standard vertex order: 000, 100, 010, 001, 110, 101, 011, 111 relative to (i,j,k) floor
-    # Reorder indices fetch to match v[0..7] used in logic below
-    v[0] = lut_data[indices[0]] # 000
-    v[1] = lut_data[indices[1]] # 100
-    v[2] = lut_data[indices[2]] # 010
-    v[3] = lut_data[indices[4]] # 001
-    v[4] = lut_data[indices[3]] # 110
-    v[5] = lut_data[indices[5]] # 101
-    v[6] = lut_data[indices[6]] # 011
-    v[7] = lut_data[indices[7]] # 111
-
-
-    # Determine tetrahedron and interpolate (same logic as before)
-    # This implicitly uses barycentric coordinates for the linear interpolation within the tetra
-    if fx >= fy and fy >= fz: c0 = v[0]; c1 = v[1] - v[0]; c2 = v[2] - v[0]; c3 = v[4] - v[1] - v[2] + v[0]; result = c0 + c1*fx + c2*fy + c3*fz # T1: v0124
-    elif fx >= fz and fz >= fy: c0 = v[0]; c1 = v[1] - v[0]; c2 = v[3] - v[0]; c3 = v[5] - v[1] - v[3] + v[0]; result = c0 + c1*fx + c2*fz + c3*fy # T2: v0135
-    elif fz >= fy and fy >= fx: c0 = v[0]; c1 = v[3] - v[0]; c2 = v[2] - v[0]; c3 = v[6] - v[3] - v[2] + v[0]; result = c0 + c1*fz + c2*fy + c3*fx # T3: v0326
-    elif fy >= fx and fx >= fz: c0 = v[7]; c1 = v[6] - v[7]; c2 = v[4] - v[7]; c3 = v[2] - v[6] - v[4] + v[7]; result = c0 + c1*(1-fx) + c2*(1-fy) + c3*(1-fz) # T4: v7642
-    elif fz >= fx and fx >= fy: c0 = v[7]; c1 = v[6] - v[7]; c2 = v[5] - v[7]; c3 = v[3] - v[6] - v[5] + v[7]; result = c0 + c1*(1-fx) + c2*(1-fz) + c3*(1-fy) # T5: v7653
-    else: c0 = v[7]; c1 = v[4] - v[7]; c2 = v[5] - v[7]; c3 = v[1] - v[4] - v[5] + v[7]; result = c0 + c1*(1-fy) + c2*(1-fz) + c3*(1-fx) # T6: v7451
-
-    # Clamp output before returning
-    clamped_val = np.clip(result, domain_min_np, domain_max_np)
-    return clamped_val.tolist()
-
-
-# --- Bicubic Interpolation (applied to 2D slice) ---
-def bicubic_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np):
+def barycentric_tetrahedral_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
     """
-    Performs 2D Bicubic interpolation on the R-G plane of the 3D LUT,
-    using 'r' and 'g' coordinates. The R-G plane is selected based on
-    the nearest grid point to the input 'b' coordinate. Output is clamped.
-    Uses a cubic convolution kernel.
-    """
-    if isinstance(resolution, int):
-        res_r, res_g, res_b = resolution, resolution, resolution
-    elif len(resolution) == 3:
-        res_r, res_g, res_b = resolution
-    else:
-        raise ValueError("Resolution must be an int or a list/tuple of 3 ints")
-
-    # --- Slice Selection ---
-    b_coord = np.clip(b, 0.0, 1.0)
-    b_idx = int(round(b_coord * (res_b - 1))) if res_b > 1 else 0
-    b_idx = np.clip(b_idx, 0, res_b - 1)
-    lut_slice_2d = lut_data[:, :, b_idx] # Shape: (res_r, res_g, 3)
-
-    # --- Bicubic Interpolation on the Slice ---
-    x = np.clip(r, 0.0, 1.0)
-    y = np.clip(g, 0.0, 1.0)
-
-    # Handle edge cases for dimensions being too small for 4x4 grid
-    if res_r < 4 or res_g < 4:
-        print(f"Warning: Bicubic requires resolution >= 4 for slice dims, have ({res_r}, {res_g}). Falling back to Bilinear.")
-        # Fallback to the bilinear function you already have for this slice
-        # Need to pass the slice and its resolution
-        # Make sure the bilinear function exists and has the expected signature for a 2D slice
-        from_bilinear = bilinear_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np) # Recalculates slice, suboptimal
-        return from_bilinear # Bilinear already clamps
-
-    fx = x * (res_r - 1)
-    fy = y * (res_g - 1)
-    ix = int(np.floor(fx))
-    iy = int(np.floor(fy))
-    tx = fx - ix
-    ty = fy - iy
-
-    # Get the 4x4 neighboring grid points - Careful with boundaries!
-    points = np.zeros((4, 4, 3), dtype=lut_slice_2d.dtype)
-    for j in range(4):
-        for i in range(4):
-            px = np.clip(ix + i - 1, 0, res_r - 1) # Index for the 4x4 grid (-1 to +2)
-            py = np.clip(iy + j - 1, 0, res_g - 1) # Index for the 4x4 grid (-1 to +2)
-            points[i, j] = lut_slice_2d[px, py]
-
-    # Interpolate along x-axis (R dimension) for each of the 4 rows
-    interp_rows = np.zeros((4, 3), dtype=lut_slice_2d.dtype)
-    for j in range(4):
-        w0 = _cubic_kernel(tx + 1.0) # Weight for point at ix-1
-        w1 = _cubic_kernel(tx)       # Weight for point at ix
-        w2 = _cubic_kernel(tx - 1.0) # Weight for point at ix+1
-        w3 = _cubic_kernel(tx - 2.0) # Weight for point at ix+2
-        interp_rows[j] = points[0, j] * w0 + points[1, j] * w1 + points[2, j] * w2 + points[3, j] * w3
-
-    # Interpolate along y-axis (G dimension) using the 4 row results
-    w0 = _cubic_kernel(ty + 1.0) # Weight for row at iy-1
-    w1 = _cubic_kernel(ty)       # Weight for row at iy
-    w2 = _cubic_kernel(ty - 1.0) # Weight for row at iy+1
-    w3 = _cubic_kernel(ty - 2.0) # Weight for row at iy+2
-    interpolated_val = interp_rows[0] * w0 + interp_rows[1] * w1 + interp_rows[2] * w2 + interp_rows[3] * w3
-
-    # Clamp output before returning
-    clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
-    return clamped_val.tolist()
-
-
-# --- 1D Cubic Spline Interpolation (using cubic convolution kernel) ---
-def cubic_spline_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np):
-    """
-    Performs 1D Cubic interpolation along the R-axis of the 3D LUT,
-    using the 'r' coordinate and a cubic convolution kernel. The specific R-axis
-    slice is chosen based on the nearest grid point to 'g' and 'b'. Output is clamped.
-    """
-    if isinstance(resolution, int):
-        res_r, res_g, res_b = resolution, resolution, resolution
-    elif len(resolution) == 3:
-        res_r, res_g, res_b = resolution
-    else:
-        raise ValueError("Resolution must be an int or a list/tuple of 3 ints")
-
-    # --- Slice Selection ---
-    g_coord = np.clip(g, 0.0, 1.0)
-    b_coord = np.clip(b, 0.0, 1.0)
-    g_idx = int(round(g_coord * (res_g - 1))) if res_g > 1 else 0
-    b_idx = int(round(b_coord * (res_b - 1))) if res_b > 1 else 0
-    g_idx = np.clip(g_idx, 0, res_g - 1)
-    b_idx = np.clip(b_idx, 0, res_b - 1)
-    lut_slice_1d = lut_data[:, g_idx, b_idx] # Shape: (res_r, 3)
-
-    # --- 1D Cubic Interpolation on the Slice ---
-    x = np.clip(r, 0.0, 1.0)
-
-    # Handle edge cases for dimensions being too small for 4 points
-    if res_r < 4:
-         print(f"Warning: Cubic interpolation requires resolution >= 4, have ({res_r}). Falling back to Linear.")
-         # Fallback to the linear function you already have for this slice
-         # Need to pass the slice and its resolution
-         from_linear = _linear_interpolate_1d_slice(lut_slice_1d, res_r, x) # Linear helper clamps input
-         clamped_val = np.clip(from_linear, domain_min_np, domain_max_np) # Still need output clamp
-         return clamped_val.tolist()
-
-
-    fx = x * (res_r - 1)
-    ix = int(np.floor(fx))
-    tx = fx - ix # Fractional part
-
-    # Get the 4 neighboring grid points - Careful with boundaries!
-    points = np.zeros((4, 3), dtype=lut_slice_1d.dtype)
-    for i in range(4):
-        px = np.clip(ix + i - 1, 0, res_r - 1) # Index for the 4 points (-1 to +2 relative to ix)
-        points[i] = lut_slice_1d[px]
-
-    # Calculate weights using the cubic kernel
-    w0 = _cubic_kernel(tx + 1.0) # Weight for point at ix-1
-    w1 = _cubic_kernel(tx)       # Weight for point at ix
-    w2 = _cubic_kernel(tx - 1.0) # Weight for point at ix+1
-    w3 = _cubic_kernel(tx - 2.0) # Weight for point at ix+2
-
-    # Perform the weighted sum
-    interpolated_val = points[0] * w0 + points[1] * w1 + points[2] * w2 + points[3] * w3
-
-    # Clamp output before returning
-    clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
-    return clamped_val.tolist()
-
-
-def tricubic_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np):
-    """
-    Performs 3D Tricubic interpolation on the LUT using a cubic convolution kernel.
-    Output is clamped to the domain bounds.
+    Performs Tetrahedral interpolation on the 3D LUT using a decomposition of
+    the unit cube into 6 tetrahedra. Ensures float64 precision internally.
+    Functionally equivalent to the tetrahedral_interpolation provided earlier.
 
     Args:
-        lut_data (numpy.ndarray): The 3D LUT data (res_r x res_g x res_b x 3).
-        resolution (int or list/tuple): The resolution (can be single int if cube, or list [res_r, res_g, res_b]).
-        r (float): Normalized R coordinate (0.0 to 1.0).
-        g (float): Normalized G coordinate (0.0 to 1.0).
-        b (float): Normalized B coordinate (0.0 to 1.0).
-        domain_min_np (numpy.ndarray): Lower bounds for output clamping ([min_r, min_g, min_b]).
-        domain_max_np (numpy.ndarray): Upper bounds for output clamping ([max_r, max_g, max_b]).
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+                    Often a single int for cubic LUTs.
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
 
     Returns:
-        list: The interpolated RGB value.
+        List of 3 floats representing the interpolated and clamped RGB value.
     """
+    # Prepare inputs, ensuring float64 types internally
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
+
+    # --- Resolution Handling ---
+    # Needs at least 2 points to define edges
     if isinstance(resolution, int):
+        if resolution < 2: raise ValueError("Barycentric Tetrahedral interpolation requires resolution >= 2")
         res_r, res_g, res_b = resolution, resolution, resolution
     elif len(resolution) == 3:
         res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 2 for res in resolution):
+             raise ValueError(f"Barycentric Tetrahedral interpolation requires resolution dimensions >= 2, got {resolution}")
     else:
-        raise ValueError("Resolution must be an int or a list/tuple of 3 ints")
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
 
-    # Clamp input coordinates
-    x = np.clip(r, 0.0, 1.0)
-    y = np.clip(g, 0.0, 1.0)
-    z = np.clip(b, 0.0, 1.0)
+    # --- Coordinate and Index Calculation (using float64) ---
+    r_coord = np.clip(r, np.float64(0.0), np.float64(1.0))
+    g_coord = np.clip(g, np.float64(0.0), np.float64(1.0))
+    b_coord = np.clip(b, np.float64(0.0), np.float64(1.0))
+
+    res_r_minus_1 = np.float64(res_r - 1)
+    res_g_minus_1 = np.float64(res_g - 1)
+    res_b_minus_1 = np.float64(res_b - 1)
+
+    x = r_coord * res_r_minus_1
+    y = g_coord * res_g_minus_1
+    z = b_coord * res_b_minus_1
+
+    i = int(np.floor(x))
+    j = int(np.floor(y))
+    k = int(np.floor(z))
+
+    fx = x - i # Fractional parts (float64)
+    fy = y - j
+    fz = z - k
+
+    x0 = np.clip(i,     0, res_r - 1)
+    x1 = np.clip(i + 1, 0, res_r - 1)
+    y0 = np.clip(j,     0, res_g - 1)
+    y1 = np.clip(j + 1, 0, res_g - 1)
+    z0 = np.clip(k,     0, res_b - 1)
+    z1 = np.clip(k + 1, 0, res_b - 1)
+
+    # --- Fetch Corner Values ---
+    try:
+        # Fetch into a float64 array 'v'
+        v = np.zeros((8, 3), dtype=np.float64)
+        # Vertex order matches the logic below (same as tetrahedral function)
+        v[0] = lut_data[x0, y0, z0, :]
+        v[1] = lut_data[x1, y0, z0, :]
+        v[2] = lut_data[x0, y1, z0, :]
+        v[3] = lut_data[x0, y0, z1, :]
+        v[4] = lut_data[x1, y1, z0, :]
+        v[5] = lut_data[x1, y0, z1, :]
+        v[6] = lut_data[x0, y1, z1, :]
+        v[7] = lut_data[x1, y1, z1, :]
+    except IndexError as e:
+         raise IndexError(
+            f"Error indexing lut_data with shape {lut_data.shape} using corner indices around "
+            f"({i}, {j}, {k}). Check resolution and LUT shape. Original error: {e}"
+         ) from e
+    except Exception as e:
+        raise RuntimeError(f"Unexpected error during barycentric corner value lookup: {e}") from e
+
+    # --- Determine Tetrahedron and Interpolate (using float64) ---
+    one_f64 = np.float64(1.0)
+    # This logic block is identical to the tetrahedral_interpolation version
+    if fx >= fy:
+        if fy >= fz: # T1: v0124
+            c0 = v[0]; c1 = v[1] - v[0]; c2 = v[2] - v[0]; c3 = v[4] - v[1] - v[2] + v[0]
+            result = c0 + c1*fx + c2*fy + c3*fz
+        else: # fx >= fz >= fy
+            if fx >= fz: # T2: v0135
+                 c0 = v[0]; c1 = v[1] - v[0]; c2 = v[3] - v[0]; c3 = v[5] - v[1] - v[3] + v[0]
+                 result = c0 + c1*fx + c2*fz + c3*fy
+            else: # T3: v0326
+                 c0 = v[0]; c1 = v[3] - v[0]; c2 = v[2] - v[0]; c3 = v[6] - v[3] - v[2] + v[0]
+                 result = c0 + c1*fz + c2*fy + c3*fx
+    else: # fy > fx
+        if fx >= fz: # T4: v7642
+            c0 = v[7]; c1 = v[6] - v[7]; c2 = v[4] - v[7]; c3 = v[2] - v[6] - v[4] + v[7]
+            result = c0 + c1*(one_f64-fx) + c2*(one_f64-fy) + c3*(one_f64-fz)
+        else: # fy >= fz > fx
+             if fy >= fz: # T5: v7653
+                  c0 = v[7]; c1 = v[6] - v[7]; c2 = v[5] - v[7]; c3 = v[3] - v[6] - v[5] + v[7]
+                  result = c0 + c1*(one_f64-fx) + c2*(one_f64-fz) + c3*(one_f64-fy)
+             else: # T6: v7451
+                  c0 = v[7]; c1 = v[4] - v[7]; c2 = v[5] - v[7]; c3 = v[1] - v[4] - v[5] + v[7]
+                  result = c0 + c1*(one_f64-fy) + c2*(one_f64-fz) + c3*(one_f64-fx)
+
+    # --- Output Clamping ---
+    clamped_val = np.clip(result, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats
+    return clamped_val.tolist()
+    
+    
+# --- Bicubic Interpolation (applied to 2D slice) ---
+def bicubic_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
+    """
+    Performs 2D Bicubic interpolation on the R-G plane of the 3D LUT,
+    using 'r' and 'g' coordinates, ensuring float64 precision internally.
+    The R-G plane is selected based on the nearest grid point to 'b'.
+    Uses a cubic convolution kernel. Output is clamped. CORRECTED VERSION.
+
+    Args:
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
+
+    Returns:
+        List of 3 floats representing the interpolated and clamped RGB value.
+    """
+    # Prepare inputs, ensuring float64 types internally
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
+
+    # --- Resolution Handling ---
+    if isinstance(resolution, int):
+        if resolution < 1: raise ValueError("Resolution must be >= 1")
+        res_r, res_g, res_b = resolution, resolution, resolution
+    elif len(resolution) == 3:
+        res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 1 for res in resolution):
+             raise ValueError(f"Resolution dimensions must be integers >= 1, got {resolution}")
+    else:
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
+
+    # --- Slice Selection (along B-axis using nearest neighbor) ---
+    b_coord = np.clip(b, np.float64(0.0), np.float64(1.0))
+    b_f_idx = b_coord * np.float64(res_b - 1) if res_b > 1 else np.float64(0.0)
+    b_idx = int(np.round(b_f_idx))
+    b_idx = np.clip(b_idx, 0, res_b - 1)
+
+    try:
+        # lut_data is float64, slice will be float64
+        # Assuming lut_data shape is (res_r, res_g, res_b, 3)
+        lut_slice_2d = lut_data[:, :, b_idx, :] # Shape: (res_r, res_g, 3)
+    except IndexError as e:
+         raise IndexError(f"Error slicing lut_data for bicubic with shape {lut_data.shape} using b_idx={b_idx}: {e}") from e
+    except Exception as e:
+         raise RuntimeError(f"Unexpected error during 2D slice extraction for bicubic: {e}") from e
+
+    # --- Fallback for small slice dimensions ---
+    min_res_bicubic = 4
+    if res_r < min_res_bicubic or res_g < min_res_bicubic:
+        warnings.warn(
+            f"Bicubic requires resolution >= {min_res_bicubic} for interpolated slice dimensions (R, G), have ({res_r}, {res_g}). "
+            "Falling back to Bilinear for this slice.",
+            UserWarning
+        )
+        try:
+             # Ensure the *main* bilinear function (which does input prep) is available
+             # Pass the original inputs, as bilinear handles prep itself.
+             return bilinear_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input)
+        except NameError:
+             raise RuntimeError("Fallback failed: bilinear_interpolation function not found.")
+        except Exception as e:
+             raise RuntimeError(f"Error during fallback to bilinear: {e}") from e
+
+
+    # --- Bicubic Interpolation Core (using float64) ---
+    x = np.clip(r, np.float64(0.0), np.float64(1.0)) # R-coord for slice
+    y = np.clip(g, np.float64(0.0), np.float64(1.0)) # G-coord for slice
+
+    res_r_minus_1 = np.float64(res_r - 1)
+    res_g_minus_1 = np.float64(res_g - 1)
+
+    # Calculate float indices and fractional parts using float64
+    fx = x * res_r_minus_1
+    fy = y * res_g_minus_1
+    ix = int(np.floor(fx)) # Integer part for indexing anchor
+    iy = int(np.floor(fy))
+    tx = fx - ix # Fractional part (float64)
+    ty = fy - iy
+
+    # Get the 4x4 neighboring grid points. Careful with indexing!
+    # points[i][j] will store the value at grid point (ix + i - 1, iy + j - 1)
+    points = np.zeros((4, 4, 3), dtype=np.float64)
+    for j_idx in range(4): # Corresponds to iy offset j_idx - 1
+        py = np.clip(iy + j_idx - 1, 0, res_g - 1)
+        for i_idx in range(4): # Corresponds to ix offset i_idx - 1
+            px = np.clip(ix + i_idx - 1, 0, res_r - 1)
+            # Fetch from the 2D slice using calculated px, py
+            points[i_idx, j_idx, :] = lut_slice_2d[px, py, :]
+
+    # Calculate weights using the float64 cubic kernel
+    # Weights for the 4 points along X relative to tx (offsets -1, 0, 1, 2)
+    wx = np.array([_cubic_kernel(tx + 1.0), _cubic_kernel(tx),
+                     _cubic_kernel(tx - 1.0), _cubic_kernel(tx - 2.0)],
+                    dtype=np.float64)
+    # Weights for the 4 points along Y relative to ty (offsets -1, 0, 1, 2)
+    wy = np.array([_cubic_kernel(ty + 1.0), _cubic_kernel(ty),
+                     _cubic_kernel(ty - 1.0), _cubic_kernel(ty - 2.0)],
+                    dtype=np.float64)
+
+    # Interpolate along x-axis (R dim) for each of the 4 conceptual 'rows' in the 4x4 grid
+    # The result interp_rows[j] will be the interpolated value at (r_input, g_anchor_j)
+    interp_rows = np.zeros((4, 3), dtype=np.float64)
+    for j_idx in range(4):
+        # points[:, j_idx, :] selects the 4 points along the X dimension
+        # for the j_idx-th row (fixed Y offset). Shape is (4, 3).
+        interp_rows[j_idx, :] = np.dot(wx, points[:, j_idx, :])
+        # Example: interp_rows[0] uses points points[0,0,:], points[1,0,:], points[2,0,:], points[3,0,:]
+
+    # Interpolate along y-axis (G dim) using the 4 intermediate row results
+    # interp_rows[j_idx, :] holds the result for the j_idx-th conceptual row (y offset j_idx - 1)
+    # The result is the interpolated value at (r_input, g_input)
+    interpolated_val = np.dot(wy, interp_rows) # Dot product of (4,) weights and (4, 3) data -> (3,) result
+
+    # --- Output Clamping ---
+    # Use the float64 bounds prepared earlier
+    clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats
+    return clamped_val.tolist()
+
+
+def cubic_spline_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
+    """
+    Performs 1D Cubic interpolation along the R-axis of the 3D LUT,
+    using the 'r' coordinate and a cubic convolution kernel. Ensures float64
+    precision internally. The R-axis slice is chosen based on nearest 'g' and 'b'.
+    Output is clamped.
+
+    Args:
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
+
+    Returns:
+        List of 3 floats representing the interpolated and clamped RGB value.
+    """
+    # Prepare inputs, ensuring float64 types internally
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
+
+    # --- Resolution Handling ---
+    if isinstance(resolution, int):
+        if resolution < 1: raise ValueError("Resolution must be >= 1")
+        res_r, res_g, res_b = resolution, resolution, resolution
+    elif len(resolution) == 3:
+        res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 1 for res in resolution):
+             raise ValueError(f"Resolution dimensions must be integers >= 1, got {resolution}")
+    else:
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
+
+    # --- Slice Selection (along G/B axes using nearest neighbor) ---
+    g_coord = np.clip(g, np.float64(0.0), np.float64(1.0))
+    b_coord = np.clip(b, np.float64(0.0), np.float64(1.0))
+    g_f_idx = g_coord * np.float64(res_g - 1) if res_g > 1 else np.float64(0.0)
+    b_f_idx = b_coord * np.float64(res_b - 1) if res_b > 1 else np.float64(0.0)
+    g_idx = int(np.round(g_f_idx))
+    b_idx = int(np.round(b_f_idx))
+    g_idx = np.clip(g_idx, 0, res_g - 1)
+    b_idx = np.clip(b_idx, 0, res_b - 1)
+
+    try:
+        # lut_data is float64, slice will be float64
+        # Assuming lut_data shape is (res_r, res_g, res_b, 3)
+        # Select all R points at the chosen G, B indices
+        lut_slice_1d = lut_data[:, g_idx, b_idx, :] # Shape: (res_r, 3)
+    except IndexError as e:
+         raise IndexError(f"Error slicing lut_data for cubic spline with shape {lut_data.shape} using g_idx={g_idx}, b_idx={b_idx}: {e}") from e
+    except Exception as e:
+         raise RuntimeError(f"Unexpected error during 1D slice extraction for cubic spline: {e}") from e
+
+    # --- Coordinate processing for the 1D slice (float64) ---
+    x = np.clip(r, np.float64(0.0), np.float64(1.0)) # R-coordinate for slice
+
+    # --- Fallback for small slice dimension ---
+    # 1D Cubic interpolation needs a 4-point neighborhood
+    min_res_cubic = 4
+    if res_r < min_res_cubic:
+        warnings.warn(
+            f"1D Cubic interpolation requires resolution >= {min_res_cubic} for the interpolated dimension (R), have ({res_r}). "
+            "Falling back to Linear for this slice.",
+            UserWarning
+        )
+        # Use the float64-aware _linear_interpolate_1d_slice helper directly
+        try:
+            # Pass the extracted float64 slice, its resolution, and the float64 coordinate
+            interpolated_val = _linear_interpolate_1d_slice(lut_slice_1d, res_r, x)
+            # Need to clamp the result from the helper
+            clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
+            return clamped_val.tolist()
+        except NameError:
+             raise RuntimeError("Fallback failed: _linear_interpolate_1d_slice function not found.")
+        except Exception as e:
+             raise RuntimeError(f"Error during fallback to linear 1D: {e}") from e
+
+
+    # --- 1D Cubic Interpolation Core (using float64) ---
+    res_r_minus_1 = np.float64(res_r - 1)
+
+    # Calculate float index and fractional part using float64
+    fx = x * res_r_minus_1
+    ix = int(np.floor(fx)) # Integer part for indexing anchor
+    tx = fx - ix          # Fractional part (float64)
+
+    # Get the 4 neighboring grid points - Ensure float64 dtype
+    # points[i] will store the value at grid point (ix + i - 1)
+    points = np.zeros((4, 3), dtype=np.float64)
+    for i_offset in range(-1, 3): # Offset relative to ix: -1, 0, 1, 2
+        # Calculate actual index, clipping to valid range [0, res_r-1]
+        px = np.clip(ix + i_offset, 0, res_r - 1)
+        # Fetch from the 1D slice using calculated px
+        points[i_offset + 1, :] = lut_slice_1d[px, :]
+
+    # Calculate weights using the float64 cubic kernel
+    # Weights for the 4 points relative to tx (offsets -1, 0, 1, 2)
+    w = np.array([_cubic_kernel(tx + 1.0), _cubic_kernel(tx),
+                  _cubic_kernel(tx - 1.0), _cubic_kernel(tx - 2.0)],
+                 dtype=np.float64)
+
+    # Perform the weighted sum using float64 dot product
+    # np.dot of (4,) weights and (4, 3) points -> (3,) result
+    interpolated_val = np.dot(w, points)
+
+    # --- Output Clamping ---
+    clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats
+    return clamped_val.tolist()
+
+
+def slice_bicubic_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
+    """
+    Performs 2D Bicubic interpolation on an R-G plane slice of the 3D LUT.
+    The slice is selected based on the nearest grid point to 'b'.
+    Ensures float64 precision internally. Uses a cubic convolution kernel. Output is clamped.
+
+    Args:
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
+
+    Returns:
+        List of 3 floats representing the interpolated and clamped RGB value.
+    """
+    # Prepare inputs, ensuring float64 types internally
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
+
+    # --- Resolution Handling ---
+    if isinstance(resolution, int):
+        if resolution < 1: raise ValueError("Resolution must be >= 1")
+        res_r, res_g, res_b = resolution, resolution, resolution
+    elif len(resolution) == 3:
+        res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 1 for res in resolution):
+             raise ValueError(f"Resolution dimensions must be integers >= 1, got {resolution}")
+    else:
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
+
+    # --- Slice Selection (Nearest B) ---
+    b_coord = np.clip(b, np.float64(0.0), np.float64(1.0))
+    b_f_idx = b_coord * np.float64(res_b - 1) if res_b > 1 else np.float64(0.0)
+    b_idx = int(np.round(b_f_idx))
+    b_idx = np.clip(b_idx, 0, res_b - 1)
+
+    try:
+        # Assuming lut_data shape is (res_r, res_g, res_b, 3)
+        lut_slice_2d = lut_data[:, :, b_idx, :] # Shape: (res_r, res_g, 3), float64
+    except IndexError as e:
+         raise IndexError(f"Error slicing lut_data for bicubic with shape {lut_data.shape} using b_idx={b_idx}: {e}") from e
+    except Exception as e:
+         raise RuntimeError(f"Unexpected error during 2D slice extraction for bicubic: {e}") from e
+
+    # --- Fallback for small slice dimensions ---
+    min_res_bicubic = 4
+    if res_r < min_res_bicubic or res_g < min_res_bicubic:
+        warnings.warn(
+            f"Slice Bicubic requires resolution >= {min_res_bicubic} for interpolated dimensions (R, G), have ({res_r}, {res_g}). "
+            "Falling back to Bilinear for this slice.",
+            UserWarning
+        )
+        try:
+             # Call the refactored bilinear function using original inputs
+             return bilinear_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input)
+        except NameError:
+             raise RuntimeError("Fallback failed: bilinear_interpolation function not found.")
+        except Exception as e:
+             raise RuntimeError(f"Error during fallback to bilinear: {e}") from e
+
+    # --- Bicubic Interpolation Core on the Slice (using float64) ---
+    x = np.clip(r, np.float64(0.0), np.float64(1.0)) # R-coord for slice
+    y = np.clip(g, np.float64(0.0), np.float64(1.0)) # G-coord for slice
+
+    res_r_minus_1 = np.float64(res_r - 1)
+    res_g_minus_1 = np.float64(res_g - 1)
+
+    fx = x * res_r_minus_1
+    fy = y * res_g_minus_1
+    ix = int(np.floor(fx))
+    iy = int(np.floor(fy))
+    tx = fx - ix # Fractional part (float64)
+    ty = fy - iy
+
+    # Get the 4x4 neighboring grid points from the slice
+    points = np.zeros((4, 4, 3), dtype=np.float64)
+    for j_idx in range(4): # Corresponds to iy offset j_idx - 1
+        py = np.clip(iy + j_idx - 1, 0, res_g - 1)
+        for i_idx in range(4): # Corresponds to ix offset i_idx - 1
+            px = np.clip(ix + i_idx - 1, 0, res_r - 1)
+            points[i_idx, j_idx, :] = lut_slice_2d[px, py, :]
+
+    # Calculate weights using the float64 cubic kernel
+    wx = np.array([_cubic_kernel(tx + 1.0), _cubic_kernel(tx),
+                     _cubic_kernel(tx - 1.0), _cubic_kernel(tx - 2.0)],
+                    dtype=np.float64)
+    wy = np.array([_cubic_kernel(ty + 1.0), _cubic_kernel(ty),
+                     _cubic_kernel(ty - 1.0), _cubic_kernel(ty - 2.0)],
+                    dtype=np.float64)
+
+    # Interpolate along x-axis (R dim) for each row
+    interp_rows = np.zeros((4, 3), dtype=np.float64)
+    for j_idx in range(4):
+        interp_rows[j_idx, :] = np.dot(wx, points[:, j_idx, :])
+
+    # Interpolate along y-axis (G dim) using intermediate results
+    interpolated_val = np.dot(wy, interp_rows)
+
+    # --- Output Clamping ---
+    clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats
+    return clamped_val.tolist()
+    
+
+def slice_tricubic_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
+    """
+    Performs standard 3D Tricubic interpolation on the full 3D LUT using a 4x4x4
+    neighborhood and a cubic convolution kernel.
+    Ensures float64 precision internally. Output is clamped.
+
+    Args:
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
+
+    Returns:
+        List of 3 floats representing the interpolated and clamped RGB value.
+    """
+    # Prepare inputs, ensuring float64 types internally
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
+
+    # --- Resolution Handling ---
+    if isinstance(resolution, int):
+        if resolution < 1: raise ValueError("Resolution must be >= 1")
+        res_r, res_g, res_b = resolution, resolution, resolution
+    elif len(resolution) == 3:
+        res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 1 for res in resolution):
+             raise ValueError(f"Resolution dimensions must be integers >= 1, got {resolution}")
+    else:
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
 
     # --- Fallback for small resolutions ---
-    if res_r < 4 or res_g < 4 or res_b < 4:
-        print(f"Warning: Tricubic requires resolution >= 4 in all dims, have ({res_r}, {res_g}, {res_b}). Falling back to Trilinear.")
-        # Fallback to the trilinear function (ensure it exists and has the correct signature)
-        # Assuming trilinear function clamps output internally
-        from_trilinear = trilinear_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np)
-        return from_trilinear # Trilinear should clamp
+    min_res_tricubic = 4
+    if res_r < min_res_tricubic or res_g < min_res_tricubic or res_b < min_res_tricubic:
+        warnings.warn(
+            f"Tricubic requires resolution >= {min_res_tricubic} in all dimensions, have ({res_r}, {res_g}, {res_b}). "
+            "Falling back to Trilinear.",
+            UserWarning
+        )
+        try:
+             # Call the refactored trilinear function using original inputs
+             return trilinear_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input)
+        except NameError:
+             raise RuntimeError("Fallback failed: trilinear_interpolation function not found.")
+        except Exception as e:
+             raise RuntimeError(f"Error during fallback to trilinear: {e}") from e
 
-    # Calculate floating point indices and integer base indices
-    fx = x * (res_r - 1)
-    fy = y * (res_g - 1)
-    fz = z * (res_b - 1)
+    # --- Tricubic Interpolation Core (using float64) ---
+    x = np.clip(r, np.float64(0.0), np.float64(1.0))
+    y = np.clip(g, np.float64(0.0), np.float64(1.0))
+    z = np.clip(b, np.float64(0.0), np.float64(1.0))
 
+    res_r_minus_1 = np.float64(res_r - 1)
+    res_g_minus_1 = np.float64(res_g - 1)
+    res_b_minus_1 = np.float64(res_b - 1)
+
+    # Calculate float indices and fractional parts using float64
+    fx = x * res_r_minus_1
+    fy = y * res_g_minus_1
+    fz = z * res_b_minus_1
     ix = int(np.floor(fx))
     iy = int(np.floor(fy))
     iz = int(np.floor(fz))
-
-    # Calculate fractional parts
-    tx = fx - ix
+    tx = fx - ix # Fractional part (float64)
     ty = fy - iy
     tz = fz - iz
 
-    # Get the 4x4x4 neighborhood grid points - Ensure boundaries are handled
-    points_4x4x4 = np.zeros((4, 4, 4, 3), dtype=lut_data.dtype)
-    for k in range(4):
-        for j in range(4):
-            for i in range(4):
-                px = np.clip(ix + i - 1, 0, res_r - 1) # Index for the 4 points along X
-                py = np.clip(iy + j - 1, 0, res_g - 1) # Index for the 4 points along Y
-                pz = np.clip(iz + k - 1, 0, res_b - 1) # Index for the 4 points along Z
-                points_4x4x4[i, j, k] = lut_data[px, py, pz]
+    # Get the 4x4x4 neighboring grid points from the full 3D LUT
+    points_4x4x4 = np.zeros((4, 4, 4, 3), dtype=np.float64)
+    for k_idx in range(4): # Corresponds to iz offset k_idx - 1
+        pz = np.clip(iz + k_idx - 1, 0, res_b - 1)
+        for j_idx in range(4): # Corresponds to iy offset j_idx - 1
+            py = np.clip(iy + j_idx - 1, 0, res_g - 1)
+            for i_idx in range(4): # Corresponds to ix offset i_idx - 1
+                px = np.clip(ix + i_idx - 1, 0, res_r - 1)
+                # Fetch from the main 3D lut_data
+                points_4x4x4[i_idx, j_idx, k_idx, :] = lut_data[px, py, pz, :]
 
-    # Interpolate along X-axis to get a 1x4x4 grid
-    interp_y_z = np.zeros((4, 4, 3), dtype=lut_data.dtype)
-    wx = np.array([_cubic_kernel(tx + 1.0), _cubic_kernel(tx), _cubic_kernel(tx - 1.0), _cubic_kernel(tx - 2.0)])
-    for k in range(4):
-        for j in range(4):
-            interp_y_z[j, k] = np.dot(wx, points_4x4x4[:, j, k]) # Efficiently sum weighted points along X
+    # Calculate weights using the float64 cubic kernel
+    wx = np.array([_cubic_kernel(tx + 1.0), _cubic_kernel(tx),
+                     _cubic_kernel(tx - 1.0), _cubic_kernel(tx - 2.0)], dtype=np.float64)
+    wy = np.array([_cubic_kernel(ty + 1.0), _cubic_kernel(ty),
+                     _cubic_kernel(ty - 1.0), _cubic_kernel(ty - 2.0)], dtype=np.float64)
+    wz = np.array([_cubic_kernel(tz + 1.0), _cubic_kernel(tz),
+                     _cubic_kernel(tz - 1.0), _cubic_kernel(tz - 2.0)], dtype=np.float64)
 
-    # Interpolate along Y-axis to get a 1x1x4 grid (effectively 4 points along Z)
-    interp_z = np.zeros((4, 3), dtype=lut_data.dtype)
-    wy = np.array([_cubic_kernel(ty + 1.0), _cubic_kernel(ty), _cubic_kernel(ty - 1.0), _cubic_kernel(ty - 2.0)])
-    for k in range(4):
-        interp_z[k] = np.dot(wy, interp_y_z[:, k]) # Efficiently sum weighted points along Y
+    # Interpolate along X-axis -> results in a 4x4 grid (for each Z plane)
+    interp_y_z = np.zeros((4, 4, 3), dtype=np.float64)
+    for k_idx in range(4):
+        for j_idx in range(4):
+            # points_4x4x4[:, j_idx, k_idx, :] selects the 4 points along X
+            interp_y_z[j_idx, k_idx, :] = np.dot(wx, points_4x4x4[:, j_idx, k_idx, :])
 
-    # Interpolate along Z-axis to get the final 1x1x1 value
-    wz = np.array([_cubic_kernel(tz + 1.0), _cubic_kernel(tz), _cubic_kernel(tz - 1.0), _cubic_kernel(tz - 2.0)])
-    interpolated_val = np.dot(wz, interp_z) # Efficiently sum weighted points along Z
+    # Interpolate along Y-axis -> results in a 4-element vector (along Z)
+    interp_z = np.zeros((4, 3), dtype=np.float64)
+    for k_idx in range(4):
+        # interp_y_z[:, k_idx, :] selects the 4 intermediate results along Y for a fixed Z
+        interp_z[k_idx, :] = np.dot(wy, interp_y_z[:, k_idx, :])
 
-    # Clamp output before returning
+    # Interpolate along Z-axis -> final value
+    # interp_z holds the 4 intermediate results along Z
+    interpolated_val = np.dot(wz, interp_z)
+
+    # --- Output Clamping ---
     clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats
+    return clamped_val.tolist()
+    
+    
+    
+def tricubic_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
+    """
+    Performs standard 3D Tricubic interpolation on the full 3D LUT using a 4x4x4
+    neighborhood and a cubic convolution kernel, ensuring float64 precision internally.
+    Output is clamped.
+
+    Args:
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
+
+    Returns:
+        List of 3 floats representing the interpolated and clamped RGB value.
+    """
+    # Prepare inputs, ensuring float64 types internally
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
+
+    # --- Resolution Handling ---
+    if isinstance(resolution, int):
+        if resolution < 1: raise ValueError("Resolution must be >= 1")
+        res_r, res_g, res_b = resolution, resolution, resolution
+    elif len(resolution) == 3:
+        res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 1 for res in resolution):
+             raise ValueError(f"Resolution dimensions must be integers >= 1, got {resolution}")
+    else:
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
+
+    # --- Fallback for small resolutions ---
+    min_res_tricubic = 4
+    if res_r < min_res_tricubic or res_g < min_res_tricubic or res_b < min_res_tricubic:
+        warnings.warn(
+            f"Tricubic requires resolution >= {min_res_tricubic} in all dimensions, have ({res_r}, {res_g}, {res_b}). "
+            "Falling back to Trilinear.",
+            UserWarning
+        )
+        try:
+             # Call the refactored trilinear function using original inputs
+             # Ensure trilinear_interpolation is defined and float64-aware
+             return trilinear_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input)
+        except NameError:
+             raise RuntimeError("Fallback failed: trilinear_interpolation function not found.")
+        except Exception as e:
+             raise RuntimeError(f"Error during fallback to trilinear: {e}") from e
+
+    # --- Tricubic Interpolation Core (using float64) ---
+    # Clip coordinates (already float64)
+    x = np.clip(r, np.float64(0.0), np.float64(1.0))
+    y = np.clip(g, np.float64(0.0), np.float64(1.0))
+    z = np.clip(b, np.float64(0.0), np.float64(1.0))
+
+    # Calculate float scaling factors (float64)
+    res_r_minus_1 = np.float64(res_r - 1)
+    res_g_minus_1 = np.float64(res_g - 1)
+    res_b_minus_1 = np.float64(res_b - 1)
+
+    # Calculate float indices and fractional parts using float64
+    fx = x * res_r_minus_1
+    fy = y * res_g_minus_1
+    fz = z * res_b_minus_1
+    ix = int(np.floor(fx)) # Integer anchor index
+    iy = int(np.floor(fy))
+    iz = int(np.floor(fz))
+    tx = fx - ix # Fractional part (float64)
+    ty = fy - iy
+    tz = fz - iz
+
+    # Get the 4x4x4 neighboring grid points from the full 3D LUT (float64)
+    points_4x4x4 = np.zeros((4, 4, 4, 3), dtype=np.float64)
+    for k_idx in range(4): # Corresponds to iz offset k_idx - 1
+        pz = np.clip(iz + k_idx - 1, 0, res_b - 1)
+        for j_idx in range(4): # Corresponds to iy offset j_idx - 1
+            py = np.clip(iy + j_idx - 1, 0, res_g - 1)
+            for i_idx in range(4): # Corresponds to ix offset i_idx - 1
+                px = np.clip(ix + i_idx - 1, 0, res_r - 1)
+                # Fetch from the main 3D lut_data (which is float64)
+                # Assuming lut_data shape is (res_r, res_g, res_b, 3)
+                points_4x4x4[i_idx, j_idx, k_idx, :] = lut_data[px, py, pz, :]
+
+    # Calculate weights using the float64 cubic kernel
+    wx = np.array([_cubic_kernel(tx + 1.0), _cubic_kernel(tx),
+                     _cubic_kernel(tx - 1.0), _cubic_kernel(tx - 2.0)], dtype=np.float64)
+    wy = np.array([_cubic_kernel(ty + 1.0), _cubic_kernel(ty),
+                     _cubic_kernel(ty - 1.0), _cubic_kernel(ty - 2.0)], dtype=np.float64)
+    wz = np.array([_cubic_kernel(tz + 1.0), _cubic_kernel(tz),
+                     _cubic_kernel(tz - 1.0), _cubic_kernel(tz - 2.0)], dtype=np.float64)
+
+    # Interpolate along X-axis -> results in a 4x4 intermediate grid (for each Z)
+    # Output shape: (4, 4, 3) corresponding to (Y, Z, Channels) after X interp
+    interp_yz = np.zeros((4, 4, 3), dtype=np.float64)
+    for k_idx in range(4): # Iterate through Z planes
+        for j_idx in range(4): # Iterate through Y lines within a Z plane
+            # points_4x4x4[:, j_idx, k_idx, :] gets the 4 points along X for a fixed (Y,Z)
+            # Result is the interpolated value at (r_input, g_anchor_j, b_anchor_k)
+            interp_yz[j_idx, k_idx, :] = np.dot(wx, points_4x4x4[:, j_idx, k_idx, :])
+
+    # Interpolate along Y-axis -> results in a 4-element intermediate vector (along Z)
+    # Output shape: (4, 3) corresponding to (Z, Channels) after Y interp
+    interp_z = np.zeros((4, 3), dtype=np.float64)
+    for k_idx in range(4): # Iterate through Z results
+        # interp_yz[:, k_idx, :] gets the 4 intermediate results along Y for a fixed Z
+        # Result is the interpolated value at (r_input, g_input, b_anchor_k)
+        interp_z[k_idx, :] = np.dot(wy, interp_yz[:, k_idx, :])
+
+    # Interpolate along Z-axis -> final value
+    # interp_z holds the 4 intermediate results along Z
+    # Result is the interpolated value at (r_input, g_input, b_input)
+    interpolated_val = np.dot(wz, interp_z) # Shape (3,)
+
+    # --- Output Clamping ---
+    clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats
     return clamped_val.tolist()
 
 
@@ -557,103 +1576,168 @@ def tricubic_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_
 # *** the existing cubic kernel over the larger grid. It's not technically "Tri-Quintic"
 # *** but shows the principle of higher-order sequential application.
 
-def _get_interpolation_weights(kernel_func, fractional_pos, num_points):
-    """Helper to get interpolation weights based on a kernel."""
-    weights = np.zeros(num_points)
-    offset = -(num_points // 2 - 1) # Center the kernel relative to floor index
-    for i in range(num_points):
-        weights[i] = kernel_func(fractional_pos + offset - i + 1) # Shift kernel correctly
-        # Example for 4 points (Cubic):
-        # w0 = kernel_func(tx + 1.0)  => i=0, offset=-1; kernel(tx - 1 - 0 + 1) = kernel(tx) INCORRECT
-        # Correct kernel positions relative to fractional coordinate `t`:
-        # indices relative to floor(fx): -1, 0, 1, 2
-        # kernel inputs should be: t - (-1), t - 0, t - 1, t - 2 => t+1, t, t-1, t-2
-    if num_points == 4: # Adjust kernel input for standard 4-point cubic
-        weights = np.array([kernel_func(fractional_pos + 1.0), kernel_func(fractional_pos),
-                            kernel_func(fractional_pos - 1.0), kernel_func(fractional_pos - 2.0)])
-    elif num_points == 6: # Adjust kernel input for conceptual 6-point method
-        # Using the _cubic_kernel for this 6-point demo - not true quintic
-         weights = np.array([kernel_func(fractional_pos + 2.0), kernel_func(fractional_pos + 1.0),
-                             kernel_func(fractional_pos), kernel_func(fractional_pos - 1.0),
-                             kernel_func(fractional_pos - 2.0), kernel_func(fractional_pos - 3.0)])
+def _get_interpolation_weights(kernel_func, fractional_pos_f64, num_points):
+    """
+    Helper to get interpolation weights based on a kernel and fractional position.
+    Ensures float64 precision.
+
+    Args:
+        kernel_func: The kernel function (e.g., _cubic_kernel) - assumed float64 aware.
+        fractional_pos_f64 (np.float64): The fractional part of the coordinate (e.g., tx).
+        num_points (int): The number of points in the neighborhood (e.g., 4 for cubic, 6 for this demo).
+
+    Returns:
+        numpy.ndarray: Array of weights (dtype=np.float64).
+    """
+    weights = np.zeros(num_points, dtype=np.float64)
+    # Calculate weights based on distance from the interpolation point (ix + t)
+    # to the neighboring grid points (ix + offset).
+    # Weight index 'i' corresponds to grid point index ix + i + grid_offset.
+    if num_points == 4: # For standard cubic kernel usage: indices ix + (-1, 0, 1, 2)
+        # Kernel argument is distance: t - (grid_point_offset_from_ix)
+        weights[0] = kernel_func(fractional_pos_f64 - (-1.0)) # Dist to ix-1 -> kernel(t+1)
+        weights[1] = kernel_func(fractional_pos_f64 - (0.0))  # Dist to ix   -> kernel(t)
+        weights[2] = kernel_func(fractional_pos_f64 - (1.0))  # Dist to ix+1 -> kernel(t-1)
+        weights[3] = kernel_func(fractional_pos_f64 - (2.0))  # Dist to ix+2 -> kernel(t-2)
+    elif num_points == 6: # For conceptual 6-point usage: indices ix + (-2, -1, 0, 1, 2, 3)
+        # Using the _cubic_kernel for this 6-point demo
+        weights[0] = kernel_func(fractional_pos_f64 - (-2.0)) # Dist to ix-2 -> kernel(t+2)
+        weights[1] = kernel_func(fractional_pos_f64 - (-1.0)) # Dist to ix-1 -> kernel(t+1)
+        weights[2] = kernel_func(fractional_pos_f64 - (0.0))  # Dist to ix   -> kernel(t)
+        weights[3] = kernel_func(fractional_pos_f64 - (1.0))  # Dist to ix+1 -> kernel(t-1)
+        weights[4] = kernel_func(fractional_pos_f64 - (2.0))  # Dist to ix+2 -> kernel(t-2)
+        weights[5] = kernel_func(fractional_pos_f64 - (3.0))  # Dist to ix+3 -> kernel(t-3)
     else:
-        raise ValueError("Unsupported number of points for weights")
+        raise ValueError(f"Unsupported number of points ({num_points}) for weights helper")
+
+    # Note: Interpolating kernels like cubic convolution are generally *not* normalized
+    # to sum to 1 across their support, as they aim for specific frequency responses
+    # or continuity properties rather than just weighted averaging like a Gaussian.
+
     return weights
+    
 
 # --- "Conceptual" Tri-Quintic (using Cubic Kernel over 6x6x6 Grid) ---
-def conceptual_triquintic_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np):
+def conceptual_triquintic_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input):
     """
     Performs 3D interpolation using a 6x6x6 neighborhood and the _cubic_kernel
-    applied sequentially. This demonstrates higher-order principles but isn't a
-    true mathematical Tri-Quintic spline. Requires resolution >= 6. Output is clamped.
+    applied sequentially. Ensures float64 precision internally. This demonstrates
+    higher-order principles but isn't a true mathematical Tri-Quintic spline.
+    Requires resolution >= 6. Output is clamped.
 
     NOTE: Falls back to Tricubic if resolution is too small.
+
+    Args:
+        lut_data_input: The 3D LUT data (NumPy array or list-of-lists, any float/int dtype).
+                        Expected layout: lut_data[r_idx, g_idx, b_idx] = [R_val, G_val, B_val].
+        resolution: Int or tuple/list of 3 ints defining LUT dimensions [res_r, res_g, res_b].
+        r_input, g_input, b_input: Input coordinates (floats).
+        domain_min_input: Min output clamp values (NumPy array, list, or float/int).
+        domain_max_input: Max output clamp values (NumPy array, list, or float/int).
+
+    Returns:
+        List of 3 floats representing the interpolated and clamped RGB value.
     """
-    kernel_func = _cubic_kernel # Using the existing cubic kernel for this demo
+    # Use the existing cubic kernel for this 6x6x6 demonstration
+    kernel_func = _cubic_kernel
     kernel_size = 6 # 6x6x6 neighborhood
 
+    # Prepare inputs, ensuring float64 types internally
+    lut_data, r, g, b, domain_min_np, domain_max_np = _prepare_inputs_for_64bit(
+        lut_data_input, r_input, g_input, b_input, domain_min_input, domain_max_input
+    )
+
+    # --- Resolution Handling ---
     if isinstance(resolution, int):
+        if resolution < 1: raise ValueError("Resolution must be >= 1")
         res_r, res_g, res_b = resolution, resolution, resolution
     elif len(resolution) == 3:
         res_r, res_g, res_b = resolution
+        if not all(isinstance(res, int) and res >= 1 for res in resolution):
+             raise ValueError(f"Resolution dimensions must be integers >= 1, got {resolution}")
     else:
-        raise ValueError("Resolution must be an int or a list/tuple of 3 ints")
-
-    # Clamp input coordinates
-    x = np.clip(r, 0.0, 1.0)
-    y = np.clip(g, 0.0, 1.0)
-    z = np.clip(b, 0.0, 1.0)
+        raise ValueError("Resolution must be an int or a list/tuple of 3 ints [res_r, res_g, res_b]")
 
     # --- Fallback for small resolutions ---
-    if res_r < kernel_size or res_g < kernel_size or res_b < kernel_size:
-        print(f"Warning: Conceptual {kernel_size}x{kernel_size}x{kernel_size} requires res >= {kernel_size}. Falling back to Tricubic.")
-        # Fallback to the tricubic function
-        from_tricubic = tricubic_interpolation(lut_data, resolution, r, g, b, domain_min_np, domain_max_np)
-        return from_tricubic # Assume tricubic clamps
+    min_res_required = kernel_size
+    if res_r < min_res_required or res_g < min_res_required or res_b < min_res_required:
+        warnings.warn(
+            f"Conceptual {kernel_size}x{kernel_size}x{kernel_size} requires resolution >= {min_res_required} in all dims, "
+            f"have ({res_r}, {res_g}, {res_b}). Falling back to Tricubic.",
+            UserWarning
+        )
+        try:
+            # Call the refactored tricubic function using original inputs
+            # Ensure tricubic_interpolation is defined and float64-aware
+            return tricubic_interpolation(lut_data_input, resolution, r_input, g_input, b_input, domain_min_input, domain_max_input)
+        except NameError:
+            raise RuntimeError("Fallback failed: tricubic_interpolation function not found.")
+        except Exception as e:
+            raise RuntimeError(f"Error during fallback to tricubic: {e}") from e
 
-    # Calculate floating point indices and integer base indices
-    fx = x * (res_r - 1)
-    fy = y * (res_g - 1)
-    fz = z * (res_b - 1)
-    ix = int(np.floor(fx))
+    # --- Conceptual "Tri-Quintic" Core (using float64 and 6x6x6 grid) ---
+    # Clip coordinates (already float64)
+    x = np.clip(r, np.float64(0.0), np.float64(1.0))
+    y = np.clip(g, np.float64(0.0), np.float64(1.0))
+    z = np.clip(b, np.float64(0.0), np.float64(1.0))
+
+    # Calculate float scaling factors (float64)
+    res_r_minus_1 = np.float64(res_r - 1)
+    res_g_minus_1 = np.float64(res_g - 1)
+    res_b_minus_1 = np.float64(res_b - 1)
+
+    # Calculate float indices and fractional parts using float64
+    fx = x * res_r_minus_1
+    fy = y * res_g_minus_1
+    fz = z * res_b_minus_1
+    ix = int(np.floor(fx)) # Integer anchor index
     iy = int(np.floor(fy))
     iz = int(np.floor(fz))
-    tx = fx - ix # Fractional parts
+    tx = fx - ix # Fractional part (float64)
     ty = fy - iy
     tz = fz - iz
 
     # Get the KxKxK neighborhood grid points (K=kernel_size)
-    grid_offset = -(kernel_size // 2 - 1) # e.g., -2 for K=6; indices -2 to +3
-    points_KxKxK = np.zeros((kernel_size, kernel_size, kernel_size, 3), dtype=lut_data.dtype)
-    for k_i in range(kernel_size):
+    # grid_offset determines the index range relative to ix,iy,iz
+    # For K=6, need indices ix+(-2, -1, 0, 1, 2, 3)
+    grid_offset = -2 # Start index relative to ix,iy,iz is ix + grid_offset
+    points_KxKxK = np.zeros((kernel_size, kernel_size, kernel_size, 3), dtype=np.float64)
+    for k_i in range(kernel_size): # Index within the KxKxK array (0..K-1)
+        pz = np.clip(iz + k_i + grid_offset, 0, res_b - 1) # Actual LUT index
         for j_i in range(kernel_size):
+            py = np.clip(iy + j_i + grid_offset, 0, res_g - 1)
             for i_i in range(kernel_size):
                 px = np.clip(ix + i_i + grid_offset, 0, res_r - 1)
-                py = np.clip(iy + j_i + grid_offset, 0, res_g - 1)
-                pz = np.clip(iz + k_i + grid_offset, 0, res_b - 1)
-                points_KxKxK[i_i, j_i, k_i] = lut_data[px, py, pz]
+                # Fetch from the main 3D lut_data (which is float64)
+                # Assuming lut_data shape is (res_r, res_g, res_b, 3)
+                points_KxKxK[i_i, j_i, k_i, :] = lut_data[px, py, pz, :]
 
-    # Calculate interpolation weights
+    # Calculate interpolation weights using float64 helper
     wx = _get_interpolation_weights(kernel_func, tx, kernel_size)
     wy = _get_interpolation_weights(kernel_func, ty, kernel_size)
     wz = _get_interpolation_weights(kernel_func, tz, kernel_size)
 
-    # Interpolate along X-axis -> KxK grid
-    interp_y_z = np.zeros((kernel_size, kernel_size, 3), dtype=lut_data.dtype)
-    for k in range(kernel_size):
-        for j in range(kernel_size):
-            interp_y_z[j, k] = np.dot(wx, points_KxKxK[:, j, k])
+    # Interpolate along X-axis -> results in a KxK intermediate grid (Y, Z)
+    interp_yz = np.zeros((kernel_size, kernel_size, 3), dtype=np.float64)
+    for k_idx in range(kernel_size): # Iterate through Z planes
+        for j_idx in range(kernel_size): # Iterate through Y lines
+            # points_KxKxK[:, j_idx, k_idx, :] selects K points along X
+            interp_yz[j_idx, k_idx, :] = np.dot(wx, points_KxKxK[:, j_idx, k_idx, :])
 
-    # Interpolate along Y-axis -> K vector along Z
-    interp_z = np.zeros((kernel_size, 3), dtype=lut_data.dtype)
-    for k in range(kernel_size):
-        interp_z[k] = np.dot(wy, interp_y_z[:, k])
+    # Interpolate along Y-axis -> results in a K-element intermediate vector (Z)
+    interp_z = np.zeros((kernel_size, 3), dtype=np.float64)
+    for k_idx in range(kernel_size): # Iterate through Z results
+        # interp_yz[:, k_idx, :] selects K intermediate results along Y
+        interp_z[k_idx, :] = np.dot(wy, interp_yz[:, k_idx, :])
 
     # Interpolate along Z-axis -> final value
-    interpolated_val = np.dot(wz, interp_z)
+    # interp_z holds the K intermediate results along Z
+    interpolated_val = np.dot(wz, interp_z) # Shape (3,)
 
-    # Clamp output before returning
+    # --- Output Clamping ---
     clamped_val = np.clip(interpolated_val, domain_min_np, domain_max_np)
+
+    # Return as list of standard Python floats
     return clamped_val.tolist()
 
 
@@ -896,6 +1980,9 @@ if __name__ == "__main__":
             (1.0, 0.0, 1.0),   # Purple
             (0.1, 0.5, 0.9),   # Random interior point 1
             (0.15, 0.15, 0.15),# Dark Gray
+            (0.155, 0.15, 0.15),# Dark Gray (variation)
+            (0.15, 0.155, 0.15),# Dark Gray (variation)
+            (0.15, 0.15, 0.155),# Dark Gray (variation)
             (0.5, 0.5, 0.5),   # Center point
             (0.75, 0.75, 0.75),# Brigth Gray
             (0.8, 0.2, 0.4),   # Random interior point 2
@@ -904,6 +1991,7 @@ if __name__ == "__main__":
             (0.997, 0.782, 0.901),   # Random interior point 5
             (1/3, 1/7, 1/6),   # Random interior point 6
             (0.25, 0.5, 0.75), # Point between grid lines
+            (0.75, 0.5, 0.25), # Point between grid lines
             (0.251, 0.51, 0.751), # Point closely to grid lines
             (-0.1, 0.5, 1.1),  # Point 1 outside bounds (will be clamped)
             (-0.01, 0.62, 1.01)# Point 2 outside bounds (will be clamped)
@@ -927,19 +2015,19 @@ if __name__ == "__main__":
 
 
         for r_in, g_in, b_in in rgb_values_to_interpolate:
-            print(f"Input RGB: ({r_in:.3f}, {g_in:.3f}, {b_in:.3f})")
+            print(f"Input RGB: ({r_in:.16f}, {g_in:.16f}, {b_in:.16f})")
 
             # Call Linear Interpolation
             try:
                 lin_result = linear_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
-                print(f"  Linear (1D R-axis): [{lin_result[0]:.10f}, {lin_result[1]:.10f}, {lin_result[2]:.10f}]")
+                print(f"  Linear (1D R-axis): [{lin_result[0]:.16f}, {lin_result[1]:.16f}, {lin_result[2]:.16f}]")
             except Exception as e:
                  print(f"  Linear (1D R-axis): Error - {e}")
 
             # Call Bilinear Interpolation
             try:
                 bilin_result = bilinear_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
-                print(f"  Bilinear (2D RG):   [{bilin_result[0]:.10f}, {bilin_result[1]:.10f}, {bilin_result[2]:.10f}]")
+                print(f"  Bilinear (2D RG):   [{bilin_result[0]:.16f}, {bilin_result[1]:.16f}, {bilin_result[2]:.16f}]")
             except Exception as e:
                  print(f"  Bilinear (2D RG):   Error - {e}")
 
@@ -948,7 +2036,7 @@ if __name__ == "__main__":
                 # NN usually just needs the single resolution value if cubic
                 nn_res = resolution if isinstance(resolution, int) else resolution[0]
                 nn_result = nearest_neighbor_interpolation(lut_data, nn_res, r_in, g_in, b_in, domain_min, domain_max)
-                print(f"  Nearest Neighbor:   [{nn_result[0]:.10f}, {nn_result[1]:.10f}, {nn_result[2]:.10f}]")
+                print(f"  Nearest Neighbor:   [{nn_result[0]:.16f}, {nn_result[1]:.16f}, {nn_result[2]:.16f}]")
             except Exception as e:
                  print(f"  Nearest Neighbor:   Error - {e}")
 
@@ -956,7 +2044,7 @@ if __name__ == "__main__":
             try:
                 # Pass the prepared resolution and numpy domain arrays
                 tl_result = trilinear_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
-                print(f"  Trilinear:          [{tl_result[0]:.10f}, {tl_result[1]:.10f}, {tl_result[2]:.10f}]")
+                print(f"  Trilinear:          [{tl_result[0]:.16f}, {tl_result[1]:.16f}, {tl_result[2]:.16f}]")
             except Exception as e:
                  print(f"  Trilinear:          Error - {e}")
 
@@ -964,7 +2052,7 @@ if __name__ == "__main__":
             try:
                 # Pass the prepared resolution and numpy domain arrays
                 tt_result = tetrahedral_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
-                print(f"  Tetrahedral:        [{tt_result[0]:.10f}, {tt_result[1]:.10f}, {tt_result[2]:.10f}]")
+                print(f"  Tetrahedral:        [{tt_result[0]:.16f}, {tt_result[1]:.16f}, {tt_result[2]:.16f}]")
             except Exception as e:
                  print(f"  Tetrahedral:        Error - {e}")
 
@@ -972,7 +2060,7 @@ if __name__ == "__main__":
             try:
                 # Pass the prepared resolution and numpy domain arrays
                 bary_result = barycentric_tetrahedral_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
-                print(f"  Barycentric:        [{bary_result[0]:.10f}, {bary_result[1]:.10f}, {bary_result[2]:.10f}]") # Used different result var name
+                print(f"  Barycentric:        [{bary_result[0]:.16f}, {bary_result[1]:.16f}, {bary_result[2]:.16f}]") # Used different result var name
             except Exception as e:
                  print(f"  Barycentric:        Error - {e}")
 
@@ -980,23 +2068,40 @@ if __name__ == "__main__":
             try:
                 # Pass the prepared resolution and numpy domain arrays
                 bicubic_result = bicubic_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
-                print(f"  Bicubic:            [{bicubic_result[0]:.10f}, {bicubic_result[1]:.10f}, {bicubic_result[2]:.10f}]") # Used different result var name
+                print(f"  Bicubic:            [{bicubic_result[0]:.16f}, {bicubic_result[1]:.16f}, {bicubic_result[2]:.16f}]") # Used different result var name
             except Exception as e:
                  print(f"  Bicubic:            Error - {e}")
 
-            # Call Cubic Spline Interpolation
+            # Call Cubic 1D Spline Interpolation
             try:
                 # Pass the prepared resolution and numpy domain arrays
                 cubic_result = cubic_spline_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
-                print(f"  Cubic Spline (1D):  [{cubic_result[0]:.10f}, {cubic_result[1]:.10f}, {cubic_result[2]:.10f}]") # Used different result var name & clarified title
+                print(f"  Cubic Spline (1D):  [{cubic_result[0]:.16f}, {cubic_result[1]:.16f}, {cubic_result[2]:.16f}]") # Used different result var name & clarified title
             except Exception as e:
                  print(f"  Cubic Spline (1D):  Error - {e}")
  
+            # Call Cubic 2D Spline Interpolation
+            try:
+                # Pass the prepared resolution and numpy domain arrays
+                cubic_result = slice_bicubic_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
+                print(f"  Cubic Spline (2D):  [{cubic_result[0]:.16f}, {cubic_result[1]:.16f}, {cubic_result[2]:.16f}]") # Used different result var name & clarified title
+            except Exception as e:
+                 print(f"  Cubic Spline (2D):  Error - {e}")
+
+            # Call Cubic 3D Spline Interpolation
+            try:
+                # Pass the prepared resolution and numpy domain arrays
+                cubic_result = slice_tricubic_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
+                print(f"  Cubic Spline (3D):  [{cubic_result[0]:.16f}, {cubic_result[1]:.16f}, {cubic_result[2]:.16f}]") # Used different result var name & clarified title
+            except Exception as e:
+                 print(f"  Cubic Spline (3D):  Error - {e}")
+
+
             # Call Tricubic Interpolation
             try:
                 # Pass the prepared resolution and numpy domain arrays
                 tricubic_result = tricubic_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
-                print(f"  Tricubic:           [{tricubic_result[0]:.10f}, {tricubic_result[1]:.10f}, {tricubic_result[2]:.10f}]")
+                print(f"  Tricubic:           [{tricubic_result[0]:.16f}, {tricubic_result[1]:.16f}, {tricubic_result[2]:.16f}]")
             except Exception as e:
                  print(f"  Tricubic:           Error - {e}")
 
@@ -1004,7 +2109,7 @@ if __name__ == "__main__":
             try:
                  # Pass the prepared resolution and numpy domain arrays
                  quintic_result = conceptual_triquintic_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
-                 print(f"  ConceptualQuintic:  [{quintic_result[0]:.10f}, {quintic_result[1]:.10f}, {quintic_result[2]:.10f}]")
+                 print(f"  ConceptualQuintic:  [{quintic_result[0]:.16f}, {quintic_result[1]:.16f}, {quintic_result[2]:.16f}]")
             except Exception as e:
                  print(f"  ConceptualQuintic:  Error - {e}")
 
@@ -1012,7 +2117,7 @@ if __name__ == "__main__":
 #            try:
 #                 # Pass the prepared resolution and numpy domain arrays
 #                 rbf_result = rbf_interpolation(lut_data, lut_resolution_for_funcs, r_in, g_in, b_in, domain_min, domain_max)
-#                 print(f"  RBF (Slow Demo):    [{rbf_result[0]:.10f}, {rbf_result[1]:.10f}, {rbf_result[2]:.10f}]")
+#                 print(f"  RBF (Slow Demo):    [{rbf_result[0]:.16f}, {rbf_result[1]:.16f}, {rbf_result[2]:.16f}]")
 #            except Exception as e:
 #                 print(f"  RBF (Slow Demo):    Error - {e}")
 #
@@ -1023,7 +2128,7 @@ if __name__ == "__main__":
 #
 #                 # Check if the result is valid before printing
 #                 if isinstance(rbf_unprot_result, (list, np.ndarray)) and len(rbf_unprot_result) == 3:
-#                     print(f"  RBF (Unprotected):  [{rbf_unprot_result[0]:.10f}, {rbf_unprot_result[1]:.10f}, {rbf_unprot_result[2]:.10f}]")
+#                     print(f"  RBF (Unprotected):  [{rbf_unprot_result[0]:.16f}, {rbf_unprot_result[1]:.16f}, {rbf_unprot_result[2]:.16f}]")
 #                 else:
 #                     print(f"  RBF (Unprotected):  Invalid result (received: {rbf_unprot_result})")
 #

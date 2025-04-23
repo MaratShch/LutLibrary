@@ -231,7 +231,7 @@ bool CDynBlockDecoder::decode (const std::vector<uint8_t>& in, std::vector<uint8
             const int32_t baseLength = cLengthGetBaseLen(LengtCodeArrayIdx);
             const int32_t finalLength = baseLength + (extraBitsInLen > 0 ? readBits(in, sp, extraBitsInLen) : 0);
 
-            if (finalLength > std::numeric_limits<uint32_t>::max() - (extraBitsInLen > 0 ? finalLength : 0u))
+            if (finalLength > std::numeric_limits<int32_t>::max() - (extraBitsInLen > 0 ? finalLength : 0))
                 throw std::runtime_error("Potential overflow of size.");
 
             // Read distance code
