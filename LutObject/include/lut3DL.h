@@ -13,17 +13,33 @@ template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::
 class CLut3DL
 {
 public:	
-    LutElement::lutFileName const getLutFileName (void) {return m_lutName;}
+    LutElement::lutFileName const getLutFileName (void) const {return m_lutName;}
     LutErrorCode::LutState getLastError(void) { return m_error; }
+    LutElement::lutSize getLutSize(void) const { return m_lutSize; }
+    LutElement::lutSize getLutComponentSize(const LutElement::LutComponent component) const { (void)component; return getLutSize(); }
 
     LutErrorCode::LutState LoadFile(std::ifstream& lutFile)
     {
-        /* clear file stream status */
+        // clear file stream status
         lutFile.clear();
-        /* cleanup internal objects before parsing */
+        // cleanup internal objects before start parse file content
         _cleanup();
-
+        // move file pointer on start of file
         lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
+
+        /* check line separator used in 3D CUBE file */
+        const char lineSeparator = getLineSeparator(lutFile);
+        if ('\0' == lineSeparator)
+            return LutErrorCode::LutState::CouldNotParseTableData;
+
+        /* unconditional seek on start of file for start parsing */
+        lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
+
+        LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
+        bool bData = false;
+
+        do {
+        } while (loadStatus == LutErrorCode::LutState::OK && false == bData);
 
         return m_error;
     }
@@ -72,19 +88,98 @@ public:
         return err;
     }
 
+
+    LutErrorCode::LutState SaveFile(std::ofstream& outFile)
+    {
+        return LutErrorCode::LutState::NotInitialized;
+    }
+
+
+    LutErrorCode::LutState SaveFile(const string_view& fileName)
+    {
+        std::ofstream outFile(fileName, std::ios::out | std::ios::trunc);
+        if (!outFile.good())
+            return LutErrorCode::LutState::FileNotOpened;
+
+        auto const err = SaveFile(outFile);
+        outFile.close();
+        return err;
+    }
+
+
+    LutErrorCode::LutState SaveFile(const char* fileName)
+    {
+        return (nullptr != fileName && '\0' != fileName[0]) ? SaveFile(string_view{ fileName }) : LutErrorCode::LutState::GenericError;
+    }
+
+
+    LutErrorCode::LutState SaveFile(const std::string& fileName)
+    {
+        return LutErrorCode::LutState::NotInitialized;
+    }
+
+    const LutElement::lutTable3DEx<T>& get_data(void) const noexcept { return m_lutBody; }
+
+
+    const std::pair<T, T> get_inout_range(void) const { return std::make_pair(m_rangeIn, m_rangeOut); }
+
+
 private:
-	LutElement::lutTable3D<T>  m_lutBody;
-	LutElement::lutFileName    m_lutName;
-	LutElement::lutTitle       m_title;
-	LutElement::lutSize        m_lutSize;
-	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
+	LutElement::lutTable3DEx<T> m_lutBody;
+	LutElement::lutFileName     m_lutName;
+	LutElement::lutTitle        m_title;
+	LutElement::lutSize         m_lutSize;
+	LutErrorCode::LutState      m_error = LutErrorCode::LutState::NotInitialized;
+
+    std::vector<T> m_inputMapping;
+
+    T m_rangeIn;
+    T m_rangeOut;
+
+	static const char symbNewLine        = '\n';
+	static const char symbCarriageReturn = '\r';
+	static const char symbCommentMarker  = '#';
+	static const char symbQuote          = '"';
+	static const char symbSpace          = ' ';
+
 
     void _cleanup (void)
     {
-       m_lutSize = 0;  
+       m_lutBody.clear();
+       m_title.clear();
+       m_lutName.clear();
+       m_lutSize = 0;
+       m_inputMapping.clear();
+       m_rangeIn = m_rangeOut = static_cast<T>(0);
        m_error = LutErrorCode::LutState::NotInitialized;
        return;
     }
+
+    char getLineSeparator(std::ifstream& lutFile)
+    {
+        char lineSeparator{ '\0' };
+        for (int32_t i = 0; i < 256; i++)
+        {
+            auto const c = lutFile.get();
+            if (c == static_cast<decltype(c)>(symbNewLine))
+            {
+                lineSeparator = symbNewLine;
+                break;
+            }
+
+            if (c == static_cast<decltype(c)>(symbCarriageReturn))
+            {
+                if (symbCarriageReturn == lutFile.get())
+                    break;
+
+                lineSeparator = symbCarriageReturn;
+                std::cout << "This file uses non - complient line separator \\r(0x0D)" << std::endl;
+                break;
+            }
+        }
+
+        return lineSeparator;
+    } /* char getLineSeparator (std::ifstream& lutFile) */
 };
 
 
