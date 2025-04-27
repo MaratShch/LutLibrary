@@ -7,7 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-
+#include  <cctype>
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CLut3DL
@@ -37,6 +37,7 @@ public:
 
         LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
         bool bData = false;
+        bool bGridLine = false;
         const std::streampos invalidStreamPos {static_cast<std::streampos>(-1)}; 
 
         do {
@@ -46,9 +47,29 @@ public:
             {
                 std::istringstream line(stringBuffer);
                 line >> keyword;
+
+                if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
+                {
+                    //  we read digits or numerical sign
+                    if (false == bGridLine)
+                    {
+                        // check if we reed Grid Line or Lut Body
+                        if (true == _containsMoreThanThreeNumbers(stringBuffer))
+                            fillGridLine (stringBuffer);
+
+                        // possible GridLine not mandatory - so let's switch to parse LUT Body    
+                        bGridLine = true;
+                    } // if (false == bGridLine)
+                    else
+                    {
+                        // parse LUT row
+                    }
+
+                } // if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
+
             } // if (invalidStreamPos != linePos && LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
 
-        } while (loadStatus == LutErrorCode::LutState::OK && false == bData);
+        } while (loadStatus == LutErrorCode::LutState::OK);
 
         return m_error;
     }
@@ -140,7 +161,7 @@ private:
     LutElement::lutSize         m_lutSize;
     LutErrorCode::LutState      m_error = LutErrorCode::LutState::NotInitialized;
 
-    std::vector<T> m_inputMapping;
+    std::vector<T> m_gridLine;
     std::string m_nativeComments;
 
     T m_rangeIn;
@@ -159,12 +180,43 @@ private:
        m_title.clear();
        m_lutName.clear();
        m_lutSize = 0;
-       m_inputMapping.clear();
+       m_gridLine.clear();
        m_nativeComments.clear();
        m_rangeIn = m_rangeOut = static_cast<T>(0);
        m_error = LutErrorCode::LutState::NotInitialized;
        return;
     }
+
+    bool _containsMoreThanThreeNumbers (const std::string& line)
+    {
+        std::stringstream ss(line);
+        std::string temp_token;
+        int count = 0;
+
+        // Count the numbers, stopping as soon as we find the 4th one.
+        while (ss >> temp_token)
+        {
+            count++;
+            if (count > 3)
+                return true;
+        }
+        return false;
+    }
+
+
+    void fillGridLine(const std::string& line)
+    {
+        std::istringstream data_line (line);
+        m_gridLine.clear();
+        while (!data_line.fail())
+        {
+            T value{};
+            data_line >> value;
+            m_gridLine.push_back(value);
+        }
+        return;
+    }
+
 
     char getLineSeparator(std::ifstream& lutFile)
     {
@@ -204,6 +256,12 @@ private:
             std::getline(lutFile, strBuffer, lineSeparator);
             if (lutFile.fail())
                 return LutErrorCode::LutState::ReadError;
+
+            if (symbCommentMarker == strBuffer[0])
+            {
+                m_nativeComments += strBuffer;
+                m_nativeComments += symbNewLine;
+            }
         }
         return LutErrorCode::LutState::OK;
     } /* LutErrorCode::LutState ReadLine(std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator) */
