@@ -37,8 +37,17 @@ public:
 
         LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
         bool bData = false;
+        const std::streampos invalidStreamPos {static_cast<std::streampos>(-1)}; 
 
         do {
+            std::string stringBuffer, keyword;
+            const auto linePos = (lutFile.good() ? lutFile.tellg() : invalidStreamPos);
+            if (invalidStreamPos != linePos && LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
+            {
+                std::istringstream line(stringBuffer);
+                line >> keyword;
+            } // if (invalidStreamPos != linePos && LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
+
         } while (loadStatus == LutErrorCode::LutState::OK && false == bData);
 
         return m_error;
@@ -125,22 +134,23 @@ public:
 
 
 private:
-	LutElement::lutTable3DEx<T> m_lutBody;
-	LutElement::lutFileName     m_lutName;
-	LutElement::lutTitle        m_title;
-	LutElement::lutSize         m_lutSize;
-	LutErrorCode::LutState      m_error = LutErrorCode::LutState::NotInitialized;
+    LutElement::lutTable3DEx<T> m_lutBody;
+    LutElement::lutFileName     m_lutName;
+    LutElement::lutTitle        m_title;
+    LutElement::lutSize         m_lutSize;
+    LutErrorCode::LutState      m_error = LutErrorCode::LutState::NotInitialized;
 
     std::vector<T> m_inputMapping;
+    std::string m_nativeComments;
 
     T m_rangeIn;
     T m_rangeOut;
 
-	static const char symbNewLine        = '\n';
-	static const char symbCarriageReturn = '\r';
-	static const char symbCommentMarker  = '#';
-	static const char symbQuote          = '"';
-	static const char symbSpace          = ' ';
+    static const char symbNewLine        = '\n';
+    static const char symbCarriageReturn = '\r';
+    static const char symbCommentMarker  = '#';
+    static const char symbQuote          = '"';
+    static const char symbSpace          = ' ';
 
 
     void _cleanup (void)
@@ -150,6 +160,7 @@ private:
        m_lutName.clear();
        m_lutSize = 0;
        m_inputMapping.clear();
+       m_nativeComments.clear();
        m_rangeIn = m_rangeOut = static_cast<T>(0);
        m_error = LutErrorCode::LutState::NotInitialized;
        return;
@@ -158,7 +169,7 @@ private:
     char getLineSeparator(std::ifstream& lutFile)
     {
         char lineSeparator{ '\0' };
-        for (int32_t i = 0; i < 256; i++)
+        for (int32_t i = 0; i < 1024; i++)
         {
             auto const c = lutFile.get();
             if (c == static_cast<decltype(c)>(symbNewLine))
@@ -175,11 +186,28 @@ private:
                 lineSeparator = symbCarriageReturn;
                 std::cout << "This file uses non - complient line separator \\r(0x0D)" << std::endl;
                 break;
-            }
-        }
+            } // if (c == static_cast<decltype(c)>(symbCarriageReturn))
+
+        }// for (int32_t i = 0; i < 1024; i++)
 
         return lineSeparator;
-    } /* char getLineSeparator (std::ifstream& lutFile) */
+    } // char getLineSeparator (std::ifstream& lutFile)
+
+
+    LutErrorCode::LutState ReadLine (std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator)
+    {
+        while (0u == strBuffer.size() || symbCommentMarker == strBuffer[0])
+        {
+            if (lutFile.eof())
+                return LutErrorCode::LutState::PrematureEndOfFile;
+
+            std::getline(lutFile, strBuffer, lineSeparator);
+            if (lutFile.fail())
+                return LutErrorCode::LutState::ReadError;
+        }
+        return LutErrorCode::LutState::OK;
+    } /* LutErrorCode::LutState ReadLine(std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator) */
+
 };
 
 
