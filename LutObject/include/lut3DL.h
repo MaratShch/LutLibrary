@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cctype>
 #include <cmath>
+#include <array>
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CLut3DL
@@ -52,8 +53,6 @@ public:
 
                 if (std::isdigit(static_cast<unsigned char>(keyword[0])) || '-' == keyword[0] || '.' == keyword[0])
                 {
-                    std::array<T, 3> rowVal{};
-
                     //  we read digits or numerical sign
                     if (false == bGridLine)
                     {
@@ -64,15 +63,17 @@ public:
                             bGridLine = true;
                             continue; 
                         } 
-                        else // possible GridLine not mandatory - so let's switch to parse LUT Body    
-                            rowVal = ParseTableRow (stringBuffer);
-
+                        else // possible GridLine not mandatory - so let's switch to parse LUT Body 
+                        {
+                            const std::array<T, 3> rowVal = ParseTableRow(stringBuffer);
+                            _body_fill(rowVal);
+                        }
                     } // if (false == bGridLine)
                     else
-                        rowVal = ParseTableRow (stringBuffer);
-
-                    for (auto const& value : rowVal)
-                        m_lutBody.push_back(value);
+                    {
+                        const std::array<T, 3> rowVal = ParseTableRow(stringBuffer);
+                        _body_fill(rowVal);
+                    }
 
                 } // if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
 
@@ -210,6 +211,14 @@ private:
        return;
     }
 
+    void _body_fill (const std::array<T, 3>& rowVal)
+    {
+        for (auto const& value : rowVal)
+            m_lutBody.push_back(value);
+
+        return;
+    }
+
     bool _containsMoreThanThreeNumbers (const std::string& line)
     {
         std::stringstream ss(line);
@@ -293,7 +302,7 @@ private:
     } // LutErrorCode::LutState ReadLine(std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator)
 
 
-    std::array<T, 3> ParseTableRow (const std::string& strBuffer)
+    const std::array<T, 3> ParseTableRow (const std::string& strBuffer)
     {
         std::array<T, 3> lutRawData;
         std::istringstream data_line (strBuffer);
