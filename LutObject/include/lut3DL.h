@@ -7,7 +7,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include  <cctype>
+#include <cctype>
+#include <cmath>
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CLut3DL
@@ -38,41 +39,63 @@ public:
         LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
         bool bData = false;
         bool bGridLine = false;
-        const std::streampos invalidStreamPos {static_cast<std::streampos>(-1)}; 
+
+        std::string stringBuffer, keyword;
 
         do {
-            std::string stringBuffer, keyword;
-            const auto linePos = (lutFile.good() ? lutFile.tellg() : invalidStreamPos);
-            if (invalidStreamPos != linePos && LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
+            stringBuffer.clear();
+            keyword.clear(); 
+            if (LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
             {
                 std::istringstream line(stringBuffer);
                 line >> keyword;
 
-                if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
+                if (std::isdigit(static_cast<unsigned char>(keyword[0])) || '-' == keyword[0] || '.' == keyword[0])
                 {
+                    std::array<T, 3> rowVal{};
+
                     //  we read digits or numerical sign
                     if (false == bGridLine)
                     {
                         // check if we reed Grid Line or Lut Body
                         if (true == _containsMoreThanThreeNumbers(stringBuffer))
+                        { 
                             fillGridLine (stringBuffer);
+                            bGridLine = true;
+                            continue; 
+                        } 
+                        else // possible GridLine not mandatory - so let's switch to parse LUT Body    
+                            rowVal = ParseTableRow (stringBuffer);
 
-                        // possible GridLine not mandatory - so let's switch to parse LUT Body    
-                        bGridLine = true;
                     } // if (false == bGridLine)
                     else
-                    {
-                        // parse LUT row
-                    }
+                        rowVal = ParseTableRow (stringBuffer);
+
+                    for (auto const& value : rowVal)
+                        m_lutBody.push_back(value);
 
                 } // if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
 
-            } // if (invalidStreamPos != linePos && LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
+            } // if (LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
 
         } while (loadStatus == LutErrorCode::LutState::OK);
 
+        const size_t bodySize = m_lutBody.size();
+        const size_t gridSize = m_gridLine.size();
+        const size_t entries  = bodySize / 3;
+        m_lutSize = static_cast<size_t>(std::cbrt(static_cast<T>(entries)));
+        if (0ull != gridSize && gridSize != m_lutSize)
+        { 
+            std::cout << "Lut size not match to Lut Grid size!!!" << std::endl;
+            std::cout << "Grid size = " << gridSize << " Lut size = " << m_lutSize << " [Body size = " << bodySize << "]" << std::endl;
+            m_error = LutErrorCode::LutState::CouldNotParseTableData;
+        } 
+        else   
+            m_error = LutErrorCode::LutState::OK;         
+ 
         return m_error;
     }
+
 
     LutErrorCode::LutState LoadFile(const string_view& lutFileName)
     {
@@ -204,21 +227,24 @@ private:
     }
 
 
-    void fillGridLine(const std::string& line)
+    void fillGridLine (const std::string& line)
     {
         std::istringstream data_line (line);
         m_gridLine.clear();
-        while (!data_line.fail())
+        while (true)
         {
             T value{};
             data_line >> value;
+            if (data_line.fail())
+                break;
             m_gridLine.push_back(value);
         }
+
         return;
     }
 
 
-    char getLineSeparator(std::ifstream& lutFile)
+    char getLineSeparator (std::ifstream& lutFile)
     {
         char lineSeparator{ '\0' };
         for (int32_t i = 0; i < 1024; i++)
@@ -264,7 +290,26 @@ private:
             }
         }
         return LutErrorCode::LutState::OK;
-    } /* LutErrorCode::LutState ReadLine(std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator) */
+    } // LutErrorCode::LutState ReadLine(std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator)
+
+
+    std::array<T, 3> ParseTableRow (const std::string& strBuffer)
+    {
+        std::array<T, 3> lutRawData;
+        std::istringstream data_line (strBuffer);
+
+        for (int32_t i = 0; i < 3; i++)
+        {
+            data_line >> lutRawData[i];
+            if (data_line.fail())
+            {
+                m_error = LutErrorCode::LutState::CouldNotParseTableData;
+                break;
+            }
+        } // for (int32_t i = 0; i < 3; i++)
+
+        return lutRawData;
+    } // std::array<T, 3> ParseTableRow (const std::string& strBuffer)
 
 };
 
