@@ -66,13 +66,13 @@ public:
                         else // possible GridLine not mandatory - so let's switch to parse LUT Body 
                         {
                             const std::array<T, 3> rowVal = ParseTableRow(stringBuffer);
-                            _body_fill(rowVal);
+                            std::copy(rowVal.begin(), rowVal.end(), std::back_inserter(m_lutBody));
                         }
                     } // if (false == bGridLine)
                     else
                     {
                         const std::array<T, 3> rowVal = ParseTableRow(stringBuffer);
-                        _body_fill(rowVal);
+                        std::copy(rowVal.begin(), rowVal.end(), std::back_inserter(m_lutBody));
                     }
 
                 } // if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
@@ -211,13 +211,6 @@ private:
        return;
     }
 
-    void _body_fill (const std::array<T, 3>& rowVal)
-    {
-        for (auto const& value : rowVal)
-            m_lutBody.push_back(value);
-
-        return;
-    }
 
     bool _containsMoreThanThreeNumbers (const std::string& line)
     {
