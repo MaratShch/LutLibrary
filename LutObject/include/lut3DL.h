@@ -66,13 +66,13 @@ public:
                         else // possible GridLine not mandatory - so let's switch to parse LUT Body 
                         {
                             const std::array<T, 3> rowVal = ParseTableRow(stringBuffer);
-                            std::copy(rowVal.begin(), rowVal.end(), std::back_inserter(m_lutBody));
+                            m_lutBody.insert(m_lutBody.end(), rowVal.begin(), rowVal.end());
                         }
                     } // if (false == bGridLine)
                     else
                     {
                         const std::array<T, 3> rowVal = ParseTableRow(stringBuffer);
-                        std::copy(rowVal.begin(), rowVal.end(), std::back_inserter(m_lutBody));
+                        m_lutBody.insert(m_lutBody.end(), rowVal.begin(), rowVal.end());
                     }
 
                 } // if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
