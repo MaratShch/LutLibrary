@@ -1,4 +1,4 @@
-function result_rgb = linear_interp_1d_slice(lut_table, resolutions, r, g, b, domain_min, domain_max)
+function result_rgb = linear_interp_3D_Lut(lut_table, resolutions, r, g, b, domain_min, domain_max)
 %LINEAR_INTERP_1D_SLICE Performs 1D linear interpolation along R-axis of 3D LUT.
 %   Selects slice based on nearest G, B index. Clamps output.
 %   Assumes lut_table indexing is [R_idx, G_idx, B_idx, Channel].
