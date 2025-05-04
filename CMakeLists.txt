@@ -90,6 +90,9 @@ if (BUILD_INCLUDE_BRANCH_NAME)
 	add_definitions(-DPROJECT_GIT_BRANCH="${GIT_BRANCH}")
 endif(BUILD_INCLUDE_BRANCH_NAME)
 
+# add 3rd party components/libs directory
+add_subdirectory(3rd)
+
 add_subdirectory(LutUtils)
 add_subdirectory(LutObject)
 add_subdirectory(LutInterface)
