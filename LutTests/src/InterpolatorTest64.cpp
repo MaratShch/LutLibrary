@@ -94,7 +94,7 @@ TEST (InterpolatorTest, Interpolator_Linear_MagicHour_f64)
            const RGBf64 rgb = TestPointF64[i];
            const RGBf64 expected_rgb = ReferencePointsLerpF64[i];
 
-           LutElement::lutTableRaw<double> out = linear_interpolation (lutData, rgb[0], rgb[1], rgb[2], lutDomain.first, lutDomain.second);
+           LutElement::lutTableRaw<double> out = Interpolator3D::linear_interpolation (lutData, rgb[0], rgb[1], rgb[2], lutDomain.first, lutDomain.second);
 
            if (
                 (true != Equal(out[0], expected_rgb[0], tolerance)) || 

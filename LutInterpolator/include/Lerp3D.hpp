@@ -7,6 +7,9 @@
 #include <cstddef>
 #include <vector> // Only if returning vector, array preferred
 
+namespace Interpolator3D
+{
+
 // --- Clip Function ---
 template <typename T>
 inline T clip(const T& value, const T& min_val, const T& max_val)
@@ -93,4 +96,5 @@ LutElement::lutTableRaw<T> linear_interpolation(
     return clamped_val;
 }
 
+} // namespace Interpolator3D
 #endif // __LUT_LINEAR_INTERPOLATOR__

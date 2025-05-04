@@ -2,6 +2,6 @@
 #define __LUT_LIBRARY_LUT_INTERPOLATOR_INTERFACE__
 
 #include "compute_mode.h"
-#include "Lerp.hpp"
+#include "Lerp3D.hpp"
 
 #endif // __LUT_LIBRARY_LUT_INTERPOLATOR_INTERFACE__
