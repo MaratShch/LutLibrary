@@ -26,10 +26,7 @@ public:
         lutFile.clear();
         // cleanup internal objects before start parse file content
         _cleanup();
-        // move file pointer on start of file
-        lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
-
-        /* check line separator used in 3D CUBE file */
+        /* check line separator used in 3DL LUT file */
         const char lineSeparator = getLineSeparator(lutFile);
         if ('\0' == lineSeparator)
             return LutErrorCode::LutState::CouldNotParseTableData;
@@ -37,43 +34,41 @@ public:
         /* unconditional seek on start of file for start parsing */
         lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
 
-        LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
-        bool bData = false;
-        bool bGridLine = false;
-
         std::string stringBuffer, keyword;
+
+        LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
+        bool bGridLine = false;
 
         do {
             stringBuffer.clear();
-            keyword.clear(); 
+
             if (LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
             {
+                keyword.clear();
                 std::istringstream line(stringBuffer);
                 line >> keyword;
 
                 if (std::isdigit(static_cast<unsigned char>(keyword[0])) || '-' == keyword[0] || '.' == keyword[0])
                 {
                     //  we read digits or numerical sign
-                    if (false == bGridLine)
+                    if (true == bGridLine)
+                    {
+                        const std::array<T, 3> rowVal = ParseTableRow(stringBuffer);
+                        m_lutBody.insert(m_lutBody.end(), rowVal.begin(), rowVal.end());
+                    }
+                    else
                     {
                         // check if we reed Grid Line or Lut Body
                         if (true == _containsMoreThanThreeNumbers(stringBuffer))
-                        { 
                             fillGridLine (stringBuffer);
-                            bGridLine = true;
-                            continue; 
-                        } 
                         else // possible GridLine not mandatory - so let's switch to parse LUT Body 
                         {
                             const std::array<T, 3> rowVal = ParseTableRow(stringBuffer);
                             m_lutBody.insert(m_lutBody.end(), rowVal.begin(), rowVal.end());
                         }
-                    } // if (false == bGridLine)
-                    else
-                    {
-                        const std::array<T, 3> rowVal = ParseTableRow(stringBuffer);
-                        m_lutBody.insert(m_lutBody.end(), rowVal.begin(), rowVal.end());
-                    }
+                        // grid line must precede LUT body; if missing, jump directly to LUT body parsing. 
+                        bGridLine = true;
+                    } // if (true == bGridLine)
 
                 } // if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
 
@@ -82,8 +77,8 @@ public:
         } while (loadStatus == LutErrorCode::LutState::OK);
 
         const size_t bodySize = m_lutBody.size();
+        const size_t entries  = bodySize / 3ull;
         const size_t gridSize = m_gridLine.size();
-        const size_t entries  = bodySize / 3;
         m_lutSize = static_cast<size_t>(std::cbrt(static_cast<T>(entries)));
         if (0ull != gridSize && gridSize != m_lutSize)
         { 
@@ -172,18 +167,18 @@ public:
         return LutErrorCode::LutState::NotInitialized;
     }
 
-    const LutElement::lutTable3DEx<T>& get_data(void) const noexcept { return m_lutBody; }
+    const LutElement::lutTable3D<T>& get_data(void) const noexcept { return m_lutBody; }
 
 
     const std::pair<T, T> get_inout_range(void) const { return std::make_pair(m_rangeIn, m_rangeOut); }
 
 
 private:
-    LutElement::lutTable3DEx<T> m_lutBody;
-    LutElement::lutFileName     m_lutName;
-    LutElement::lutTitle        m_title;
-    LutElement::lutSize         m_lutSize;
-    LutErrorCode::LutState      m_error = LutErrorCode::LutState::NotInitialized;
+    LutElement::lutTable3D<T> m_lutBody;
+    LutElement::lutFileName   m_lutName;
+    LutElement::lutTitle      m_title;
+    LutElement::lutSize       m_lutSize;
+    LutErrorCode::LutState    m_error = LutErrorCode::LutState::NotInitialized;
 
     std::vector<T> m_gridLine;
     std::string m_nativeComments;
@@ -191,11 +186,11 @@ private:
     T m_rangeIn;
     T m_rangeOut;
 
-    static const char symbNewLine        = '\n';
-    static const char symbCarriageReturn = '\r';
-    static const char symbCommentMarker  = '#';
-    static const char symbQuote          = '"';
-    static const char symbSpace          = ' ';
+    static constexpr char symbNewLine        = '\n';
+    static constexpr char symbCarriageReturn = '\r';
+    static constexpr char symbCommentMarker  = '#';
+    static constexpr char symbQuote          = '"';
+    static constexpr char symbSpace          = ' ';
 
 
     void _cleanup (void)

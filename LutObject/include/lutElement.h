@@ -2,6 +2,7 @@
 #define __LUT_LIBRARY_LUT_ELEMENT__
 
 #include <vector>
+#include <array>
 #include <string>
 
 namespace LutElement
@@ -16,12 +17,12 @@ namespace LutElement
 	using lutTable2D = std::vector<lutTable1D<T>>;
 
     // nested memory layout of the 3D LUT
-    template <typename T>
-	using lutTable3D = std::vector<lutTable2D<T>>;
+//  template <typename T>
+//	using lutTable3D = std::vector<lutTable2D<T>>;
 
     // flat memory layout of the 3D LUT
     template <typename T>
-    using lutTable3DEx = std::vector<T>;
+    using lutTable3D = std::vector<T>;
 
 	using lutFileName = std::string;
 	using lutTitle    = std::string;

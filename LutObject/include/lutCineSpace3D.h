@@ -20,7 +20,8 @@ class CCineSpaceLut3D
 	
 	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
 	{
-		/* clear file stream status */
+        bool bValid = true;
+		// clear file stream status
 		lutFile.clear();
 		/* cleanup internal objects before parsing */
 		_cleanup();
@@ -90,29 +91,28 @@ class CCineSpaceLut3D
 				lutDim >> m_lutComponentSize[i];
 		}
 
-		LutElement::lutSize r = 0u, g = 0u, b = 0u;
-		bool bValid = true;
 		if (0u != m_lutComponentSize[0] && 0u != m_lutComponentSize[1] && 0u != m_lutComponentSize[2])
 		{
-			/* resize vectors holds LUT tables */
+            // resize vectors holds LUT tables/
 			set_lut_size();
-			/* load LUT table from file */
-			for (b = 0u; b < m_lutComponentSize[0] && true == bValid; b++)
-				for (g = 0u; g < m_lutComponentSize[1] && true == bValid; g++)
-					for (r = 0u; r < m_lutComponentSize[2] && true == bValid; r++)
-					{
-						stringBuffer.clear();
-						if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator)))
-							m_lutBody[r][g][b] = ParseTableRow (stringBuffer);
-						else
-							bValid = false;
-					}
-		}
+			
+            // load LUT table from file/
+            const LutElement::lutSize lutLines = m_lutComponentSize[0] * m_lutComponentSize[1] * m_lutComponentSize[2];
+            for (LutElement::lutSize idx = 0; idx < lutLines && true == bValid; idx++)
+            {
+                stringBuffer.clear();
+                if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator)))
+                {
+                    const std::array<T, 3> lutLineVal = ParseTableRow(stringBuffer);
+                    m_lutBody.insert(m_lutBody.end(), lutLineVal.cbegin(), lutLineVal.cend());
+                }
+                else
+                    bValid = false;
+            }
 
-		auto const componentMask = (m_lutComponentSize[0] && m_lutComponentSize[1] && m_lutComponentSize[2]);
+		} // if (0u != m_lutComponentSize[0] && 0u != m_lutComponentSize[1] && 0u != m_lutComponentSize[2])
 
-		return (true == componentMask && b == m_lutComponentSize[0] && g == m_lutComponentSize[1] && r == m_lutComponentSize[2]) ?
-			LutErrorCode::LutState::OK : LutErrorCode::LutState::CouldNotParseTableData;
+		return (true == bValid) ? LutErrorCode::LutState::OK : LutErrorCode::LutState::CouldNotParseTableData;
 	}
 	
 	LutErrorCode::LutState LoadFile (const string_view& lutFileName)
@@ -180,11 +180,11 @@ class CCineSpaceLut3D
 
 	
  private:
- 	LutElement::lutTable3D<T>  m_lutBody;
- 	LutElement::lutFileName    m_lutName;
-	LutElement::lutSize        m_lutSize;
-	LutElement::lutSize        m_lutComponentSize[3];
-	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
+ 	LutElement::lutTable3D<T> m_lutBody;
+ 	LutElement::lutFileName   m_lutName;
+	LutElement::lutSize       m_lutSize;
+	LutElement::lutSize       m_lutComponentSize[3];
+	LutErrorCode::LutState    m_error = LutErrorCode::LutState::NotInitialized;
 	
 	uint32_t m_preLutR;
 	uint32_t m_preLutG;
@@ -198,9 +198,9 @@ class CCineSpaceLut3D
 	std::vector<T> m_preLut_B_out;
 	
 	const std::string str_LutDimType {"3D"};
-	static const char symbNewLine        = '\n';
-	static const char symbCarriageReturn = '\r';
-	static const char symbSpace          = ' ';
+	static constexpr char symbNewLine        = '\n';
+	static constexpr char symbCarriageReturn = '\r';
+	static constexpr char symbSpace          = ' ';
 
 	void _cleanup (void)
 	{
@@ -323,37 +323,36 @@ class CCineSpaceLut3D
 		return lineSeparator;
 	} /* char getLineSeparator (std::ifstream& lutFile) */
 
-	LutElement::lutTableRaw<T> ParseTableRow (const std::string& strBuffer)
-	{
-		LutElement::lutTableRaw<T> lutRawData(3);
-		std::istringstream data_line(strBuffer);
 
-		for (int32_t i = 0; i < 3; i++)
-		{
-			data_line >> lutRawData[i];
-			if (data_line.fail())
-			{
-				m_error = LutErrorCode::LutState::CouldNotParseTableData;
-				break;
-			}
-		}
+    const std::array<T, 3> ParseTableRow (const std::string& strBuffer)
+    {
+        std::array<T, 3> lutRawData;
+        std::istringstream data_line(strBuffer);
 
-		return lutRawData;
-	}
+        for (int32_t i = 0; i < 3; i++)
+        {
+            data_line >> lutRawData[i];
+            if (data_line.fail())
+            {
+                m_error = LutErrorCode::LutState::CouldNotParseTableData;
+                break;
+            }
+        }
+
+        return lutRawData;
+    }
 
 	LutErrorCode::LutState set_lut_size (void)
 	{
-		if (m_lutComponentSize[0] >= 2 && m_lutComponentSize[0] <= 256 && m_lutComponentSize[1] >= 2 && m_lutComponentSize[1] && m_lutComponentSize[2] >= 2 && m_lutComponentSize[2])
+		if (m_lutComponentSize[0] >= 2 && m_lutComponentSize[0] <= 256 && m_lutComponentSize[1] >= 2 && m_lutComponentSize[1] <= 256  && m_lutComponentSize[2] >= 2 && m_lutComponentSize[2] <= 256)
 		{
-			/* let's set lutSize equal to minimal component size ??? */
+			// let's set lutSize equal to minimal component size ??? */
 			m_lutSize = std::min(m_lutComponentSize[0], std::min(m_lutComponentSize[1], m_lutComponentSize[2]));
 
-			m_lutBody = LutElement::lutTable3D<T>(
-				getLutComponentSize(LutElement::LutComponent::Blue),  LutElement::lutTable2D<T>(
-				getLutComponentSize(LutElement::LutComponent::Green), LutElement::lutTable1D<T>(
-				getLutComponentSize(LutElement::LutComponent::Red),   LutElement::lutTableRaw<T>(3)))
-			);
-			return LutErrorCode::LutState::OK;
+            // reserve memory for vector for hold all LUT Body data
+            LutElement::lutSize vecSize = m_lutComponentSize[0] * m_lutComponentSize[1] * m_lutComponentSize[2] * static_cast<LutElement::lutSize>(3);
+            m_lutBody.reserve(vecSize);
+            return LutErrorCode::LutState::OK;
 		}
 		return LutErrorCode::LutState::LutSizeOutOfRange;
 	}
