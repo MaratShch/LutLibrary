@@ -4,14 +4,14 @@
 namespace LutAlgorithm
 {
     
-template<typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr> 
+template<typename T> 
 inline T getTripletIdx (const T& r, const T& g, const T& b, const T& resR, const T& resG, const T& resB) noexcept
 {
     return (((b * resR) * resG) + (g * resR) + r) * 3;	 
 }
 
 
-template<typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr> 
+template<typename T> 
 inline T getTripletIdx (const T& r, const T& g, const T& b, const T& lutSize) noexcept
 {
     // Calculate index of the triplet itself first

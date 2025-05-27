@@ -54,9 +54,11 @@ public:
 
 	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
 	{
-		/* clear file stream status */
+        // clear Lut Body vector
+        m_lutBody3D.clear();
+		// clear file stream status/
 		lutFile.clear();
-		/* cleanup internal objects before parsing */
+		// cleanup internal objects before parsing/
 		_cleanup();
 
 		lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
@@ -152,11 +154,11 @@ public:
 	
 protected:
 private:
-	LutElement::lutTable3D<T>  m_lutBody3D;
-	LutElement::lutTable1D<T>  m_lutBody1D;
- 	LutElement::lutFileName    m_lutName;
-	LutElement::lutSize        m_lutSize;
-	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
+	LutElement::lutTable3D<T> m_lutBody3D;
+	LutElement::lutTable1D<T> m_lutBody1D;
+ 	LutElement::lutFileName   m_lutName;
+	LutElement::lutSize       m_lutSize;
+	LutErrorCode::LutState    m_error = LutErrorCode::LutState::NotInitialized;
 	
 	/* Original PNG file chunks. Let's save this chunks for keep possibility restore original PNG file */
 	std::unordered_map<std::string, std::vector<uint8_t>> mHaldChunkOrig{};
@@ -381,40 +383,34 @@ private:
 
                 if (decodedDataSize >= expectedDataSize)
                 {
-                    // resize LUT buffer
-                    m_lutBody3D = LutElement::lutTable3D<T>(m_lutSize, LutElement::lutTable2D<T>(m_lutSize, LutElement::lutTable1D<T>(m_lutSize, LutElement::lutTableRaw<T>(3))));
+                    // compute normalized coefficients
+                    const T normalizer = (m_bitDepth == 8u) ? static_cast<T>(255) : static_cast<T>(65535);
+                    // reserve memory for LUT Body data
+                    const LutElement::lutSize totalLines = m_lutSize * m_lutSize * m_lutSize;
+                    m_lutBody3D.reserve(totalLines * static_cast<LutElement::lutSize>(3));
 
-                    uint32_t b, g, r, dec = 0u;
-                    // fill LUT data
-                    if (8u == m_bitDepth)
-                    { // copy from vector with 8 bits values
-                        for (b = 0u; b < m_lutSize; b++)
-                            for (g = 0u; g < m_lutSize; g++)
-                                for (r = 0u; r < m_lutSize; r++)
-                                {
-                                    m_lutBody3D[r][g][b] = {
-                                        static_cast<float>(vecRGB8[dec + 0u]),
-                                        static_cast<float>(vecRGB8[dec + 1u]),
-                                        static_cast<float>(vecRGB8[dec + 2u]) };
-                                    dec += 3u;  
-                                }
+                    if (m_bitDepth == 8u)
+                    {
+                        const uint8_t* src = vecRGB8.data();
+                        for (size_t i = 0; i < totalLines; ++i)
+                        {
+                            m_lutBody3D.push_back(static_cast<float>(*src++) / normalizer);
+                            m_lutBody3D.push_back(static_cast<float>(*src++) / normalizer);
+                            m_lutBody3D.push_back(static_cast<float>(*src++) / normalizer);
+                        }
                     }
                     else
-                    { // copy from vector with 16 bits values
-                        for (b = 0u; b < m_lutSize; b++)
-                            for (g = 0u; g < m_lutSize; g++)
-                                for (r = 0u; r < m_lutSize; r++)
-                                {
-                                    m_lutBody3D[r][g][b] = {
-                                        static_cast<float>(vecRGB16[dec + 0u]),
-                                        static_cast<float>(vecRGB16[dec + 1u]),
-                                        static_cast<float>(vecRGB16[dec + 2u]) };
-                                    dec += 3u;  
-                                }
+                    {
+                        const uint16_t* src = vecRGB16.data();
+                        for (size_t i = 0; i < totalLines; ++i)
+                        {
+                            m_lutBody3D.push_back(static_cast<float>(*src++) / normalizer);
+                            m_lutBody3D.push_back(static_cast<float>(*src++) / normalizer);
+                            m_lutBody3D.push_back(static_cast<float>(*src++) / normalizer);
+                        }
                     }
 
                     bRet = true;
-
                 } // if (decodedDataSize >= expectedDataSize)
                 else
                     bRet = false;

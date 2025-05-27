@@ -9,7 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <utility>
-#include  <cctype>
+#include <cctype>
 
 template<typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr> 
 class CCubeLut3D
@@ -20,35 +20,35 @@ public:
 	LutElement::lutSize getLutSize (void) const { return m_lutSize; }
 	LutElement::lutSize getLutComponentSize (const LutElement::LutComponent component) const {(void)component; return getLutSize();}
 
-	LutErrorCode::LutState LoadFile (std::ifstream& lutFile)
-	{
+    LutErrorCode::LutState LoadFile(std::ifstream& lutFile)
+    {
         std::string stringBuffer, keyword;
-      
+
         /* clear file stream status */
-		lutFile.clear();
-		/* cleanup internal objects before parsing */
-		_cleanup();
+        lutFile.clear();
+        /* cleanup internal objects before parsing */
+        _cleanup();
 
-		/* check line separator used in 3D CUBE file */
-		const char lineSeparator = getLineSeparator(lutFile);
-		if ('\0' == lineSeparator)
-			return LutErrorCode::LutState::CouldNotParseTableData;
+        /* check line separator used in 3D CUBE file */
+        const char lineSeparator = getLineSeparator(lutFile);
+        if ('\0' == lineSeparator)
+            return LutErrorCode::LutState::CouldNotParseTableData;
 
-		/* unconditional seek on start of file for start parsing */
-		lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
+        /* unconditional seek on start of file for start parsing */
+        lutFile.seekg(static_cast<std::streampos>(0), std::ios_base::beg);
 
-		LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
-		bool bData = false;
+        LutErrorCode::LutState loadStatus = LutErrorCode::LutState::OK;
+        bool bData = false;
 
-		/* IN FIRST READ KEYWORDS */
-		do {
-			stringBuffer.clear(); /* cleanup string before read line from file */
+        /* IN FIRST READ KEYWORDS */
+        do {
+            stringBuffer.clear(); /* cleanup string before read line from file */
             const auto linePos = (lutFile.good() ? lutFile.tellg() : static_cast<std::streampos>(-1));
-			if (LutErrorCode::LutState::OK == (loadStatus = ReadLine (lutFile, stringBuffer, lineSeparator)))
-			{
-				keyword.clear();
-				std::istringstream line(stringBuffer);
-				line >> keyword;
+            if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator)))
+            {
+                keyword.clear();
+                std::istringstream line(stringBuffer);
+                line >> keyword;
 
                 if (std::isdigit(static_cast<unsigned char>(keyword[0])) || keyword[0] == '-' || keyword[0] == '.')
                 {
@@ -66,42 +66,40 @@ public:
                     loadStatus = set_domain_min_value(line);
                 else if ("DOMAIN_MAX" == keyword)
                     loadStatus = set_domain_max_value(line);
-			} /* if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator))) */
-		} while (loadStatus == LutErrorCode::LutState::OK && false == bData);
+            } /* if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator))) */
+        } while (loadStatus == LutErrorCode::LutState::OK && false == bData);
 
-		LutElement::lutSize r = 0u, g = 0u, b = 0u;
+        LutElement::lutSize r = 0u, g = 0u, b = 0u;
 
-		/* VALIDATE KEYWORDS AND READ LUT BODY */
-		if (LutErrorCode::LutState::OK == keywords_validation())
-		{
-			const auto& lut3DSize = m_lutSize;
-			bool bNoBlob = true;
+        // VALIDATE KEYWORDS AND READ LUT BODY
+        if (LutErrorCode::LutState::OK == keywords_validation())
+        {
+            bool bNoBlob = true;
+            const LutElement::lutSize lutLinesNumb = m_lutSize * m_lutSize * m_lutSize;
+            for (LutElement::lutSize idx = 0; idx < lutLinesNumb; idx++)
+            {
+                // READ LUT DATA
+                stringBuffer.clear();
+                if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator)))
+                {
+                    // skip #xxBLOB section
+                    if (symbCommentMarker == stringBuffer[0])
+                    {
+                        bNoBlob = false;
+                        continue;
+                    }
 
-			for (b = 0; b < lut3DSize && bNoBlob; b++)
-				for (g = 0; g < lut3DSize && bNoBlob; g++)
-					for (r = 0; r < lut3DSize && bNoBlob; r++)
-					{
-						/* READ LUT DATA */
-						stringBuffer.clear();
-						if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator)))
-						{
-							/* skip #xxBLOB section */
-							if (symbCommentMarker == stringBuffer[0])
-							{
-								bNoBlob = false;
-								continue;
-							}
-							m_lutBody[r][g][b] = ParseTableRow(stringBuffer);
-						}
-					}
-		}
+                    const std::array<T, 3> lutLine = ParseTableRow(stringBuffer);
+                    m_lutBody.insert(m_lutBody.end(), lutLine.cbegin(), lutLine.cend());
+                }
+            }
 
-		loadStatus = lut_size_validation (r, g, b);
-		m_error = loadStatus;
+            loadStatus = lut_size_validation();
+            m_error = loadStatus;
 
-		return loadStatus;
-	}
-
+            return loadStatus;
+        }
+    }
 
 	LutErrorCode::LutState LoadFile (const string_view& lutFileName)
 	{
@@ -171,24 +169,20 @@ public:
 			outFile << std::endl;
 			outFile.flush();
 
-			if (outFile.good())
-			{
-				/* write LUT table */
-				for (b = 0; b < m_lutSize && outFile.good(); b++)
-				{
-					for (g = 0; g < m_lutSize && outFile.good(); g++)
-					{
-						for (r = 0; r < m_lutSize && outFile.good(); r++)
-						{
-							outFile << m_lutBody[r][g][b][0] << symbSpace << m_lutBody[r][g][b][1] << symbSpace << m_lutBody[r][g][b][2] << std::endl;
-						}
-					}
-				}
-				outFile << std::endl;
-			}
+            const LutElement::lutSize totalElements = m_lutSize * m_lutSize * m_lutSize;
+            const auto itBegin = m_lutBody.cbegin();
+            const auto itEnd = m_lutBody.cend();
+            auto it = itBegin;
+
+            while (it + 2 < itEnd && outFile.good())
+            {
+                outFile << *it << symbSpace << *(it + 1) << symbSpace << *(it + 2) << std::endl;
+                it += 3;
+            }
+            outFile << std::endl;
 			outFile.flush(); /* flush file stream */
 		}
-		return (b == m_lutSize && g == m_lutSize && r == m_lutSize && outFile.good()) ? LutErrorCode::LutState::OK : LutErrorCode::LutState::WriteError;
+		return (outFile.good() ? LutErrorCode::LutState::OK : LutErrorCode::LutState::WriteError);
 	}
 
 	LutErrorCode::LutState SaveFile (const string_view& fileName)
@@ -221,7 +215,7 @@ public:
 	}
 
 
-   const LutElement::lutTable3D<T>& get_data(void) const noexcept { return m_lutBody; } 
+   const LutElement::lutTable3D<T>& get_data(void) const noexcept { return m_lutBody; }
  
         
    const std::pair<LutElement::lutTableRaw<T>, LutElement::lutTableRaw<T>> getMinMaxDomain (void)
@@ -241,19 +235,19 @@ public:
    }
 
 private:
-	LutElement::lutTableRaw<T> m_domainMin;
-	LutElement::lutTableRaw<T> m_domainMax;
-	LutElement::lutTable3D<T>  m_lutBody;
-	LutElement::lutFileName    m_lutName;
-	LutElement::lutTitle       m_title;
-	LutElement::lutSize        m_lutSize;
-	LutErrorCode::LutState     m_error = LutErrorCode::LutState::NotInitialized;
+	LutElement::lutTableRaw<T>  m_domainMin;
+	LutElement::lutTableRaw<T>  m_domainMax;
+    LutElement::lutTable3D<T>   m_lutBody;
+    LutElement::lutFileName     m_lutName;
+	LutElement::lutTitle        m_title;
+	LutElement::lutSize         m_lutSize;
+	LutErrorCode::LutState      m_error = LutErrorCode::LutState::NotInitialized;
 
-	static const char symbNewLine        = '\n';
-	static const char symbCarriageReturn = '\r';
-	static const char symbCommentMarker  = '#';
-	static const char symbQuote          = '"';
-	static const char symbSpace          = ' ';
+	static constexpr char symbNewLine        = '\n';
+	static constexpr char symbCarriageReturn = '\r';
+	static constexpr char symbCommentMarker  = '#';
+	static constexpr char symbQuote          = '"';
+	static constexpr char symbSpace          = ' ';
 
 	void _cleanup (void)
 	{
@@ -268,10 +262,9 @@ private:
 	}
 
 
-	LutErrorCode::LutState lut_size_validation (const LutElement::lutSize& r, const LutElement::lutSize& g, const LutElement::lutSize& b)
+	LutErrorCode::LutState lut_size_validation (void)
 	{
-		/* validate real LUT size */
-		return ((0u == m_lutSize || r != m_lutSize || g != m_lutSize || b != m_lutSize) ? LutErrorCode::LutState::LutSizeInvalid : LutErrorCode::LutState::OK);
+		return ((0u == m_lutSize ? LutErrorCode::LutState::LutSizeInvalid : LutErrorCode::LutState::OK));
 	}
 
 
@@ -332,7 +325,8 @@ private:
 		if (lutSize >= 2 && lutSize <= 256)
 		{
 			m_lutSize = static_cast<decltype(m_lutSize)>(lutSize);
-			m_lutBody = LutElement::lutTable3D<T>(lutSize, LutElement::lutTable2D<T>(lutSize, LutElement::lutTable1D<T>(lutSize, LutElement::lutTableRaw<T>(3))));
+            const LutElement::lutSize vecMemSize = m_lutSize * m_lutSize * m_lutSize * static_cast<LutElement::lutSize>(3);
+            m_lutBody.reserve(vecMemSize);
 			return LutErrorCode::LutState::OK;
 		}
 		return LutErrorCode::LutState::LutSizeOutOfRange;
@@ -381,24 +375,24 @@ private:
 	} /* LutErrorCode::LutState ReadLine(std::ifstream& lutFile, std::string& strBuffer, const char& lineSeparator) */
 
 
-	LutElement::lutTableRaw<T> ParseTableRow (const std::string& strBuffer)
-	{
-		LutElement::lutTableRaw<T> lutRawData(3);
-		std::istringstream data_line (strBuffer);
+    std::array<T, 3> ParseTableRow(const std::string& strBuffer)
+    {
+        constexpr size_t elementsInLine = 3ull;
+        std::array<T, elementsInLine> lutRawData;
+        std::istringstream data_line(strBuffer);
 
-		for (int32_t i = 0; i < 3; i++)
-		{
-			data_line >> lutRawData[i];
-			if (data_line.fail())
-			{
-				m_error = LutErrorCode::LutState::CouldNotParseTableData;
-				break;
-			}
-		}
+        for (int32_t i = 0; i < elementsInLine; i++)
+        {
+            data_line >> lutRawData[i];
+            if (data_line.fail())
+            {
+                m_error = LutErrorCode::LutState::CouldNotParseTableData;
+                break;
+            }
+        }
 
-		return lutRawData;
-	}
-
+        return lutRawData;
+    }
 
 }; /* class CCubeLut3D */
 

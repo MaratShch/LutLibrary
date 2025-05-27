@@ -167,18 +167,18 @@ public:
         return LutErrorCode::LutState::NotInitialized;
     }
 
-    const LutElement::lutTable3DEx<T>& get_data(void) const noexcept { return m_lutBody; }
+    const LutElement::lutTable3D<T>& get_data(void) const noexcept { return m_lutBody; }
 
 
     const std::pair<T, T> get_inout_range(void) const { return std::make_pair(m_rangeIn, m_rangeOut); }
 
 
 private:
-    LutElement::lutTable3DEx<T> m_lutBody;
-    LutElement::lutFileName     m_lutName;
-    LutElement::lutTitle        m_title;
-    LutElement::lutSize         m_lutSize;
-    LutErrorCode::LutState      m_error = LutErrorCode::LutState::NotInitialized;
+    LutElement::lutTable3D<T> m_lutBody;
+    LutElement::lutFileName   m_lutName;
+    LutElement::lutTitle      m_title;
+    LutElement::lutSize       m_lutSize;
+    LutErrorCode::LutState    m_error = LutErrorCode::LutState::NotInitialized;
 
     std::vector<T> m_gridLine;
     std::string m_nativeComments;
@@ -186,11 +186,11 @@ private:
     T m_rangeIn;
     T m_rangeOut;
 
-    static const char symbNewLine        = '\n';
-    static const char symbCarriageReturn = '\r';
-    static const char symbCommentMarker  = '#';
-    static const char symbQuote          = '"';
-    static const char symbSpace          = ' ';
+    static constexpr char symbNewLine        = '\n';
+    static constexpr char symbCarriageReturn = '\r';
+    static constexpr char symbCommentMarker  = '#';
+    static constexpr char symbQuote          = '"';
+    static constexpr char symbSpace          = ' ';
 
 
     void _cleanup (void)

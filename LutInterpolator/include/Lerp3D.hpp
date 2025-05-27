@@ -5,7 +5,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstddef>
-#include <vector> // Only if returning vector, array preferred
+#include <vector>
 
 namespace Interpolator3D
 {
@@ -21,48 +21,49 @@ inline T clip(const T& value, const T& min_val, const T& max_val)
 template <typename T>
 inline LutElement::lutTableRaw<T> interpolate_1d_segment_vec
 (
-    const LutElement::lutTableRaw<T>& p0, // Assumed size 3
-    const LutElement::lutTableRaw<T>& p1, // Assumed size 3
+    const LutElement::lutTableRaw<T>& p0,
+    const LutElement::lutTableRaw<T>& p1,
     T t
 )
 {
     LutElement::lutTableRaw<T> result(3);
     const T one_minus_t = static_cast<T>(1.0) - t;
-    result[0] = p0[0] * one_minus_t + p1[0] * t; // R
-    result[1] = p0[1] * one_minus_t + p1[1] * t; // G
-    result[2] = p0[2] * one_minus_t + p1[2] * t; // B
+    result[0] = p0[0] * one_minus_t + p1[0] * t;
+    result[1] = p0[1] * one_minus_t + p1[1] * t;
+    result[2] = p0[2] * one_minus_t + p1[2] * t;
     return result;
+}
+
+
+// --- Extract RGB triplet from flat LUT vector ---
+template <typename T>
+inline LutElement::lutTableRaw<T> getTriplet(const LutElement::lutTableRaw<T>& lutData, int r, int g, int b, int lutSize)
+{
+    const int base = LutAlgorithm::getTripletIdx(r, g, b, lutSize);
+    return { lutData[base + 0], lutData[base + 1], lutData[base + 2] };
 }
 
 // --- Main Linear Interpolation Function (1D over R-axis) ---
 template <typename T>
 LutElement::lutTableRaw<T> linear_interpolation(
-    const LutElement::lutTable3D<T>& lutData,
+    const LutElement::lutTableRaw<T>& lutData,
     T r, T g, T b,
     const LutElement::lutTableRaw<T>& domain_min,
     const LutElement::lutTableRaw<T>& domain_max
 ) {
-//    std::cout << "Using type: " << typeid(T).name() << std::endl;
+    const int lutSize = static_cast<int>(std::round(std::cbrt(lutData.size() / 3.0))); // Cube root of triplet count
+    const int res_r = lutSize;
+    const int res_g = lutSize;
+    const int res_b = lutSize;
 
-    const int res_r = static_cast<int>(lutData.size());
-    const int res_g = static_cast<int>(lutData[0].size());
-    const int res_b = static_cast<int>(lutData[0][0].size());
-
-    // Clip normalized G/B coordinates
     const T g_coord = clip(g, static_cast<T>(0.0), static_cast<T>(1.0));
     const T b_coord = clip(b, static_cast<T>(0.0), static_cast<T>(1.0));
 
-    const int g_idx = clip(
-        (res_g > 1) ? static_cast<int>(std::round(g_coord * (res_g - 1))) : 0,
-        0, res_g - 1);
+    const int g_idx = clip((res_g > 1) ? static_cast<int>(std::round(g_coord * (res_g - 1))) : 0, 0, res_g - 1);
+    const int b_idx = clip((res_b > 1) ? static_cast<int>(std::round(b_coord * (res_b - 1))) : 0, 0, res_b - 1);
 
-    const int b_idx = clip(
-        (res_b > 1) ? static_cast<int>(std::round(b_coord * (res_b - 1))) : 0,
-        0, res_b - 1);
-
-    // Handle edge case where LUT has only 1 R-point
     if (res_r <= 1) {
-        LutElement::lutTableRaw<T> result = lutData[0][g_idx][b_idx];
+        LutElement::lutTableRaw<T> result = getTriplet(lutData, 0, g_idx, b_idx, lutSize);
         result[0] = clip(result[0], domain_min[0], domain_max[0]);
         result[1] = clip(result[1], domain_min[1], domain_max[1]);
         result[2] = clip(result[2], domain_min[2], domain_max[2]);
@@ -80,11 +81,11 @@ LutElement::lutTableRaw<T> linear_interpolation(
 
     T t = f_index - static_cast<T>(r_idx0);
     if (r_idx0 == r_idx1) {
-        t = static_cast<T>(0.0); // No interpolation needed
+        t = static_cast<T>(0.0);
     }
 
-    const auto& p0 = lutData[r_idx0][g_idx][b_idx];
-    const auto& p1 = lutData[r_idx1][g_idx][b_idx];
+    const auto p0 = getTriplet(lutData, r_idx0, g_idx, b_idx, lutSize);
+    const auto p1 = getTriplet(lutData, r_idx1, g_idx, b_idx, lutSize);
 
     LutElement::lutTableRaw<T> interpolated_val = interpolate_1d_segment_vec(p0, p1, t);
 
