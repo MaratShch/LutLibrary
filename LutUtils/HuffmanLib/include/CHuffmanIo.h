@@ -15,7 +15,7 @@ namespace HuffmanUtils
     inline uint32_t readBit (const std::vector<uint8_t>& stream, const CStreamPointer& streamOffset) 
     {
 #ifdef _DEBUG
-        if (sp2byte(streamOffset) >= stream.size())
+        if (sp2byte(streamOffset) >= static_cast<int64_t>(stream.size()))
            throw std::runtime_error("Stream offset out of range (readBit)");
         return (stream.at(streamOffset.byte()) >> streamOffset.bit()) & 0x01u;
 #else
