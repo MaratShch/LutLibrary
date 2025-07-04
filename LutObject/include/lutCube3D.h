@@ -96,9 +96,10 @@ public:
 
             loadStatus = lut_size_validation();
             m_error = loadStatus;
-
-            return loadStatus;
         }
+        else
+            loadStatus = LutErrorCode::LutState::GenericError;
+        return loadStatus;
     }
 
 	LutErrorCode::LutState LoadFile (const string_view& lutFileName)
