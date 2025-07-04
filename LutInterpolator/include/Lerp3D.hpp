@@ -6,16 +6,10 @@
 #include <algorithm>
 #include <cstddef>
 #include <vector>
+#include "InterpolatorUtils.hpp"
 
 namespace Interpolator3D
 {
-
-// --- Clip Function ---
-template <typename T>
-inline T clip(const T& value, const T& min_val, const T& max_val)
-{
-    return std::max(min_val, std::min(max_val, value));
-}
 
 // --- Helper function for 1D Linear Interpolation (on vectors) ---
 template <typename T>
