@@ -3,6 +3,6 @@
 
 #include "algorithm.h"
 #include "compute_mode.h"
-#include "Lerp3D.hpp"
+#include "InterpolatorLinear.hpp"
 
 #endif // __LUT_LIBRARY_LUT_INTERPOLATOR_INTERFACE__

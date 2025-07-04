@@ -7,8 +7,10 @@
 #include <cstddef>
 #include <vector>
 #include "InterpolatorUtils.hpp"
+#include "lutElement.h"
+#include "lutErrors.h"
 
-namespace Interpolator3D
+namespace Interpolator
 {
 
 // --- Helper function for 1D Linear Interpolation (on vectors) ---
@@ -39,7 +41,8 @@ inline LutElement::lutTableRaw<T> getTriplet(const LutElement::lutTableRaw<T>& l
 
 // --- Main Linear Interpolation Function (1D over R-axis) ---
 template <typename T>
-LutElement::lutTableRaw<T> linear_interpolation(
+LutElement::lutTableRaw<T> linear_interpolation
+(
     const LutElement::lutTableRaw<T>& lutData,
     T r, T g, T b,
     const LutElement::lutTableRaw<T>& domain_min,
