@@ -1,7 +1,7 @@
 #ifndef __LUT_INTERPOLATOR_UTILS__
 #define __LUT_INTERPOLATOR_UTILS__
 
-namespace Interpolator3D
+namespace Interpolator
 {
 
     // --- Clip Function ---
