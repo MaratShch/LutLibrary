@@ -22,7 +22,7 @@ if [ "$1" == "--accuracy" ]; then
   fi
 fi
 
-CMAKE_BIN=~/cmake-3.30.2-linux-x86_64/bin/cmake
+CMAKE_BIN=cmake #~/cmake-3.30.2-linux-x86_64/bin/cmake
 BUILD_FOLDER=$WORK_DIR/build_${ACCURACY_MODE}
 INSTALL_FOLDER=$WORK_DIR/install
 
