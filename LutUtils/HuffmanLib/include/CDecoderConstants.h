@@ -1,7 +1,8 @@
 #ifndef __C_HUFFMAN_BLOCK_DECODER_CONSTANTS__
 #define __C_HUFFMAN_BLOCK_DECODER_CONSTANTS__
 
-
+#include <cstdint>
+#include <cstddef>
 #include <array>
 #include <tuple>
 #include <type_traits>

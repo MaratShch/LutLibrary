@@ -1,3 +1,5 @@
+#include <string>
+#include <stdexcept>
 #include "CHuffmanBlock.h"
 #include "CHuffmanIo.h"
 #include "CFakedBlockDecoder.h"
