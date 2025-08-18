@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.25 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.30...4.0 FATAL_ERROR)
 
 # Cleanup default C++ CMake options
 # All parameters for build will be defined explicitly in developer provided CMake files
