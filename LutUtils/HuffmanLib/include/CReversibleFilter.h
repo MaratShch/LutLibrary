@@ -56,7 +56,7 @@ namespace HuffmanUtils
     inline uint8_t rev_sub_filter (const uint8_t& filt, const uint8_t& reconLeft) noexcept
     {
 	// Lambda expression for SUB filter
-    	auto sub_filter = [&](const int16_t filtered, const int16_t left) -> uint8_t
+    	auto sub_filter = [&](const int16_t& filtered, const int16_t& left) -> uint8_t
     	{
             return static_cast<uint8_t>((filtered + left) & 0x00FF);
     	};
@@ -67,7 +67,7 @@ namespace HuffmanUtils
     inline uint8_t rev_up_filter (const uint8_t& filt, const uint8_t& reconUp) noexcept
     {
         // Lambda expression for UP filter
-        auto up_filter = [&](const int16_t filtered, const int16_t above) -> uint8_t
+        auto up_filter = [&](const int16_t& filtered, const int16_t& above) -> uint8_t
         {
             return static_cast<uint8_t>((filtered + above) & 0x00FF);
         };
@@ -79,7 +79,7 @@ namespace HuffmanUtils
     inline uint8_t rev_average_filter (const uint8_t& filt, const uint8_t& reconLeft, const uint8_t& reconUp) noexcept
     {
         // Lambda expression for UP filter
-        auto average_filter = [&](const int16_t filtered, const int16_t left, const int16_t above) -> uint8_t
+        auto average_filter = [&](const int16_t& filtered, const int16_t& left, const int16_t& above) -> uint8_t
         {
             const int16_t floorVal = static_cast<const int16_t>(std::floor((left + above) >> 1));
             return static_cast<uint8_t>((filtered + floorVal) & 0x00FF);
@@ -92,7 +92,7 @@ namespace HuffmanUtils
     inline uint8_t rev_paeth_filter (const uint8_t& filt, const uint8_t& reconLeft, const uint8_t& reconUp, const uint8_t& reconUpLeft) noexcept
     {
         // Lambda expression for PAETH filter 
-        auto paeth_filter = [&](const int16_t filtered, const int16_t left, const int16_t above, const int16_t upper_left) -> uint8_t
+        auto paeth_filter = [&](const int16_t& filtered, const int16_t& left, const int16_t& above, const int16_t& upper_left) -> uint8_t
         {
             const int16_t p  = left + above - upper_left;
             const int16_t pa = std::abs(p - left);
@@ -141,7 +141,7 @@ namespace HuffmanUtils
                 {
                     int32_t idxFilt  = lineIn  + i;
                     int32_t idxRecon = lineOut + o;  
-		    restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0]);
+		            restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0]);
                     restored[idxRecon + 1] = ref_none_filter(decoded[idxFilt + 1]);
                     restored[idxRecon + 2] = ref_none_filter(decoded[idxFilt + 2]);
                 }// for (i = lineIn + 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)
@@ -289,7 +289,7 @@ namespace HuffmanUtils
     inline uint16_t rev_sub_filter (const uint8_t& filtMsb, const uint8_t& filtLsb, const uint16_t& reconLeft) noexcept
     {
 	// Lambda expression for SUB filter
-    	auto sub_filter = [&](const int16_t filtered, const int16_t left) -> uint8_t
+    	auto sub_filter = [&](const int16_t& filtered, const int16_t& left) -> uint8_t
     	{
 	        return static_cast<uint8_t>((filtered + left) & 0x00FF);
     	};
@@ -303,7 +303,7 @@ namespace HuffmanUtils
     inline uint16_t rev_up_filter (const uint8_t& filtMsb, const uint8_t& filtLsb, const uint16_t& reconUp) noexcept
     {
         // Lambda expression for UP filter
-        auto up_filter = [&](const int16_t filtered, const int16_t above) -> uint8_t
+        auto up_filter = [&](const int16_t& filtered, const int16_t& above) -> uint8_t
         {
            return static_cast<uint8_t>((filtered + above) & 0x00FF);
         };
@@ -318,7 +318,7 @@ namespace HuffmanUtils
     inline uint16_t rev_average_filter (const uint8_t& filtMsb, const uint8_t& filtLsb, const uint16_t& reconLeft, const uint16_t& reconUp) noexcept
     {
         // Lambda expression for UP filter
-        auto average_filter = [&](const int16_t filtered, const int16_t left, const int16_t above) -> uint8_t
+        auto average_filter = [&](const int16_t& filtered, const int16_t& left, const int16_t& above) -> uint8_t
         {
             const int16_t floorVal = static_cast<const int16_t>(std::floor((left + above) >> 1));
             return static_cast<uint8_t>((filtered + floorVal) & 0x00FF);
@@ -334,7 +334,7 @@ namespace HuffmanUtils
     inline uint16_t rev_paeth_filter (const uint8_t& filtMsb, const uint8_t& filtLsb, const uint16_t& reconLeft, const uint16_t& reconUp, const uint16_t& reconUpLeft) noexcept
     {
         // Lambda expression for PAETH filter 
-        auto paeth_filter = [&](const int16_t filtered, const int16_t left, const int16_t above, const int16_t upper_left) -> uint8_t
+        auto paeth_filter = [&](const int16_t& filtered, const int16_t& left, const int16_t& above, const int16_t& upper_left) -> uint8_t
         {
             const int16_t p  = left + above - upper_left;
             const int16_t pa = std::abs(p - left);
@@ -387,7 +387,7 @@ namespace HuffmanUtils
                 {
                     int32_t idxFilt  = lineIn  + i;
                     int32_t idxRecon = lineOut + o;  
-		    restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0], decoded[idxFilt + 1]);
+		            restored[idxRecon + 0] = ref_none_filter(decoded[idxFilt + 0], decoded[idxFilt + 1]);
                     restored[idxRecon + 1] = ref_none_filter(decoded[idxFilt + 2], decoded[idxFilt + 3]);
                     restored[idxRecon + 2] = ref_none_filter(decoded[idxFilt + 4], decoded[idxFilt + 5]);
                 }// for (i = lineIn + 1, o = 0; o < outLineSize; o += channels, i += inChannelIncrement)

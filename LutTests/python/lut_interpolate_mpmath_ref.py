@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+#
+# Run with default precision (16 digits)
+#   python lut_interpolate_ref.py YourLutFile.cube
+#
+# Run with 50 digits of precision
+#   python lut_interpolate_ref.py YourLutFile.cube --precision 50
+#
+# Run with 10 digits of precision
+#   python lut_interpolate_ref.py YourLutFile.cube --precision 10
+#
 import numpy as np
 import warnings
 import argparse
