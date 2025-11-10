@@ -6,7 +6,13 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-#include(AVX512test)
+include (Test_CpuArch)
+
+#if (BUILD_ARCH_X86)
+# include(Test_AVX512)
+#elseif (BUILD_ARCH_ARM)
+# include(Test_NEON)
+#endif()
 
 add_compile_definitions(-D_FILE_OFFSET_BITS=64)
 
