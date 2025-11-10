@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+#include(AVX512test)
+
 add_compile_definitions(-D_FILE_OFFSET_BITS=64)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -35,10 +37,14 @@ if(MSVC)
  # /GS - Set security checks (usually default in modern VS, good practice)
  # /FC - Set Full Path diagnostic messages (helps locate errors/warnings)
  # /W3 - Recommended level for warnings
- # /arch:AVX2 - minimal CPU requirements: AVX2 instructions set
+ # /arch:AVX2 or /arch:AVX512 - minimal CPU requirements: AVX2 or AVX512 (if available) instructions set
  # /Za - Disables MS language extensions
- add_compile_options(/EHsc /GS /FC /W3 /arch:AVX2) # /Za)
-
+#if(AVX512_SUPPORTED)
+#  add_compile_options(/EHsc /GS /FC /W3 /arch:AVX512) # /Za)
+# else()
+  add_compile_options(/EHsc /GS /FC /W3 /arch:AVX2) # /Za)
+# endif()
+ 
  if(ENABLE_HIGH_ACCURACY)
   set(CMAKE_CXX_FLAGS_DEBUG "/Od" CACHE STRING "/Od" FORCE)
   set(CMAKE_CXX_FLAGS_RELEASE "/O2" CACHE STRING "/O2" FORCE)
