@@ -53,6 +53,12 @@ lutlib_test (
 	LutObject # actually we don't needed this library here. Just add it for correct includes and link 
 )
 
+lutlib_test (
+	FastComputeTest 
+	${LUT_TESTS_FILES_FOLDER}/src/FastComputeTest.cpp 
+	LutObject # actually we don't needed this library here. Just add it for correct includes and link 
+)
+
 set (TST_PRIVATE_COMPILATION_DEFINES -DCUBE_3D_LUT_FOLDER=\"${CMAKE_INSTALL_CUBE_LUT_TST_DIRECTORY}/3D\")
 lutlib_test (
 	ParseCube3d 
