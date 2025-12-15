@@ -22,7 +22,7 @@ TEST(FastFloorF32Test, f32_test1)
 	const bool b4 = (-21.f == floor_f4);
 	const bool b5 = (0.0f  == floor_f5);
  	
-        if (false == (b1 && b2 && b3 && b4 && b5))
+    if (false == (b1 && b2 && b3 && b4 && b5))
 	{
 		std::cout << "floor (2.131f)  = " << floor_f1 << std::endl;	
 		std::cout << "floor (4.894f)  = " << floor_f2 << std::endl;	
@@ -55,7 +55,7 @@ TEST(FastFloorF64Test, f64_test1)
 	const bool b4 = (-21.0 == floor_f4);
 	const bool b5 = (0.00  == floor_f5);
  	
-        if (false == (b1 && b2 && b3 && b4 && b5))
+    if (false == (b1 && b2 && b3 && b4 && b5))
 	{
 		std::cout << "floor (2.131)  = " << floor_f1 << std::endl;	
 		std::cout << "floor (4.894)  = " << floor_f2 << std::endl;	
