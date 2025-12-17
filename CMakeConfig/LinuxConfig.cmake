@@ -29,7 +29,7 @@ message (STATUS "Install TEST LUT's folder: ${CMAKE_INSTALL_LUT_TST_DIRECTORY}")
 add_compile_definitions(
     _LARGEFILE64_SOURCE=1
     __USE_LARGEFILE64
-    "$<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>" # Enables checks in glibc functions (like memcpy, sprintf) 
+    "$<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>" # Enables checks in glibc functions (like memcpy, sprintf)
 	                                          # for potential buffer overflows
 )
 
@@ -38,50 +38,44 @@ add_compile_options(
     -Wextra                  # Enable more warnings
     -pedantic                # Uncomment for stricter ISO C++/C compliance warnings
     -fstack-protector-strong # Add stack smashing protection
-    -mfpmath=sse             # Use vectorized (SSE/AVX) FP math instead of x87
+    -mfpmath=avx2            # Use vectorized (AVX2) FP math instead of x87
     -march=native            # Tells the compiler to optimize for the specific CPU it's compiling on
 )
 
-if (ENABLE_HIGH_ACCURACY)
- set(CMAKE_CXX_FLAGS_DEBUG "-O0" CACHE STRING "-O0" FORCE)
- set(CMAKE_CXX_FLAGS_RELEASE "-O3" CACHE STRING "-O3" FORCE)
- set(CMAKE_CXX_FLAGS_MINSIZEREL "-O3" CACHE STRING "-O3" FORCE)
- set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Os" CACHE STRING "-Os" FORCE)
+if (ENABLE_HIGH_ACCURACY) # High Accuracy Flow
+ # Flags for High Accuracy (GCC)
+ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -DDEBUG -D_GLIBCXX_DEBUG" CACHE STRING "-O0 -g3 -DDEBUG -D_GLIBCXX_DEBUG" FORCE)
+ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -s -DNDEBUG" CACHE STRING "-O2 -s -DNDEBUG" FORCE)
+ set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os -g0 -s -DNDEBUG" CACHE STRING "-Os -g0 -s -DNDEBUG" FORCE)
+ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -ggdb -g -DNDEBUG" CACHE STRING "-O2 -ggdb -g -DNDEBUG" FORCE)
 
- message("${COLOR_BOLD_GREEN}Build for LINUX OS with HIGH ACCURACY ENABLED${COLOR_RESET}")
- add_compile_definitions(WITH_HIGH_ACCURACY_MODE)
- add_compile_options(
-    "$<$<CONFIG:DEBUG>:-O0 -g3 -DDEBUG -D_GLIBCXX_DEBUG>"# disable optimization, includes debugging information
-    "$<$<CONFIG:RELEASE>:-O3 -s -DNDEBUG>"		 # high optimization
-    "$<$<CONFIG:RelWithDebInfo>:-O3 -ggdb -g -DNDEBUG>"
-    "$<$<CONFIG:MinSizeRel>:-Os -g0 -s -DNDEBUG>"
- )
- add_compile_options(
-     -fno-fast-math           # Disable fast math (preserves IEEE compliance)
-     -frounding-math          # Respect rounding mode (prevents dangerous FP optimizations)
-     -fno-associative-math    # Prevent floating point optimizations based on associativity
-     -fno-reciprocal-math     # Prevent optimizing division/sqrt using reciprocals
-     -ffp-contract=off        # Disable FMA (Fused Multiply-Add) if it might change results
- )
-else()
- set(CMAKE_CXX_FLAGS_DEBUG "-O0" CACHE STRING "-O0" FORCE)
- set(CMAKE_CXX_FLAGS_RELEASE "-O3" CACHE STRING "-O3" FORCE)
- set(CMAKE_CXX_FLAGS_MINSIZEREL "-O3" CACHE STRING "-O3" FORCE)
- set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Os" CACHE STRING "-Os" FORCE)
+ message("${COLOR_BOLD_GREEN}Build for LINUX OS with HIGH ACCURACY ENABLED${COLOR_RESET}") # Fine.
+ add_compile_definitions(WITH_HIGH_ACCURACY_MODE) # Fine.
 
- message ("${COLOR_YELLOW}Build for LINUX OS with HIGH PERFORMANCE ENABLED${COLOR_RESET}")
+ # These are the crucial FP accuracy flags. They are correctly placed here.
  add_compile_options(
-    "$<$<CONFIG:DEBUG>:-O0 -g3  -DDEBUG -D_GLIBCXX_DEBUG>"# disable optimization, includes debugging information
-    "$<$<CONFIG:RELEASE>:-O3 -s -DNDEBUG>"		  # highest optimization
-    "$<$<CONFIG:RelWithDebInfo>:-O3 -ggdb -g -DNDEBUG>"
-    "$<$<CONFIG:MinSizeRel>:-Os -g0 -s -DNDEBUG>"
+     -fno-fast-math           # Disable fast math (preserves IEEE compliance) - Correct for High Accuracy.
+     -frounding-math          # Respect rounding mode (prevents dangerous FP optimizations) - Correct for High Accuracy.
+     -fno-associative-math    # Prevent floating point optimizations based on associativity - Correct for High Accuracy.
+     -fno-reciprocal-math     # Prevent optimizing division/sqrt using reciprocals - Correct for High Accuracy.
+     -ffp-contract=off        # Disable FMA (Fused Multiply-Add) if it might change results - Correct for High Accuracy.
  )
+else() # High Performance Flow
+
+ # Flags for High Performance (GCC)
+ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -g3 -DDEBUG -D_GLIBCXX_DEBUG" CACHE STRING "-O0 -ggdb -g3 -DDEBUG -D_GLIBCXX_DEBUG" FORCE)
+ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -s -DNDEBUG" CACHE STRING "-O3 -s -DNDEBUG" FORCE)
+ set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os -g0 -s -DNDEBUG" CACHE STRING "-Os -g0 -s -DNDEBUG" FORCE)
+ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -ggdb -g -DNDEBUG" CACHE STRING "-O3 -ggdb -g -DNDEBUG" FORCE)
+
+ message ("${COLOR_YELLOW}Build for LINUX OS with HIGH PERFORMANCE ENABLED${COLOR_RESET}") # Fine.
+
+ # These are the crucial FP performance flags. They are correctly placed here.
  add_compile_options(
      -ffast-math
-     -fno-math-errno 
-     -freciprocal-math        # Allow the reciprocal of a value to be used instead of dividing by the value if this enables optimizations
-     -ffp-contract=fast       # Tells the compiler it is free to use FMA instructions (if available) or other contractions
-     -ffinite-math-only       # Allow optimizations for floating-point arithmetic that assume that arguments and results are not NaNs or +-Infs
+     -freciprocal-math        # Correct for High Performance.
+     -ffp-contract=fast       # Correct for High Performance.
+     -ffinite-math-only       # Correct for High Performance.
  )
 endif()
 
