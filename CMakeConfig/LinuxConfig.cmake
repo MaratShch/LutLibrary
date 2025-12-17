@@ -30,7 +30,7 @@ add_compile_definitions(
     _LARGEFILE64_SOURCE=1
     __USE_LARGEFILE64
     "$<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>" # Enables checks in glibc functions (like memcpy, sprintf)
-	                                          # for potential buffer overflows
+                                                  # for potential buffer overflows
 )
 
 add_compile_options(
@@ -38,7 +38,7 @@ add_compile_options(
     -Wextra                  # Enable more warnings
     -pedantic                # Uncomment for stricter ISO C++/C compliance warnings
     -fstack-protector-strong # Add stack smashing protection
-    -mfpmath=avx2            # Use vectorized (AVX2) FP math instead of x87
+    -mfpmath=sse             # Use vectorized (SSE/AVX) FP math instead of x87
     -march=native            # Tells the compiler to optimize for the specific CPU it's compiling on
 )
 
