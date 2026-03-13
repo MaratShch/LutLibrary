@@ -36,8 +36,8 @@ if(MSVC)
   set(CMAKE_CXX_FLAGS_MINSIZEREL "/Os" CACHE STRING "/Os" FORCE)
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/O2" CACHE STRING "/O2" FORCE)
   
-  message("${COLOR_BOLD_GREEN} Build for Windows OS with HIGH ACCURACY ENABLED${COLOR_RESET}") # Fine.
-  add_compile_definitions(WITH_HIGH_ACCURACY_MODE) # Fine.
+  message("${COLOR_BOLD_GREEN} Build for Windows OS with HIGH ACCURACY ENABLED${COLOR_RESET}")
+  add_compile_definitions(WITH_HIGH_ACCURACY_MODE)
 
   add_compile_options(
     "$<$<CONFIG:Debug>:/Od;/ZI;/RTC1;/MDd;/fp:strict;/D_DEBUG;/D_ITERATOR_DEBUG_LEVEL=2>" 
@@ -73,4 +73,4 @@ if(MSVC)
  ) 
 endif(MSVC) # Correct endif.
 
-include(InstallRequiredSystemLibraries) # Correct command, placement fine.
+include(InstallRequiredSystemLibraries)
