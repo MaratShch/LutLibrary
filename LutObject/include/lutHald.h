@@ -72,7 +72,7 @@ public:
 			do
 			{
                 // if we have number of IDAT sections - let's rename it to IDAT0, IDAT1, etc... 
-				std::unordered_map<std::string, std::vector<uint8_t>> chunkMap = std::move(readPngChunk(lutFile, sections_IDAT));
+				std::unordered_map<std::string, std::vector<uint8_t>> chunkMap = readPngChunk(lutFile, sections_IDAT);
 				mHaldChunkOrig.insert(chunkMap.begin(), chunkMap.end());
 
                 // add logic for handle multiple IDAT sections in one PNG

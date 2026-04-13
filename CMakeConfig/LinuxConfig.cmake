@@ -13,6 +13,8 @@ elseif (BUILD_ARCH_ARM)
  include(Test_NEON)
 endif()
 
+include(GNUInstallDirs)
+
 set(CMAKE_INSTALL_LIB_DIRECTORY ${CMAKE_INSTALL_PREFIX}/lib)
 set(CMAKE_INSTALL_HXX_DIRECTORY ${CMAKE_INSTALL_PREFIX}/include)
 set(CMAKE_INSTALL_BIN_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
@@ -54,11 +56,11 @@ if (ENABLE_HIGH_ACCURACY) # High Accuracy Flow
 
  # These are the crucial FP accuracy flags. They are correctly placed here.
  add_compile_options(
-     -fno-fast-math           # Disable fast math (preserves IEEE compliance) - Correct for High Accuracy.
-     -frounding-math          # Respect rounding mode (prevents dangerous FP optimizations) - Correct for High Accuracy.
-     -fno-associative-math    # Prevent floating point optimizations based on associativity - Correct for High Accuracy.
-     -fno-reciprocal-math     # Prevent optimizing division/sqrt using reciprocals - Correct for High Accuracy.
-     -ffp-contract=off        # Disable FMA (Fused Multiply-Add) if it might change results - Correct for High Accuracy.
+     -fno-fast-math           # Disable fast math (preserves IEEE compliance)
+     -frounding-math          # Respect rounding mode (prevents dangerous FP optimizations)
+     -fno-associative-math    # Prevent floating point optimizations based on associativity
+     -fno-reciprocal-math     # Prevent optimizing division/sqrt using reciprocals
+     -ffp-contract=off        # Disable FMA (Fused Multiply-Add) if it might change results
  )
 else() # High Performance Flow
 
@@ -70,13 +72,10 @@ else() # High Performance Flow
 
  message ("${COLOR_YELLOW}Build for LINUX OS with HIGH PERFORMANCE ENABLED${COLOR_RESET}") # Fine.
 
- # These are the crucial FP performance flags. They are correctly placed here.
  add_compile_options(
      -ffast-math
-     -freciprocal-math        # Correct for High Performance.
-     -ffp-contract=fast       # Correct for High Performance.
-     -ffinite-math-only       # Correct for High Performance.
+     -freciprocal-math 
+     -ffp-contract=fast
+     -ffinite-math-only 
  )
 endif()
-
-include(GNUInstallDirs)

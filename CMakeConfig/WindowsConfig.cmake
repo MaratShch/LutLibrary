@@ -7,7 +7,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-	
+
+include(InstallRequiredSystemLibraries) 	
+
 set(CMAKE_INSTALL_LIB_DIRECTORY ${CMAKE_INSTALL_PREFIX}/lib)
 set(CMAKE_INSTALL_HXX_DIRECTORY ${CMAKE_INSTALL_PREFIX}/include)
 set(CMAKE_INSTALL_BIN_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
@@ -36,8 +38,8 @@ if(MSVC)
   set(CMAKE_CXX_FLAGS_MINSIZEREL "/Os" CACHE STRING "/Os" FORCE)
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/O2" CACHE STRING "/O2" FORCE)
   
-  message("${COLOR_BOLD_GREEN} Build for Windows OS with HIGH ACCURACY ENABLED${COLOR_RESET}")
-  add_compile_definitions(WITH_HIGH_ACCURACY_MODE)
+  message("${COLOR_BOLD_GREEN} Build for Windows OS with HIGH ACCURACY ENABLED${COLOR_RESET}") # Fine.
+  add_compile_definitions(WITH_HIGH_ACCURACY_MODE) # Fine.
 
   add_compile_options(
     "$<$<CONFIG:Debug>:/Od;/ZI;/RTC1;/MDd;/fp:strict;/D_DEBUG;/D_ITERATOR_DEBUG_LEVEL=2>" 
@@ -73,4 +75,3 @@ if(MSVC)
  ) 
 endif(MSVC) # Correct endif.
 
-include(InstallRequiredSystemLibraries)
