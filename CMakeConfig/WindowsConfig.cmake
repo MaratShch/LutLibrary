@@ -71,7 +71,7 @@ if(MSVC)
      "$<$<CONFIG:RELEASE>:/DEBUG:NONE;/OPT:REF;/OPT:ICF>"    # No debug info, linker size/speed optimization (Correct)
      "$<$<CONFIG:RelWithDebInfo>:/DEBUG>"                    # Generate debug info for linker (Correct)
      "$<$<CONFIG:MinSizeRel>:/DEBUG:NONE;/OPT:REF;/OPT:ICF>" # No debug info, linker size/speed optimization (Correct)
-     "$<$<OR:$<CONFIG:RELEASE>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:/LTCG>"
+#     "$<$<OR:$<CONFIG:RELEASE>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:/LTCG>"
  ) 
 endif(MSVC) # Correct endif.
 
