@@ -69,12 +69,9 @@ public:
             } /* if (LutErrorCode::LutState::OK == (loadStatus = ReadLine(lutFile, stringBuffer, lineSeparator))) */
         } while (loadStatus == LutErrorCode::LutState::OK && false == bData);
 
-        LutElement::lutSize r = 0u, g = 0u, b = 0u;
-
         // VALIDATE KEYWORDS AND READ LUT BODY
         if (LutErrorCode::LutState::OK == keywords_validation())
         {
-            bool bNoBlob = true;
             const LutElement::lutSize lutLinesNumb = m_lutSize * m_lutSize * m_lutSize;
             for (LutElement::lutSize idx = 0; idx < lutLinesNumb; idx++)
             {
@@ -85,7 +82,6 @@ public:
                     // skip #xxBLOB section
                     if (symbCommentMarker == stringBuffer[0])
                     {
-                        bNoBlob = false;
                         continue;
                     }
 
@@ -150,7 +146,6 @@ public:
 		if (0 == m_lutSize)
 			return LutErrorCode::LutState::NotInitialized;
 
-		LutElement::lutSize r = 0, g = 0, b = 0;
 		if (outFile.good())
 		{
 			outFile << symbCommentMarker << symbSpace << "This file created by LutLibrary" << std::endl;
@@ -170,7 +165,6 @@ public:
 			outFile << std::endl;
 			outFile.flush();
 
-            const LutElement::lutSize totalElements = m_lutSize * m_lutSize * m_lutSize;
             const auto itBegin = m_lutBody.cbegin();
             const auto itEnd = m_lutBody.cend();
             auto it = itBegin;
@@ -339,14 +333,14 @@ private:
 		char lineSeparator { '\0' };
 		for (int32_t i = 0; i < 256; i++)
 		{
-			auto const c = lutFile.get();
-			if (c == static_cast<decltype(c)>(symbNewLine))
+			auto c = lutFile.get();
+			if (c == symbNewLine)
 			{
 				lineSeparator = symbNewLine;
 				break;
 			}
 
-			if (c == static_cast<decltype(c)>(symbCarriageReturn))
+			if (c == symbCarriageReturn)
 			{
 				if (symbCarriageReturn == lutFile.get())
 					break;
@@ -382,7 +376,7 @@ private:
         std::array<T, elementsInLine> lutRawData;
         std::istringstream data_line(strBuffer);
 
-        for (int32_t i = 0; i < elementsInLine; i++)
+        for (size_t i = 0; i < elementsInLine; i++)
         {
             data_line >> lutRawData[i];
             if (data_line.fail())

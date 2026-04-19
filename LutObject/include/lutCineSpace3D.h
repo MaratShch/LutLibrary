@@ -302,7 +302,7 @@ class CCineSpaceLut3D
 		char lineSeparator { '\0' };
 		for (int32_t i = 0; i < 256; i++)
 		{
-			auto const c = lutFile.get();
+			auto c = lutFile.get();
 			if (c == static_cast<decltype(c)>(symbNewLine))
 			{
 				lineSeparator = symbNewLine;

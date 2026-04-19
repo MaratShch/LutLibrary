@@ -81,7 +81,7 @@ namespace HuffmanUtils
         // Lambda expression for UP filter
         auto average_filter = [&](const int16_t& filtered, const int16_t& left, const int16_t& above) -> uint8_t
         {
-            const int16_t floorVal = static_cast<const int16_t>(std::floor((left + above) >> 1));
+            const int16_t floorVal = static_cast<int16_t>(std::floor((left + above) >> 1));
             return static_cast<uint8_t>((filtered + floorVal) & 0x00FF);
         };
 
@@ -320,7 +320,7 @@ namespace HuffmanUtils
         // Lambda expression for UP filter
         auto average_filter = [&](const int16_t& filtered, const int16_t& left, const int16_t& above) -> uint8_t
         {
-            const int16_t floorVal = static_cast<const int16_t>(std::floor((left + above) >> 1));
+            const int16_t floorVal = static_cast<int16_t>(std::floor((left + above) >> 1));
             return static_cast<uint8_t>((filtered + floorVal) & 0x00FF);
         };
 

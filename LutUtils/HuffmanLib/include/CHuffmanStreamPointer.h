@@ -18,9 +18,9 @@ namespace HuffmanUtils
       // class constructors with parameters	
           constexpr CStreamPointer (const int64_t& _offset) noexcept : m_StreamPointer { _offset > 0ll ? _offset : 0ll } {};
 
-          constexpr CStreamPointer (const uint32_t& _byte, const uint32_t& _bit) noexcept : m_StreamPointer {(static_cast<const int64_t>(_byte) << 3) | static_cast<const int64_t>(0x7u & _bit)} {};
+          constexpr CStreamPointer (const uint32_t& _byte, const uint32_t& _bit) noexcept : m_StreamPointer {(static_cast<int64_t>(_byte) << 3) | static_cast<int64_t>(0x7u & _bit)} {};
 
-          explicit constexpr CStreamPointer (const std::pair<const uint32_t, const uint32_t>& _pair) noexcept : m_StreamPointer {(static_cast<const int64_t>(_pair.first) << 3) | (0x7u & _pair.second)} {};
+          explicit constexpr CStreamPointer (const std::pair<const uint32_t, const uint32_t>& _pair) noexcept : m_StreamPointer {(static_cast<int64_t>(_pair.first) << 3) | (0x7u & _pair.second)} {};
 
        // copy and move constructors 
           constexpr CStreamPointer (const CStreamPointer& other_sp) noexcept : m_StreamPointer { other_sp.m_StreamPointer } {};
@@ -32,7 +32,7 @@ namespace HuffmanUtils
        // copy and move operators
           CStreamPointer& operator= (const std::pair<const uint32_t, const uint32_t>& other) noexcept
           {
-              m_StreamPointer = ((static_cast<const int64_t>(other.first) << 3) | static_cast<const int64_t>(other.second & 0x07u));
+              m_StreamPointer = ((static_cast<int64_t>(other.first) << 3) | static_cast<int64_t>(other.second & 0x07u));
               return *this;
           }
 
