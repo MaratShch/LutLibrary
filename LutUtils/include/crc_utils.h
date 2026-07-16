@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <cstdint>
 #include <array>
+#include <utility>
 
 namespace detail
 {
